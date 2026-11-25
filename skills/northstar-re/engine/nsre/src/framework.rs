@@ -600,8 +600,8 @@ fn tool_paths() -> Value {
         .map(|n| {
             let key = format!("NSRE_TOOL_{}", n.to_ascii_uppercase());
             let configured = env::var_os(&key).map(PathBuf::from);
-            let (found, source) =
-                tool_candidate(n, configured.as_deref(), &paths, &tool_hints(n));
+            let hints = tool_hints(n);
+            let (found, source) = tool_candidate(n, configured.as_deref(), &paths, &hints);
             json!({
                 "name": n,
                 "path": found,
