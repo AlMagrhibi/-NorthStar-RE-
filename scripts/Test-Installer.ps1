@@ -3,6 +3,9 @@ param([string]$Root=(Split-Path -Parent $PSScriptRoot))
 $ErrorActionPreference='Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'Windows required for lifecycle verification' }
 $oldLocal=$env:LOCALAPPDATA; $oldUser=$env:USERPROFILE
+$oldCargo=$env:CARGO_HOME; $oldRustup=$env:RUSTUP_HOME
+if (!$env:CARGO_HOME) { $env:CARGO_HOME=Join-Path $oldUser '.cargo' }
+if (!$env:RUSTUP_HOME) { $env:RUSTUP_HOME=Join-Path $oldUser '.rustup' }
 $temp=Join-Path ([IO.Path]::GetTempPath()) ('nsre-lifecycle-'+[Guid]::NewGuid().ToString('N'))
 function Invoke-Manager([string[]]$Arguments,[bool]$Success=$true) {
  & powershell.exe -NoProfile -File (Join-Path $Root 'install/Manage.ps1') @Arguments
@@ -53,5 +56,6 @@ try {
  Invoke-Manager @('-Action','Uninstall','-NonInteractive')
  if ((Test-Path -LiteralPath $target) -or (Test-Path -LiteralPath $reg)) { throw 'Registration remains' }
  if (!(Test-Path -LiteralPath (Join-Path $project 'sentinel'))) { throw 'Project data touched' }
- 'PASS: clean installation, ownership refusal, integrity rejection, idempotency, doctor, backup, upgrade failure rollback, update, explicit rollback and uninstall'
-} finally { $env:LOCALAPPDATA=$oldLocal; $env:USERPROFILE=$oldUser; if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Recurse -Force } }
+ Invoke-Manager @('-Action','Build-Engine','-NonInteractive')
+ 'PASS: pinned source build, clean installation, ownership refusal, integrity rejection, idempotency, doctor, backup, upgrade failure rollback, update, explicit rollback and uninstall'
+} finally { $env:LOCALAPPDATA=$oldLocal; $env:USERPROFILE=$oldUser; $env:CARGO_HOME=$oldCargo; $env:RUSTUP_HOME=$oldRustup; if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Recurse -Force } }

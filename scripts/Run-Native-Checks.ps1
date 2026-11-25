@@ -15,6 +15,14 @@ try {
  if ($LASTEXITCODE -ne 0) { throw 'Version smoke failed' }
  & "./$bin" doctor|Set-Content -LiteralPath (Join-Path $Reports 'doctor.json')
  if ($LASTEXITCODE -ne 0) { throw 'Doctor failed' }
+ if ($env:OS -eq 'Windows_NT') {
+  $vswhere=Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+  $dumpbin=& $vswhere -latest -products '*' -find 'VC/Tools/MSVC/**/bin/Hostx64/x64/dumpbin.exe' | Select-Object -Last 1
+  if (!$dumpbin) { throw 'dumpbin required to verify Windows distribution dependencies' }
+  $dependencies=& $dumpbin /DEPENDENTS $bin
+  if ($LASTEXITCODE -ne 0 -or ($dependencies -match '(?i)(VCRUNTIME|MSVCP)[0-9_]*\.dll')) { throw 'Unexpected external VC runtime dependency' }
+  $dependencies|Set-Content -LiteralPath (Join-Path $Reports 'windows-dependencies.txt')
+ }
  $lines+='- PASS: --version and doctor'; $lines+='- UNVERIFIED: actual Windows 11 desktop and coding-agent acceptance'
  $lines|Set-Content -LiteralPath (Join-Path $Reports 'build-report.md') -Encoding UTF8
  Copy-Item -LiteralPath (Join-Path $Reports 'build-report.md') -Destination (Join-Path $Reports 'test-report.md')

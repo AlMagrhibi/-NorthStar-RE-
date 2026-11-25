@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 if ($env:OS -ne 'Windows_NT') { throw 'Windows is required for installation. No host changes made.' }
+if ($env:PROCESSOR_ARCHITECTURE -ne 'AMD64' -and $env:PROCESSOR_ARCHITEW6432 -ne 'AMD64') { throw 'Windows x64 host required' }
 $Package=Split-Path -Parent $PSScriptRoot
 $Master=Join-Path $Package 'skills\northstar-re'
 $HomeRoot=Join-Path $env:LOCALAPPDATA 'NorthStarRE'
@@ -78,16 +79,18 @@ function Save-Backup($Registration) {
 }
 function Build-Engine([string]$Work) {
  $src=Join-Path $Work 'engine\nsre'
- $cargo=Get-Command cargo.exe -ErrorAction SilentlyContinue
+ $cargo=Get-Command rustup.exe -ErrorAction SilentlyContinue
  if (!$cargo) { throw 'Rust MSVC/Cargo and Visual Studio C++ Build Tools required. Install explicitly; no fallback.' }
+ $toolchains=& $cargo.Source toolchain list
+ if ($LASTEXITCODE -ne 0 -or !($toolchains -match '^1\.91\.1-x86_64-pc-windows-msvc(?:\s|$)')) { throw 'Pinned Rust 1.91.1 x64 MSVC toolchain missing; install explicitly before retrying' }
  $oldTarget=$env:CARGO_TARGET_DIR
  Push-Location $src
  try {
   $env:CARGO_TARGET_DIR=Join-Path $Work 'target'
   if (!(Test-Path -LiteralPath 'Cargo.lock')) { throw 'Reviewed Cargo.lock required' }
   $opts=@('--locked'); if (!$AllowDependencyDownload) { $opts+='--offline' }
-  Run-Native $cargo.Source (@('test','--workspace')+$opts)
-  Run-Native $cargo.Source (@('build','--release')+$opts)
+  Run-Native $cargo.Source (@('run','1.91.1-x86_64-pc-windows-msvc','cargo','test','--workspace')+$opts)
+  Run-Native $cargo.Source (@('run','1.91.1-x86_64-pc-windows-msvc','cargo','build','--release')+$opts)
   $exe=Join-Path $env:CARGO_TARGET_DIR 'release\nsre.exe'
   Run-Native $exe @('--version'); Run-Native $exe @('doctor')
   New-Item -ItemType Directory -Path (Join-Path $Work 'engine\bin') -Force|Out-Null
