@@ -1,3 +1,5 @@
+HISTORICAL INPUT-PACKAGE REPORT ONLY. Current results: docs/reports/ACCEPTANCE-AR.md
+
 NorthStar RE V11 packaging validation
 PASS: exact 52 specialist directory names match V10.
 PASS: no .py or .pyc files distributed.

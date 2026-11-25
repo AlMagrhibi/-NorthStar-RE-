@@ -1,0 +1,19 @@
+{
+ "$schema":"https://json-schema.org/draft/2020-12/schema",
+ "title":"NorthStar RE V11 release manifest",
+ "type":"object",
+ "required":["schema_version","tag","framework_major","engine_version","platform","required_checks_passed","status","commit","assets","limitations"],
+ "properties":{
+  "schema_version":{"const":1},
+  "tag":{"type":"string","pattern":"^v11\\.[0-9]+\\.[0-9]+(?:-rc\\.[0-9]+)?$"},
+  "framework_major":{"const":11},
+  "engine_version":{"const":"0.3.0"},
+  "platform":{"enum":["source","windows-x64"]},
+  "required_checks_passed":{"type":"boolean"},
+  "status":{"enum":["RELEASE_CANDIDATE"]},
+  "commit":{"type":["string","null"]},
+  "assets":{"type":"array","minItems":1,"items":{"type":"object","required":["name","sha256","bytes"],"properties":{"name":{"type":"string","pattern":"^[A-Za-z0-9._-]+$"},"sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},"bytes":{"type":"integer","minimum":0}},"additionalProperties":false}},
+  "limitations":{"type":"array","items":{"type":"string"}}
+ },
+ "additionalProperties":false
+}

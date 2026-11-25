@@ -1,0 +1,1118 @@
+{
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:95b9f67e-7739-4ca9-bb0f-dcfed5a9f607",
+  "dependencies": [
+    {
+      "ref": "pkg:cargo/bitflags@2.13.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/block-buffer@0.10.4",
+      "dependsOn": [
+        "pkg:cargo/generic-array@0.14.7"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/cc@1.11.3",
+      "dependsOn": [
+        "pkg:cargo/find-msvc-tools@0.1.15",
+        "pkg:cargo/shlex@2.0.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/cfg-if@1.0.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/cpufeatures@0.2.17",
+      "dependsOn": [
+        "pkg:cargo/libc@0.2.191"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/crossbeam-deque@0.8.8",
+      "dependsOn": [
+        "pkg:cargo/crossbeam-epoch@0.9.21",
+        "pkg:cargo/crossbeam-utils@0.8.23"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/crossbeam-epoch@0.9.21",
+      "dependsOn": [
+        "pkg:cargo/crossbeam-utils@0.8.23"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/crossbeam-utils@0.8.23",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/crypto-common@0.1.7",
+      "dependsOn": [
+        "pkg:cargo/generic-array@0.14.7",
+        "pkg:cargo/typenum@1.20.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/digest@0.10.7",
+      "dependsOn": [
+        "pkg:cargo/block-buffer@0.10.4",
+        "pkg:cargo/crypto-common@0.1.7"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/either@1.19.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/fallible-iterator@0.3.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/fallible-streaming-iterator@0.1.9",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/find-msvc-tools@0.1.15",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/foldhash@0.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/generic-array@0.14.7",
+      "dependsOn": [
+        "pkg:cargo/typenum@1.20.1",
+        "pkg:cargo/version_check@0.9.5"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/hashbrown@0.17.2",
+      "dependsOn": [
+        "pkg:cargo/foldhash@0.2.0"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/hashlink@0.12.2",
+      "dependsOn": [
+        "pkg:cargo/hashbrown@0.17.2"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/itoa@1.0.19",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/libc@0.2.191",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/libsqlite3-sys@0.40.0",
+      "dependsOn": [
+        "pkg:cargo/cc@1.11.3",
+        "pkg:cargo/pkg-config@0.3.34",
+        "pkg:cargo/vcpkg@0.2.15"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/memchr@2.8.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/nsre@0.3.0",
+      "dependsOn": [
+        "pkg:cargo/rayon@1.12.0",
+        "pkg:cargo/rusqlite@0.43.0",
+        "pkg:cargo/serde_json@1.0.154",
+        "pkg:cargo/sha2@0.10.9",
+        "pkg:cargo/walkdir@2.5.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/pkg-config@0.3.34",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/proc-macro2@1.0.107",
+      "dependsOn": [
+        "pkg:cargo/unicode-ident@1.0.27"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/quote@1.0.47",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/rayon@1.12.0",
+      "dependsOn": [
+        "pkg:cargo/either@1.19.0",
+        "pkg:cargo/rayon-core@1.13.0"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/rayon-core@1.13.0",
+      "dependsOn": [
+        "pkg:cargo/crossbeam-deque@0.8.8",
+        "pkg:cargo/crossbeam-utils@0.8.23"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/rusqlite@0.43.0",
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.2",
+        "pkg:cargo/fallible-iterator@0.3.0",
+        "pkg:cargo/fallible-streaming-iterator@0.1.9",
+        "pkg:cargo/hashlink@0.12.2",
+        "pkg:cargo/libsqlite3-sys@0.40.0",
+        "pkg:cargo/smallvec@1.16.6"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/same-file@1.0.6",
+      "dependsOn": [
+        "pkg:cargo/winapi-util@0.1.11"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/serde@1.0.229",
+      "dependsOn": [
+        "pkg:cargo/serde_core@1.0.229"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/serde_core@1.0.229",
+      "dependsOn": [
+        "pkg:cargo/serde_derive@1.0.229"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/serde_derive@1.0.229",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.10"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/serde_json@1.0.154",
+      "dependsOn": [
+        "pkg:cargo/itoa@1.0.19",
+        "pkg:cargo/memchr@2.8.3",
+        "pkg:cargo/serde@1.0.229",
+        "pkg:cargo/serde_core@1.0.229",
+        "pkg:cargo/zmij@1.0.23"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/sha2@0.10.9",
+      "dependsOn": [
+        "pkg:cargo/cfg-if@1.0.5",
+        "pkg:cargo/cpufeatures@0.2.17",
+        "pkg:cargo/digest@0.10.7"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/shlex@2.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/smallvec@1.16.6",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/syn@3.0.10",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/unicode-ident@1.0.27"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/typenum@1.20.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/unicode-ident@1.0.27",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/vcpkg@0.2.15",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/version_check@0.9.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/walkdir@2.5.1",
+      "dependsOn": [
+        "pkg:cargo/same-file@1.0.6",
+        "pkg:cargo/winapi-util@0.1.11"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/winapi-util@0.1.11",
+      "dependsOn": [
+        "pkg:cargo/windows-sys@0.61.2"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/windows-link@0.2.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/windows-sys@0.61.2",
+      "dependsOn": [
+        "pkg:cargo/windows-link@0.2.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/zmij@1.0.23",
+      "dependsOn": []
+    }
+  ],
+  "version": 1,
+  "bomFormat": "CycloneDX",
+  "metadata": {
+    "timestamp": "2026-11-25T20:01:33.3652731Z",
+    "component": {
+      "bom-ref": "pkg:cargo/nsre@0.3.0",
+      "type": "application",
+      "name": "nsre",
+      "version": "0.3.0"
+    }
+  },
+  "components": [
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/bitflags@2.13.2",
+      "name": "bitflags",
+      "version": "2.13.2",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/bitflags@2.13.2"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/block-buffer@0.10.4",
+      "name": "block-buffer",
+      "version": "0.10.4",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/block-buffer@0.10.4"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/cc@1.11.3",
+      "name": "cc",
+      "version": "1.11.3",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/cc@1.11.3"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/cfg-if@1.0.5",
+      "name": "cfg-if",
+      "version": "1.0.5",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/cfg-if@1.0.5"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/cpufeatures@0.2.17",
+      "name": "cpufeatures",
+      "version": "0.2.17",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/cpufeatures@0.2.17"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/crossbeam-deque@0.8.8",
+      "name": "crossbeam-deque",
+      "version": "0.8.8",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/crossbeam-deque@0.8.8"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/crossbeam-epoch@0.9.21",
+      "name": "crossbeam-epoch",
+      "version": "0.9.21",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/crossbeam-epoch@0.9.21"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/crossbeam-utils@0.8.23",
+      "name": "crossbeam-utils",
+      "version": "0.8.23",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/crossbeam-utils@0.8.23"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/crypto-common@0.1.7",
+      "name": "crypto-common",
+      "version": "0.1.7",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/crypto-common@0.1.7"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/digest@0.10.7",
+      "name": "digest",
+      "version": "0.10.7",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/digest@0.10.7"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/either@1.19.0",
+      "name": "either",
+      "version": "1.19.0",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/either@1.19.0"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/fallible-iterator@0.3.0",
+      "name": "fallible-iterator",
+      "version": "0.3.0",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT/Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/fallible-iterator@0.3.0"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/fallible-streaming-iterator@0.1.9",
+      "name": "fallible-streaming-iterator",
+      "version": "0.1.9",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT/Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/fallible-streaming-iterator@0.1.9"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/find-msvc-tools@0.1.15",
+      "name": "find-msvc-tools",
+      "version": "0.1.15",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/find-msvc-tools@0.1.15"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "Zlib"
+        }
+      ],
+      "purl": "pkg:cargo/foldhash@0.2.0",
+      "name": "foldhash",
+      "version": "0.2.0",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "Zlib"
+        }
+      ],
+      "bom-ref": "pkg:cargo/foldhash@0.2.0"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "purl": "pkg:cargo/generic-array@0.14.7",
+      "name": "generic-array",
+      "version": "0.14.7",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT"
+        }
+      ],
+      "bom-ref": "pkg:cargo/generic-array@0.14.7"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/hashbrown@0.17.2",
+      "name": "hashbrown",
+      "version": "0.17.2",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/hashbrown@0.17.2"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/hashlink@0.12.2",
+      "name": "hashlink",
+      "version": "0.12.2",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/hashlink@0.12.2"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/itoa@1.0.19",
+      "name": "itoa",
+      "version": "1.0.19",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/itoa@1.0.19"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/libc@0.2.191",
+      "name": "libc",
+      "version": "0.2.191",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/libc@0.2.191"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "purl": "pkg:cargo/libsqlite3-sys@0.40.0",
+      "name": "libsqlite3-sys",
+      "version": "0.40.0",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT"
+        }
+      ],
+      "bom-ref": "pkg:cargo/libsqlite3-sys@0.40.0"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "Unlicense OR MIT"
+        }
+      ],
+      "purl": "pkg:cargo/memchr@2.8.3",
+      "name": "memchr",
+      "version": "2.8.3",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "Unlicense OR MIT"
+        }
+      ],
+      "bom-ref": "pkg:cargo/memchr@2.8.3"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/pkg-config@0.3.34",
+      "name": "pkg-config",
+      "version": "0.3.34",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/pkg-config@0.3.34"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/proc-macro2@1.0.107",
+      "name": "proc-macro2",
+      "version": "1.0.107",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/proc-macro2@1.0.107"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/quote@1.0.47",
+      "name": "quote",
+      "version": "1.0.47",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/quote@1.0.47"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/rayon@1.12.0",
+      "name": "rayon",
+      "version": "1.12.0",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/rayon@1.12.0"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/rayon-core@1.13.0",
+      "name": "rayon-core",
+      "version": "1.13.0",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/rayon-core@1.13.0"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "purl": "pkg:cargo/rusqlite@0.43.0",
+      "name": "rusqlite",
+      "version": "0.43.0",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT"
+        }
+      ],
+      "bom-ref": "pkg:cargo/rusqlite@0.43.0"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "Unlicense OR MIT"
+        }
+      ],
+      "purl": "pkg:cargo/same-file@1.0.6",
+      "name": "same-file",
+      "version": "1.0.6",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "Unlicense/MIT"
+        }
+      ],
+      "bom-ref": "pkg:cargo/same-file@1.0.6"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/serde@1.0.229",
+      "name": "serde",
+      "version": "1.0.229",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/serde@1.0.229"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/serde_core@1.0.229",
+      "name": "serde_core",
+      "version": "1.0.229",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/serde_core@1.0.229"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/serde_derive@1.0.229",
+      "name": "serde_derive",
+      "version": "1.0.229",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/serde_derive@1.0.229"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/serde_json@1.0.154",
+      "name": "serde_json",
+      "version": "1.0.154",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/serde_json@1.0.154"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/sha2@0.10.9",
+      "name": "sha2",
+      "version": "0.10.9",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/sha2@0.10.9"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/shlex@2.0.1",
+      "name": "shlex",
+      "version": "2.0.1",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/shlex@2.0.1"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/smallvec@1.16.6",
+      "name": "smallvec",
+      "version": "1.16.6",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/smallvec@1.16.6"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/syn@3.0.10",
+      "name": "syn",
+      "version": "3.0.10",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/syn@3.0.10"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/typenum@1.20.1",
+      "name": "typenum",
+      "version": "1.20.1",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/typenum@1.20.1"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "(MIT OR Apache-2.0) AND Unicode-3.0"
+        }
+      ],
+      "purl": "pkg:cargo/unicode-ident@1.0.27",
+      "name": "unicode-ident",
+      "version": "1.0.27",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "(MIT OR Apache-2.0) AND Unicode-3.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/unicode-ident@1.0.27"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/vcpkg@0.2.15",
+      "name": "vcpkg",
+      "version": "0.2.15",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT/Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/vcpkg@0.2.15"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/version_check@0.9.5",
+      "name": "version_check",
+      "version": "0.9.5",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT/Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/version_check@0.9.5"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "Unlicense OR MIT"
+        }
+      ],
+      "purl": "pkg:cargo/walkdir@2.5.1",
+      "name": "walkdir",
+      "version": "2.5.1",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "Unlicense/MIT"
+        }
+      ],
+      "bom-ref": "pkg:cargo/walkdir@2.5.1"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "Unlicense OR MIT"
+        }
+      ],
+      "purl": "pkg:cargo/winapi-util@0.1.11",
+      "name": "winapi-util",
+      "version": "0.1.11",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "Unlicense OR MIT"
+        }
+      ],
+      "bom-ref": "pkg:cargo/winapi-util@0.1.11"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/windows-link@0.2.1",
+      "name": "windows-link",
+      "version": "0.2.1",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/windows-link@0.2.1"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/windows-sys@0.61.2",
+      "name": "windows-sys",
+      "version": "0.61.2",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT OR Apache-2.0"
+        }
+      ],
+      "bom-ref": "pkg:cargo/windows-sys@0.61.2"
+    },
+    {
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "purl": "pkg:cargo/zmij@1.0.23",
+      "name": "zmij",
+      "version": "1.0.23",
+      "type": "library",
+      "properties": [
+        {
+          "name": "northstar:upstream-declared-license",
+          "value": "MIT"
+        }
+      ],
+      "bom-ref": "pkg:cargo/zmij@1.0.23"
+    }
+  ]
+}

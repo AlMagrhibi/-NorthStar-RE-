@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([Parameter(Mandatory=$true)][string]$Output,[string]$Tag='v11.0.0-rc.1',[string]$Reports,[switch]$SourceOnly)
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest

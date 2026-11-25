@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Reports,[string]$Root=(Split-Path -Parent $PSScriptRoot))
+﻿param([Parameter(Mandatory=$true)][string]$Reports,[string]$Root=(Split-Path -Parent $PSScriptRoot))
 $ErrorActionPreference='Stop'
 New-Item -ItemType Directory -Path $Reports -Force|Out-Null
 $manifest=Join-Path $Root 'skills/northstar-re/engine/nsre/Cargo.toml'

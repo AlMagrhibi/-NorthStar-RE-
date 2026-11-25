@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Output,[string]$Root=(Split-Path -Parent $PSScriptRoot))
+﻿param([Parameter(Mandatory=$true)][string]$Output,[string]$Root=(Split-Path -Parent $PSScriptRoot))
 $ErrorActionPreference='Stop'
 $manifest=Join-Path $Root 'skills/northstar-re/engine/nsre/Cargo.toml'
 $json=& cargo metadata --manifest-path $manifest --locked --format-version 1
@@ -6,7 +6,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Cargo metadata failed' }
 $metadata=$json|ConvertFrom-Json
 $components=@($metadata.packages|Where-Object {$_.name -ne 'nsre'}|Sort-Object name,version|ForEach-Object {
  if (!$_.license) { throw "Missing dependency license: $($_.name)" }
- @{type='library';name=$_.name;version=$_.version;'bom-ref'="pkg:cargo/$($_.name)@$($_.version)";purl="pkg:cargo/$($_.name)@$($_.version)";licenses=@(@{expression=$_.license})}
+ @{type='library';name=$_.name;version=$_.version;'bom-ref'="pkg:cargo/$($_.name)@$($_.version)";purl="pkg:cargo/$($_.name)@$($_.version)";licenses=@(@{expression=($_.license -replace '/', ' OR ')});properties=@(@{name='northstar:upstream-declared-license';value=$_.license})}
 })
 $dependencies=@($metadata.resolve.nodes|ForEach-Object {
  $id=$_.id; $package=$metadata.packages|Where-Object {$_.id -eq $id}|Select-Object -First 1

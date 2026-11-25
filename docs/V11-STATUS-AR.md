@@ -1,3 +1,7 @@
+# أرشيف حالة حزمة الإدخال — ليس تقرير التحقق الحالي
+
+هذا المحتوى يصف التسليم الأصلي قبل هندسة المستودع. راجع [تقارير القبول الحالية](reports/ACCEPTANCE-AR.md).
+
 # NorthStar RE Framework V11 — حالة التسليم
 
 **Source Release Candidate / NOT WINDOWS VERIFIED**

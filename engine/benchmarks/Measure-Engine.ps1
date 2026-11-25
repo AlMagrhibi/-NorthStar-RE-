@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([Parameter(Mandatory=$true)][string]$Engine,[Parameter(Mandatory=$true)][string]$Output,[int[]]$Counts=@(1000,10000,100000,1000000),[int]$Jobs=4)
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest

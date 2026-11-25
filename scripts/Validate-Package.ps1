@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([string]$Root=(Split-Path -Parent $PSScriptRoot),[switch]$CheckHashes)
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest

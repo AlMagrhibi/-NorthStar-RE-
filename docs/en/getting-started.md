@@ -6,7 +6,7 @@
 NorthStar RE combines one agent master, 52 specialist instruction modules and a native local Rust engine. Generation V11 uses engine 0.3.0. The source candidate does not imply Windows or agent certification.
 
 ## System requirements
-Windows 11 x64, a compatible coding agent, writable LOCALAPPDATA and an approved skill directory. Ready packages need no Rust toolchain. Source builds require Rust 1.91.1 (MSRV 1.85), Cargo, Visual Studio C++ Build Tools with Windows SDK and MSVC x64. Windows PowerShell 5.1 or PowerShell 7 runs management scripts. No administrator rights or Python are required by the framework. Git/GitHub CLI is needed only for authenticated acquisition.
+Windows 11 x64, a compatible coding agent, writable LOCALAPPDATA and an approved skill directory. Ready packages need no Rust toolchain. Source builds require Rust 1.91.1 (MSRV 1.89), Cargo, Visual Studio C++ Build Tools with Windows SDK and MSVC x64. Windows PowerShell 5.1 or PowerShell 7 runs management scripts. No administrator rights or Python are required by the framework. Git/GitHub CLI is needed only for authenticated acquisition.
 
 ## Quick start
 Read [installation](../../INSTALL.md), verify the authenticated release and SHA-256, extract the complete package, close the agent and run Install.cmd with its confirmed agent path. Source-only users must build first or explicitly permit Cargo dependency acquisition. Never execute a remote script piped to a shell.

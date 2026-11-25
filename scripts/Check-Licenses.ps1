@@ -1,4 +1,4 @@
-param([string]$Root=(Split-Path -Parent $PSScriptRoot))
+﻿param([string]$Root=(Split-Path -Parent $PSScriptRoot))
 $ErrorActionPreference='Stop'
 $json=& cargo metadata --manifest-path (Join-Path $Root 'skills/northstar-re/engine/nsre/Cargo.toml') --locked --format-version 1
 if ($LASTEXITCODE -ne 0) { throw 'Cargo metadata failed' }

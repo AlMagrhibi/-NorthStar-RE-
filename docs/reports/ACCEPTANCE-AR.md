@@ -5,12 +5,12 @@
 | سلامة حزمة الإدخال وبصماتها | PASS | تدقيق المصدر |
 | الماستر و52 تخصصًا و108 أدوات | PASS للمصدر | سجل specialists والكتالوج الأصلي |
 | Cargo.lock وبناء واختبارات Linux | PASS | 11 اختبارًا وClippy وبناء release |
-| Windows MSVC وnsre.exe وdoctor | PENDING | GitHub Actions وسجلات runner |
+| Windows MSVC وnsre.exe وdoctor | PASS للبناء الأول؛ إعادة بعد إصلاح SQLite | CI الأول أثبت التشغيل، والنسخة النهائية تنتظر CI |
 | Clean install/update/backup/rollback/uninstall | PENDING | Test-Installer.ps1 على Windows الحقيقي داخل CI |
 | Windows 11 فعلي | UNVERIFIED | جلسة قبول على جهاز Windows 11 |
 | FreePi/Codex/Pi/Claude | UNVERIFIED | مسار وإصدار واكتشاف واستدعاء فعلي |
 | Zero Python | PASS للجرد | فحص CI يمنع إدخاله |
-| فحص ثغرات الاعتماديات | PENDING | cargo-audit الحالي وقاعدة RustSec الحديثة |
+| فحص ثغرات الاعتماديات | PASS محليًا بعد الإصلاح | cargo-audit 0.23.0، صفر ثغرات؛ يعاد على CI |
 | تراخيص الاعتماديات | PASS لتصريحات SPDX | حقوق التوزيع والإشعارات تحتاج مراجعة مستقلة |
 | ترخيص المنظومة | OWNER DECISION | لم يعتمد ترخيص مفتوح المصدر |
 | الروابط والتوثيق والبصمات الجديدة | PENDING | Validate-Package النهائي |

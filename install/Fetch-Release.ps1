@@ -1,4 +1,4 @@
-# Explicit online acquisition. Does not install or execute downloaded files.
+﻿# Explicit online acquisition. Does not install or execute downloaded files.
 [CmdletBinding()]
 param([Parameter(Mandatory=$true)][string]$Destination,[string]$Tag,[switch]$AllowPrerelease)
 $ErrorActionPreference='Stop'

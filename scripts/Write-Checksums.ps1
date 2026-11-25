@@ -1,4 +1,4 @@
-param([string]$Root=(Split-Path -Parent $PSScriptRoot))
+﻿param([string]$Root=(Split-Path -Parent $PSScriptRoot))
 $ErrorActionPreference='Stop'
 $Root=[IO.Path]::GetFullPath($Root)
 $manifest=Join-Path $Root 'docs/SHA256SUMS.txt'

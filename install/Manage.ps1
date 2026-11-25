@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
  [ValidateSet('Install','Update','Doctor','Build-Engine','Backup','Uninstall','Rollback')][string]$Action='Install',
  [string]$SkillRoot, [string]$BackupPath,
