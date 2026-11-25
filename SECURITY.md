@@ -1,2 +1,0 @@
-# Security
-Use only authorized files, source and isolated local fixtures. Do not upload client binaries, credentials, private keys, live traffic or proprietary dumps to the repository. Tool references are not endorsements or verification. Review publishers, versions and licenses before installation. Report vulnerabilities privately to the repository owner, with redacted reproducible evidence. No access-control, licensing or anti-cheat bypass. No automatic restore or deployment. Review GitHub Actions tags and pin audited commit SHAs before enabling production CI.
