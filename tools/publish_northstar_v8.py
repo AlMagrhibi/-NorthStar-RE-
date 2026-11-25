@@ -5,6 +5,7 @@ import hashlib
 from pathlib import Path, PurePosixPath
 import stat
 import subprocess
+import sys
 import tempfile
 import zipfile
 
@@ -49,18 +50,20 @@ def git(*args, cwd=None, capture=False):
     return subprocess.run(['git', '-c', 'core.autocrlf=false', *args], cwd=cwd,
                           check=True, stdout=subprocess.PIPE if capture else None).stdout
 
-def stage(repo, files):
+def stage(repo, files, replace_bootstrap_docs=False):
     if git('status', '--porcelain', cwd=repo, capture=True).strip():
         raise SystemExit('Repository is not clean.')
     for name, data in files.items():
         p = repo / name
-        if p.exists() and p.read_bytes() != data and name not in INITIAL_DOCS:
+        if p.exists() and p.read_bytes() != data and not (replace_bootstrap_docs and name in INITIAL_DOCS):
             raise SystemExit('Existing file differs; review manually: ' + name)
     for name, data in files.items():
         p = repo / name
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_bytes(data)
-    git('add', '--', *files, cwd=repo)
+    names = list(files)
+    for i in range(0, len(names), 40):
+        git('add', '--', *names[i:i+40], cwd=repo)
     for name, data in files.items():
         if git('show', ':' + name, cwd=repo, capture=True) != data:
             raise SystemExit('Staged Git blob differs: ' + name)
@@ -70,6 +73,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('archive', type=Path)
     parser.add_argument('--publish', action='store_true', help='Commit and push after reviewing the diff.')
+    parser.add_argument('--replace-bootstrap-docs', action='store_true',
+                        help='Explicitly allow replacing existing bootstrap docs with archive originals.')
     args = parser.parse_args()
     files = read_package(args.archive)
     print('Verified 168 archive files and 167 manifest entries.', flush=True)
@@ -78,12 +83,21 @@ def main():
         git('clone', '--branch', 'main', '--single-branch', URL, str(repo))
         if git('remote', 'get-url', 'origin', cwd=repo, capture=True).decode().strip() != URL:
             raise SystemExit('Unexpected remote URL.')
-        stage(repo, files)
+        git('config', 'core.autocrlf', 'false', cwd=repo)
+        stage(repo, files, args.replace_bootstrap_docs)
+        git('-c', 'core.whitespace=-blank-at-eof', 'diff', '--cached', '--check', cwd=repo)
         if not args.publish:
             print('Dry run only; no commit or push. Re-run with --publish to publish.')
             return
         if input('Publish these source files to private GitHub main? [yes/no] ').strip().lower() != 'yes':
             raise SystemExit('Cancelled.')
+        subprocess.run([sys.executable, '-B', '-c',
+                        "import unittest,sys; s=unittest.defaultTestLoader.discover('tests'); "
+                        "assert s.countTestCases() >= 79, 'V8 test inventory incomplete'; "
+                        "sys.exit(not unittest.TextTestRunner(verbosity=2).run(s).wasSuccessful())"],
+                       cwd=repo, check=True)
+        if git('diff', '--name-only', cwd=repo, capture=True).strip():
+            raise SystemExit('Tests changed tracked working files; review before publishing.')
         if git('diff', '--cached', '--name-only', cwd=repo, capture=True).strip():
             git('commit', '-m', 'Publish NorthStar RE V8 source and documentation', cwd=repo)
         git('push', 'origin', 'HEAD:main', cwd=repo)
