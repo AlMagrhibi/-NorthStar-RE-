@@ -1,0 +1,881 @@
+{
+  "archive_sha256": "bfbfbbc6666842838f431dcc3ccd6a59f996bf833c668ad762cb75eca7572e5d",
+  "file_count": 175,
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 1416,
+      "sha256": "797a588b32b1e570cd60df9485b12874b44e8a8d4dec05dc357e1705cde3ee4b"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 90,
+      "sha256": "0826a2ff311ed70f10a1e2d328fb1c8f7c071af85146969d84cfb3cb9b14f8b2"
+    },
+    {
+      "path": "Backup.cmd",
+      "bytes": 128,
+      "sha256": "336e12d44007cb32e1a567fa7d7c38e1bacad04a72069e729377600dc49bbdcf"
+    },
+    {
+      "path": "Build-Engine.cmd",
+      "bytes": 134,
+      "sha256": "52059587d93faf4e29cd7e3e8bf4eb253ce336fabe7384bb4e74a32a28bbc021"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "bytes": 3727,
+      "sha256": "c4f2362ccdcc007f39c7fdf3cd772d14373aba4fe4598b80d31c615768c9b791"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "bytes": 137,
+      "sha256": "6df6f97643067ca6ef6fd70868249ab9a1807f515bd868436bdc337367dbed19"
+    },
+    {
+      "path": "Doctor.cmd",
+      "bytes": 128,
+      "sha256": "469da896e343f27960fe777ed3fed2631bf597f1a08756d1f8802c5d07054bb2"
+    },
+    {
+      "path": "Install.cmd",
+      "bytes": 129,
+      "sha256": "cbc87b9f4bd5ad409c91ec7c7d4545512ca4d7db5da71f5d5f81593777fb7b21"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2170,
+      "sha256": "40097be4f6a16e2f978809b787cebf100a4321b038d69e33f4033a71805c6353"
+    },
+    {
+      "path": "SECURITY.md",
+      "bytes": 569,
+      "sha256": "68c2fae6ed4fbbf414efb3b21102aea30b4bc0de4bf71fae38ec8b7a911c01fa"
+    },
+    {
+      "path": "Uninstall.cmd",
+      "bytes": 131,
+      "sha256": "49e835c0c4e21282650366a5e2b9f6644a312a0fb169a56f7d710ec42e3c3a0f"
+    },
+    {
+      "path": "Update.cmd",
+      "bytes": 128,
+      "sha256": "8caf021ba48c14797a9aa21de3bd2277716974e441200065b38eeb243b2adc50"
+    },
+    {
+      "path": "docs/INSTALL-UPGRADE.md",
+      "bytes": 2884,
+      "sha256": "d3e75a9862adf2c4b257a62064c2dca2561dad1733817ac09fc1fa5a5e64e57c"
+    },
+    {
+      "path": "docs/SHA256SUMS.txt",
+      "bytes": 22609,
+      "sha256": "1d9bd112f49de56e1c466d01619620075a4c01e16a144b23781bac1af38bc014"
+    },
+    {
+      "path": "docs/V10-RESEARCH-AR.md",
+      "bytes": 9915,
+      "sha256": "8f2ff41a1c0c0397c85a0df3f1b34891f71427dd0e373596cd88ecd62cb3f1bb"
+    },
+    {
+      "path": "docs/V11-STATUS-AR.md",
+      "bytes": 3148,
+      "sha256": "ba767c810157baa396eebaef5555b57841eecf7f0b6b0d6c6e86dedfebd1094e"
+    },
+    {
+      "path": "docs/VALIDATION-RESULTS.txt",
+      "bytes": 980,
+      "sha256": "0b71c6043d2ead3c761fd8ea66d11fe3010e0007a974520586729a45d45384aa"
+    },
+    {
+      "path": "install/Manage.ps1",
+      "bytes": 8892,
+      "sha256": "1d144b5b7648d6f0c32fac28dee3dc03967088e7191ecf7d790ef153466d9ce4"
+    },
+    {
+      "path": "install/Package-Binary.ps1",
+      "bytes": 2410,
+      "sha256": "51e4df97c7106734dff6159c0ec1df22e5220b9457cba23242ef7d332d69eec3"
+    },
+    {
+      "path": "skills/northstar-re/SKILL.md",
+      "bytes": 8791,
+      "sha256": "a651432c3e13338203d9835972820a4c89ca11ad557d8bc451f0dd204e75f203"
+    },
+    {
+      "path": "skills/northstar-re/engine/nsre/Cargo.toml",
+      "bytes": 316,
+      "sha256": "f524e3bb5c1af8571ad351c1414ce39219aca69244081c8c9a4293e462c92f7f"
+    },
+    {
+      "path": "skills/northstar-re/engine/nsre/README.md",
+      "bytes": 1622,
+      "sha256": "a5bb6fd60a286c64b8a6a43be13e81845a2b374b146d9be1839d338e0707452a"
+    },
+    {
+      "path": "skills/northstar-re/engine/nsre/src/framework.rs",
+      "bytes": 17775,
+      "sha256": "10cd0bc2adce553e4776c2897c83404a07c8ae72781a43db0f26349db1c63fdf"
+    },
+    {
+      "path": "skills/northstar-re/engine/nsre/src/index.rs",
+      "bytes": 12613,
+      "sha256": "1e73b85e145fe5bcd1a12237543fe0c70e3547a9712457068f3a4ec178cd7aee"
+    },
+    {
+      "path": "skills/northstar-re/engine/nsre/src/main.rs",
+      "bytes": 8231,
+      "sha256": "c5dd12c38dbab8ee9e759a313493295212abbe1d33582df93438d30576e1b941"
+    },
+    {
+      "path": "skills/northstar-re/engine/nsre/src/probe.rs",
+      "bytes": 2846,
+      "sha256": "c02c12aa54234e8d8f414feec64cc0a5f5b13fb18875776a14093e7d93dec109"
+    },
+    {
+      "path": "skills/northstar-re/engine/nsre/src/rpc.rs",
+      "bytes": 3928,
+      "sha256": "ea2e5caabb61de6551e1cf3ecc71799a18f16a3aea408660ec4b30baa58adff1"
+    },
+    {
+      "path": "skills/northstar-re/engine/nsre/src/schema.sql",
+      "bytes": 1076,
+      "sha256": "84eea9cd388024baea25dac19927e3ae440ea08a3cc2bf9bb0c578df2d919c3f"
+    },
+    {
+      "path": "skills/northstar-re/engine/nsre/tests/engine_cli.rs",
+      "bytes": 2263,
+      "sha256": "91713fb36a35077d0f76b1675b61848621ebf82045bf1f245db327c1ca9f025c"
+    },
+    {
+      "path": "skills/northstar-re/engine/nsre/tests/framework_cli.rs",
+      "bytes": 2016,
+      "sha256": "2226e3ebf66009f8a5744af20f48be9f0c57e4f5bbc74a32ce3ee2a139d8d2e7"
+    },
+    {
+      "path": "skills/northstar-re/references/evidence-contract.md",
+      "bytes": 1088,
+      "sha256": "25aea5119125ee8dc65e0d4726125f1a2758a5175db17d76d148f94c9be78603"
+    },
+    {
+      "path": "skills/northstar-re/references/original-launcher-workflow.md",
+      "bytes": 1297,
+      "sha256": "a231225816f3bf87411f1a8ba31d6eba23950d7ca8a4a3c61c0015b8f7f76c4b"
+    },
+    {
+      "path": "skills/northstar-re/references/server-workflow.md",
+      "bytes": 1325,
+      "sha256": "82d9cbc41be32ccbdc8a3b6bd5d8d3226b5c045e5b6fdc80352e939c893f0d13"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/evidence-manifest.json",
+      "bytes": 146,
+      "sha256": "49f089775e7db828d32309df91866df6850e2585a95a218e4d2e4713095b27ce"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/knowledge-record.json",
+      "bytes": 429,
+      "sha256": "056aa31570abffe03e3f1665185ec59a1ec06388f9b0b84c80ff2ec10b758c3c"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/ANALYSIS.md",
+      "bytes": 184,
+      "sha256": "750fffd7000aa75f7eb39ce0ed255fbb874ddf5eba4dc5fda5a270637cac6fcd"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/ARCHITECTURE.md",
+      "bytes": 191,
+      "sha256": "255015c44a9e5290a22c2707588f68906fc893c5552965899883ebc21da89168"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/BUILD.md",
+      "bytes": 186,
+      "sha256": "ceaa159519b55770dedcbb1af42aaee76f2312c2cf28dd6757f0384ed394bd36"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/CHANGELOG.md",
+      "bytes": 180,
+      "sha256": "8952f6494064af96d5f0cde13f28cb4950b388cc0798afe95cc146fd049d7964"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/DATA-FORMATS.md",
+      "bytes": 190,
+      "sha256": "93ab166eb7d5ff7068229432e34174b4157212ee7bdb0e0459ba1f4815eaf5f2"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/DATABASE.md",
+      "bytes": 180,
+      "sha256": "3f7281f97a2bbba2641f02bc0a91b68820d8dc66594012261b6ab57991255c37"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/DECISIONS.md",
+      "bytes": 188,
+      "sha256": "66729799f229eca82dfea26799e77be3a7958da3e32b83677a43aa6715e6f346"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/DLL-MAPPING.md",
+      "bytes": 196,
+      "sha256": "697f6498a501b446584bf3ccc11f146c37d8885568efbaa1be3e3ce511c18b27"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/ENVIRONMENT.md",
+      "bytes": 194,
+      "sha256": "60068853df6a1af4d6f2a78cf583cb91d17c24e03ff620344a1e65b457f3d7bf"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/ERRORS.md",
+      "bytes": 184,
+      "sha256": "42157ed6836bd9468270ea6d82fe091dd29d5286e9f5b1480634529a4bab386a"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/HANDOFF.md",
+      "bytes": 194,
+      "sha256": "b66230f34bb7773222a257ff2d8a578d2212ca2b04dead2837454d4036e1c68b"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/PROGRESS.md",
+      "bytes": 197,
+      "sha256": "6ce32e21ed6c94fadb05c2f8574893a84bc765eda799a9133dc43b6a2881142c"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/PROJECT.md",
+      "bytes": 190,
+      "sha256": "b56915f950492bbe2b1091b1dcf2dda9e601f0fa452ab38fbf5578f5e21790f8"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/PROTOCOLS.md",
+      "bytes": 197,
+      "sha256": "c3f65c42dbc3f3dd0c1b24a2dc7d6115fac0ffd8f0f01b4e67516a455d6a9fd5"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/REFERENCES.md",
+      "bytes": 179,
+      "sha256": "887ee00a86c77c4c932da1c776e9451a61d2bd55ca9c2f4cd3ab23298f82bb99"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/ROADMAP.md",
+      "bytes": 163,
+      "sha256": "6ad256ce9b082f102f1fc56b5ccc7e6fd7fe390743828f751beab7ef74549a15"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/SECURITY.md",
+      "bytes": 185,
+      "sha256": "1f50c244e916bdcf3db76d7a15254e7400e882110ae1385db422c31c3536cac9"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/SESSION-LOG.md",
+      "bytes": 189,
+      "sha256": "9a027c2231666cdae233238a166ecc8003c027fe09fb85bfe27aa21d3bb96dfe"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/TASKS.md",
+      "bytes": 173,
+      "sha256": "fed231aa59045e4e573928fd2a5b333e92961398f92e2925abe8a7a0f7ee2120"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/project-docs/TESTING.md",
+      "bytes": 187,
+      "sha256": "db1912ac73ecefeefffb65973eb54927198666a3cd2abedd76c8ecdd8ce02658"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/quality-gate.json",
+      "bytes": 1157,
+      "sha256": "119f298a8568ab8b4afb63b54b47fe94d7232214428386497cdbc61c28c1ea58"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/session-state.json",
+      "bytes": 79,
+      "sha256": "ce515a7c9731f63e5a6dc508f3cb9214dd994cb52d3c93f5b07609a88c240465"
+    },
+    {
+      "path": "skills/northstar-re/references/templates/task-plan.json",
+      "bytes": 404,
+      "sha256": "813fcf98616ba01318fc5ea118c81508603083b48cac62cbac3b5379cbdc8c9c"
+    },
+    {
+      "path": "skills/northstar-re/references/tool-selection.md",
+      "bytes": 2491,
+      "sha256": "e3de382c1446c0108813f47b691f48c1258d5a8bad8d8976f9a63e420edcbff0"
+    },
+    {
+      "path": "skills/northstar-re/references/v10-engineering-engine.md",
+      "bytes": 338,
+      "sha256": "1518f382c55b223e6da1cdf4be30beaa8e3254dba8c3f3c7cf6ce9cf3e878ed1"
+    },
+    {
+      "path": "skills/northstar-re/references/v11-native-contract.md",
+      "bytes": 3229,
+      "sha256": "c0ca8c315f539bf55ffabbe8de57ff88078648da4fa880fcd54fe66df607a63c"
+    },
+    {
+      "path": "skills/northstar-re/references/v7-engineering-workflow.md",
+      "bytes": 2500,
+      "sha256": "d9325294f3d0ddb66afff650a36d3673461251ce694d0f12b243961c1e75344c"
+    },
+    {
+      "path": "skills/northstar-re/references/v8-project-governance.md",
+      "bytes": 702,
+      "sha256": "36cb9c3989e7c913f0cc50876b938f301f8bdcde734de66d5aa55361fd179821"
+    },
+    {
+      "path": "skills/northstar-re/references/v9-rust-workflow.md",
+      "bytes": 333,
+      "sha256": "483730b2186fa96aa1f123ed03e2c5fc0e348c7df98ec7c26dbcdf7d8836c7fc"
+    },
+    {
+      "path": "skills/northstar-re/specialists/account-server-engineering/SKILL.md",
+      "bytes": 2586,
+      "sha256": "9435db8cba0395b22b7e2a5945c8167147c820f0d493dace9b9dfee6344dce30"
+    },
+    {
+      "path": "skills/northstar-re/specialists/account-server-engineering/references/usage.md",
+      "bytes": 1022,
+      "sha256": "70224e5924521a7fa75e548a18d2723ca440a3c9c4d8eb220d9a61590a6e20bf"
+    },
+    {
+      "path": "skills/northstar-re/specialists/advanced-binary-intelligence/SKILL.md",
+      "bytes": 2307,
+      "sha256": "bc124162889709050045a111b6d8d166e173d953d50989524a9ac97d800bc755"
+    },
+    {
+      "path": "skills/northstar-re/specialists/advanced-binary-intelligence/references/usage.md",
+      "bytes": 2963,
+      "sha256": "6f5273c31085273f18629037f11959fbd4b41639ad8f6e69120f423f1cc6ec9f"
+    },
+    {
+      "path": "skills/northstar-re/specialists/automated-quality-assurance/SKILL.md",
+      "bytes": 2054,
+      "sha256": "9a3833ed8c6ea2ad512870897ad74dfa6978c95935a42165dc979ebb418871d7"
+    },
+    {
+      "path": "skills/northstar-re/specialists/automated-quality-assurance/references/usage.md",
+      "bytes": 1784,
+      "sha256": "b43a4c32f35fb97499af4dac6d019ed0d93111d1ece41b70a346d3bd944b92df"
+    },
+    {
+      "path": "skills/northstar-re/specialists/automated-regression-testing/SKILL.md",
+      "bytes": 1222,
+      "sha256": "18219c1164354cf8922eacbe0a6db91aa15a0b85bb7ca697689f04772445690e"
+    },
+    {
+      "path": "skills/northstar-re/specialists/automated-regression-testing/references/usage.md",
+      "bytes": 681,
+      "sha256": "d23db937f07556ac2a43b12598f598f7f2b1075c0d25ed7f8b425ab8660dd17c"
+    },
+    {
+      "path": "skills/northstar-re/specialists/binary-diffing-version-migration/SKILL.md",
+      "bytes": 2104,
+      "sha256": "0b4d3ca0d291ab732acf82e9b071c10789b98ef7aa96dfe2ef468cd501a1aa8a"
+    },
+    {
+      "path": "skills/northstar-re/specialists/binary-diffing-version-migration/references/usage.md",
+      "bytes": 1621,
+      "sha256": "22f4f8b4d30098d9e519615423550d905c48a395480cfb91d13fd9dedb426279"
+    },
+    {
+      "path": "skills/northstar-re/specialists/binary-format-engineering/SKILL.md",
+      "bytes": 2681,
+      "sha256": "7d7eb2789201fee652d586bd7076387cbb54b12fef4ea6dab20fd038f551bbfe"
+    },
+    {
+      "path": "skills/northstar-re/specialists/binary-format-engineering/references/usage.md",
+      "bytes": 2544,
+      "sha256": "0b5d216cdac677cdff7441c5b7527e76a9e7f9c998a706bfb0071ffc72eae20c"
+    },
+    {
+      "path": "skills/northstar-re/specialists/build-release-engineering/SKILL.md",
+      "bytes": 2275,
+      "sha256": "7df6f025cec2d836f3baa81524e6ecbbc61341a36a7a18d02a676365796fa72a"
+    },
+    {
+      "path": "skills/northstar-re/specialists/build-release-engineering/references/usage.md",
+      "bytes": 2706,
+      "sha256": "4a01dfc20333faf6c00b41846d0e7fb0017dbb342bffb6d014b7323118a9619e"
+    },
+    {
+      "path": "skills/northstar-re/specialists/checkpoint-recovery/SKILL.md",
+      "bytes": 1227,
+      "sha256": "da62f3a0d812eeef68c617df830b39ada841719f5d4fc909a4b81a748a7c5f20"
+    },
+    {
+      "path": "skills/northstar-re/specialists/checkpoint-recovery/references/usage.md",
+      "bytes": 689,
+      "sha256": "6aef58e821acc659799d8b2bd59f0c9685553811988067c3e455a3bf8a4dd768"
+    },
+    {
+      "path": "skills/northstar-re/specialists/ci-cd-engineering/SKILL.md",
+      "bytes": 1250,
+      "sha256": "67fb6ac55afa65ec45957a237eda648fe5e83c35c976dc22dbd4f5b2b3cb2b03"
+    },
+    {
+      "path": "skills/northstar-re/specialists/ci-cd-engineering/references/usage.md",
+      "bytes": 727,
+      "sha256": "f5d127d72a26d9715912c1829a6502ff403eee7ebd9d7dc17f364a99d0e63c74"
+    },
+    {
+      "path": "skills/northstar-re/specialists/client-compatibility-analysis/SKILL.md",
+      "bytes": 3270,
+      "sha256": "5083154cbdbce2e6d0a76692534ffb2850edbe38701a5a3ccdf1cd45511522f0"
+    },
+    {
+      "path": "skills/northstar-re/specialists/client-compatibility-analysis/references/compatibility-playbook.md",
+      "bytes": 1036,
+      "sha256": "eeb1c6b225bc9fdfb531ba9d3109d90479f1a3bdf7a3c55a4f4b50833cbb194c"
+    },
+    {
+      "path": "skills/northstar-re/specialists/client-compatibility-analysis/references/operational-reference.md",
+      "bytes": 472,
+      "sha256": "6de915c9a8ba594a139ac7e4fad5cef369dfffdab7e3b15a40cca942204ac9fb"
+    },
+    {
+      "path": "skills/northstar-re/specialists/client-data-discovery/SKILL.md",
+      "bytes": 1768,
+      "sha256": "ea6da90eafc01eba3b37945471a5a2f118063c516ad9154239a77a12b4bc4deb"
+    },
+    {
+      "path": "skills/northstar-re/specialists/client-data-discovery/references/usage.md",
+      "bytes": 2131,
+      "sha256": "c99997556ae098b6927bfe6627b8b3e0a0eb1e9387be15ecfff9ca3bb98cf626"
+    },
+    {
+      "path": "skills/northstar-re/specialists/client-server-interoperability/SKILL.md",
+      "bytes": 2514,
+      "sha256": "2278b3e97282634a6b98c714c8888c7029bd066cd01c2bcd68937faf1c917b80"
+    },
+    {
+      "path": "skills/northstar-re/specialists/client-server-interoperability/references/usage.md",
+      "bytes": 881,
+      "sha256": "0ba3a0796057270b3b44138c14971debf275766d8f7ba17ca6bdd731d1b61527"
+    },
+    {
+      "path": "skills/northstar-re/specialists/conquer-domain-knowledge/SKILL.md",
+      "bytes": 2536,
+      "sha256": "262d39a142fcaddf6804898bd825effd176753ccc17581cf091832ef3045321d"
+    },
+    {
+      "path": "skills/northstar-re/specialists/conquer-domain-knowledge/references/conquer-formats.md",
+      "bytes": 2894,
+      "sha256": "e27a4e57c04ec86621d5c5632abe373a802cd548f4af708a4fbc52b37522c282"
+    },
+    {
+      "path": "skills/northstar-re/specialists/conquer-domain-knowledge/references/usage.md",
+      "bytes": 3554,
+      "sha256": "02fa7f288a3c18f81c8ba025965cc136ea9b69fda1f49b6de02049eb936d488c"
+    },
+    {
+      "path": "skills/northstar-re/specialists/cross-version-analysis/SKILL.md",
+      "bytes": 2448,
+      "sha256": "c16fb9a91544fda571de7ecab68ff28f6cce4036768d804670399c52eed9d068"
+    },
+    {
+      "path": "skills/northstar-re/specialists/cross-version-analysis/references/usage.md",
+      "bytes": 2308,
+      "sha256": "92cfbeda3df1091283ff9144dbd4c0057d74d340a2b55e18f38510fc67ca822b"
+    },
+    {
+      "path": "skills/northstar-re/specialists/custom-tool-development/SKILL.md",
+      "bytes": 2633,
+      "sha256": "309b1b474443a474b72e6bfefeb4fcea7d0ff100dc1099ce3be16da749f07a93"
+    },
+    {
+      "path": "skills/northstar-re/specialists/custom-tool-development/references/usage.md",
+      "bytes": 3063,
+      "sha256": "495243462b8bcaf01ea926fa8028b8f5395d9b332208bd8a34c75d967973f721"
+    },
+    {
+      "path": "skills/northstar-re/specialists/data-cryptography-analysis/SKILL.md",
+      "bytes": 2777,
+      "sha256": "045b5f9b9eb3343ea001cc9db66a4245bf7caf056e6c467c96df48d7811c0942"
+    },
+    {
+      "path": "skills/northstar-re/specialists/data-cryptography-analysis/references/usage.md",
+      "bytes": 2113,
+      "sha256": "c9e2bc3ea3a51447aecfbe137d3eaf00167e0c81debb8fe6a1c597cca90301cb"
+    },
+    {
+      "path": "skills/northstar-re/specialists/database-engineering/SKILL.md",
+      "bytes": 2444,
+      "sha256": "c968aa991b9e9af981108e41552d7f0a416d95fccddf7f46e903b089e1041d11"
+    },
+    {
+      "path": "skills/northstar-re/specialists/database-engineering/references/usage.md",
+      "bytes": 1048,
+      "sha256": "9e1bf267b29cba5d8edf1b0205985b1d13517a08964b4d877b1a4adcbe0eb696"
+    },
+    {
+      "path": "skills/northstar-re/specialists/dependency-mapping/SKILL.md",
+      "bytes": 2184,
+      "sha256": "699b624cd552358f13b3029780b4bd7fd8b2980393055ab07a129332ddeab77e"
+    },
+    {
+      "path": "skills/northstar-re/specialists/dependency-mapping/references/usage.md",
+      "bytes": 1941,
+      "sha256": "1305880a8acc12ece18fc061744b17bef349e4f3e06c02232429763f50e4f45c"
+    },
+    {
+      "path": "skills/northstar-re/specialists/dependency-security/SKILL.md",
+      "bytes": 1220,
+      "sha256": "4e61c003cd8a0bf31c99d41b38b1e604a997cb50f010f2af2ca3f7e79fc6b95c"
+    },
+    {
+      "path": "skills/northstar-re/specialists/dependency-security/references/usage.md",
+      "bytes": 694,
+      "sha256": "4e6afedb6fe13be439294bcc034b3d2a46b0215675a76c67fc30add4e0513c6f"
+    },
+    {
+      "path": "skills/northstar-re/specialists/dll-unpacking-triage/SKILL.md",
+      "bytes": 3709,
+      "sha256": "7d21eb35542a918dd648a11ef9a3827065096f8f3750d1ed4bd176a1f0f0ac47"
+    },
+    {
+      "path": "skills/northstar-re/specialists/dll-unpacking-triage/references/operational-reference.md",
+      "bytes": 1712,
+      "sha256": "0dcc0f815d2b79c483d356a06e9a567cca0042184325d46bcaf1f7b62125f8e8"
+    },
+    {
+      "path": "skills/northstar-re/specialists/dynamic-runtime-analysis/SKILL.md",
+      "bytes": 2386,
+      "sha256": "4173a4ddbb384c40c6f5e3f6ec6ac3201a6b82a8968f9914e8cfabef29d7fd2a"
+    },
+    {
+      "path": "skills/northstar-re/specialists/dynamic-runtime-analysis/references/usage.md",
+      "bytes": 2366,
+      "sha256": "5f74500dd7c6005fff710fe2f875cc3125bcebc01294188dff76f260aff96f5a"
+    },
+    {
+      "path": "skills/northstar-re/specialists/engineering-documentation/SKILL.md",
+      "bytes": 1186,
+      "sha256": "8482c428f962fd64131973ad773a9613dc06149bd006c2b78ca5bca75baa48f2"
+    },
+    {
+      "path": "skills/northstar-re/specialists/engineering-documentation/references/usage.md",
+      "bytes": 727,
+      "sha256": "286d3e41a5c960d2572da087f3c3f95966889ecdacd1354bdcafc8c05db16ea2"
+    },
+    {
+      "path": "skills/northstar-re/specialists/engineering-observability/SKILL.md",
+      "bytes": 1237,
+      "sha256": "9de685675cef9a0fb186118f798db76d4120da2e4d4436671073f3c44436c4f7"
+    },
+    {
+      "path": "skills/northstar-re/specialists/engineering-observability/references/usage.md",
+      "bytes": 696,
+      "sha256": "4c53a8fc5bdb33536770230e0d828657ba0c36d99daaba2d6b9d13415ff8542a"
+    },
+    {
+      "path": "skills/northstar-re/specialists/environment-discovery-setup/SKILL.md",
+      "bytes": 4219,
+      "sha256": "d127197d17d9908367aec5c458a2b60fa3b0b03c53eb31d21092fabb18ec8bac"
+    },
+    {
+      "path": "skills/northstar-re/specialists/environment-discovery-setup/references/TOOL-DIRECTORY.md",
+      "bytes": 48792,
+      "sha256": "8a100e668f0859ea1fb4ce3109e9539a7d004a05e249ea81476e45550dd34019"
+    },
+    {
+      "path": "skills/northstar-re/specialists/environment-discovery-setup/references/setup-runbook.md",
+      "bytes": 442,
+      "sha256": "c0571373feefb39aa8ce6d883032696446721612d27b5110e6c49feec545ea24"
+    },
+    {
+      "path": "skills/northstar-re/specialists/environment-discovery-setup/references/tool-catalog.json",
+      "bytes": 61089,
+      "sha256": "d224888e0a6ff4a5716200fdfbcf2d94563449ffe9079789c9b01e3e233f3982"
+    },
+    {
+      "path": "skills/northstar-re/specialists/game-archive-analysis/SKILL.md",
+      "bytes": 2627,
+      "sha256": "22b69aabdf5ed6196d7db31a591b4e2c7459dbc6827e903b839ea6f95ae01197"
+    },
+    {
+      "path": "skills/northstar-re/specialists/game-archive-analysis/references/usage.md",
+      "bytes": 3039,
+      "sha256": "93e7d26bda95efead9080d01913bc0a0790de5dbebc2b2011c9eaae888930ebb"
+    },
+    {
+      "path": "skills/northstar-re/specialists/game-assets-analysis/SKILL.md",
+      "bytes": 2558,
+      "sha256": "fddb62ea3baff01fa7a2d2f5ad55ae62969adc7b40bd661da14e3bb9d4e99381"
+    },
+    {
+      "path": "skills/northstar-re/specialists/game-assets-analysis/references/usage.md",
+      "bytes": 3446,
+      "sha256": "f33e6c04d34db5813c315cc1470ebec7ebbb22f74d2e113741655b291eb53033"
+    },
+    {
+      "path": "skills/northstar-re/specialists/game-server-engineering/SKILL.md",
+      "bytes": 2507,
+      "sha256": "333ad9ff870f9d82d62fb13b44f478cc18afd6b617029ffd98550fd26a761339"
+    },
+    {
+      "path": "skills/northstar-re/specialists/game-server-engineering/references/usage.md",
+      "bytes": 868,
+      "sha256": "6c47cbef2f21175c48a08544005dbbfda6c1f4d55c0ac076b26aa33f1b0d7171"
+    },
+    {
+      "path": "skills/northstar-re/specialists/ghidra-native-analysis/SKILL.md",
+      "bytes": 8274,
+      "sha256": "d6b65c9161b7c2f0d4c0e167b7228920f30c2fa9d59d434b155a4eb6430fcf85"
+    },
+    {
+      "path": "skills/northstar-re/specialists/ghidra-native-analysis/references/headless-cheatsheet.md",
+      "bytes": 3765,
+      "sha256": "25165e36278c32f66e88701d42fd286193eec5acd35eed019ec6bd230e8c0669"
+    },
+    {
+      "path": "skills/northstar-re/specialists/ghidra-native-analysis/references/operational-reference.md",
+      "bytes": 818,
+      "sha256": "32c544da00e52da4815d107d3099134d277c5b240e40312ab9c2a5ae065f26ec"
+    },
+    {
+      "path": "skills/northstar-re/specialists/git-version-control/SKILL.md",
+      "bytes": 1220,
+      "sha256": "c57c871e7ef030561dbda75a2b234ae868b87cc8defffa4fdc97c63d064a336f"
+    },
+    {
+      "path": "skills/northstar-re/specialists/git-version-control/references/usage.md",
+      "bytes": 691,
+      "sha256": "dd392b4412cc692d41147776f530c1ce87bb5b98d2301f7764c2e5f5c6d105e9"
+    },
+    {
+      "path": "skills/northstar-re/specialists/graphics-game-engine-engineering/SKILL.md",
+      "bytes": 2174,
+      "sha256": "109cf341df34501eddb4ff2368f84eb5817f32713320189540acc6121076cc24"
+    },
+    {
+      "path": "skills/northstar-re/specialists/graphics-game-engine-engineering/references/usage.md",
+      "bytes": 1695,
+      "sha256": "1a5270d4480e1b4b8d86f4d6dcd01066fd5afeee6fd98f1afa6260c355594cdb"
+    },
+    {
+      "path": "skills/northstar-re/specialists/high-performance-file-processing/SKILL.md",
+      "bytes": 1075,
+      "sha256": "85f40966c3d2510283dd0bf5e1a11870b748437f5d4fa0e424bd62da9bfb38c3"
+    },
+    {
+      "path": "skills/northstar-re/specialists/high-performance-file-processing/references/usage.md",
+      "bytes": 629,
+      "sha256": "9cd70fed23ed2a9ee76a155d9dbc3a5a1e50f83d7c49560ffcb16b4285d8fa81"
+    },
+    {
+      "path": "skills/northstar-re/specialists/ilspy-dotnet-decompilation/SKILL.md",
+      "bytes": 8325,
+      "sha256": "644d77865138575df3f5f4ee2397db9808ec20bfca4fd18f4f609ca39297e80a"
+    },
+    {
+      "path": "skills/northstar-re/specialists/ilspy-dotnet-decompilation/references/operational-reference.md",
+      "bytes": 835,
+      "sha256": "b0640ded0a485b2f5f38ca16c3bdcbfcf6ee8af0d5d8102db1afdad622c1921f"
+    },
+    {
+      "path": "skills/northstar-re/specialists/independent-code-review/SKILL.md",
+      "bytes": 1255,
+      "sha256": "e2184b00560083e8441503f85e49e15df2933a11025dc242dd847f9c2d4ad67e"
+    },
+    {
+      "path": "skills/northstar-re/specialists/independent-code-review/references/usage.md",
+      "bytes": 716,
+      "sha256": "da4780fda1c23a56c7bfa2170923b5e565576f1972ee1446578caca5d55fff39"
+    },
+    {
+      "path": "skills/northstar-re/specialists/intelligent-task-orchestrator/SKILL.md",
+      "bytes": 2394,
+      "sha256": "b6d4ff6b17baa349349f117f8caaeb7dca6a24e3c7dad3fa012898995534c58c"
+    },
+    {
+      "path": "skills/northstar-re/specialists/intelligent-task-orchestrator/references/usage.md",
+      "bytes": 650,
+      "sha256": "a2df4ba6e8b877ab3e5fcf5b94809b059d0e55be58fad98f37959455fa52c0c2"
+    },
+    {
+      "path": "skills/northstar-re/specialists/intelligent-technical-research/SKILL.md",
+      "bytes": 2341,
+      "sha256": "8e90ad65da411874e923ecaa0908c1ee832c400864e58613e5c1322c9e793a84"
+    },
+    {
+      "path": "skills/northstar-re/specialists/intelligent-technical-research/references/usage.md",
+      "bytes": 1435,
+      "sha256": "8e2269bf8e009619b21463f7b4cec6910f3de47cf9115fac18abc880b55f3f8a"
+    },
+    {
+      "path": "skills/northstar-re/specialists/large-scale-data-processing/SKILL.md",
+      "bytes": 1178,
+      "sha256": "7841a7e9959aaa087f6b49c876ab3c51f1537f391491c95f06d2a4ad20097a92"
+    },
+    {
+      "path": "skills/northstar-re/specialists/large-scale-data-processing/references/usage.md",
+      "bytes": 750,
+      "sha256": "349ad5967621249ff00b3651923d8258941c0cf38e1fbc0897db5f3d338513c5"
+    },
+    {
+      "path": "skills/northstar-re/specialists/native-windows-engineering/SKILL.md",
+      "bytes": 1064,
+      "sha256": "8d01e70571ca31edf66888a7c15531725819b9123eb6fb4245f3fb51cd17bc48"
+    },
+    {
+      "path": "skills/northstar-re/specialists/native-windows-engineering/references/usage.md",
+      "bytes": 673,
+      "sha256": "567e6fd0c6cb2cc02514ce0021afe996f3f131f2f9f1ff69db4fddf71f0b22d0"
+    },
+    {
+      "path": "skills/northstar-re/specialists/network-cryptography/SKILL.md",
+      "bytes": 2498,
+      "sha256": "7e70208da8e875054b045bb591664a2e88ac94768b268b86b0eb3ce909e359a2"
+    },
+    {
+      "path": "skills/northstar-re/specialists/network-cryptography/references/usage.md",
+      "bytes": 871,
+      "sha256": "0fe4308512be759a58802ef4c5a49330123567c434093cecbf7d576923ea8c92"
+    },
+    {
+      "path": "skills/northstar-re/specialists/network-protocol-analysis/SKILL.md",
+      "bytes": 2465,
+      "sha256": "89d02b92898fe8ab430c0b5b28727d542400785c0a0a837407a7f7854c16e9b3"
+    },
+    {
+      "path": "skills/northstar-re/specialists/network-protocol-analysis/references/usage.md",
+      "bytes": 966,
+      "sha256": "37f4991483696d784315118087f7cd759d70b00d3112fc1159b241cbc321f1ad"
+    },
+    {
+      "path": "skills/northstar-re/specialists/parallel-computing/SKILL.md",
+      "bytes": 1051,
+      "sha256": "58302422b543e17297c11ce40a4211c910392a54aff239882432952e1a8ba391"
+    },
+    {
+      "path": "skills/northstar-re/specialists/parallel-computing/references/usage.md",
+      "bytes": 626,
+      "sha256": "8c5f210609fffdfafeb3c3c6f7441cbb6128d5b2bb10f53bc6e9bc4b79a918aa"
+    },
+    {
+      "path": "skills/northstar-re/specialists/performance-benchmarking/SKILL.md",
+      "bytes": 1106,
+      "sha256": "cfc677f9debaeebb353e8c1f4d4645dd621c376bf7f521e0909ca26ebd977a34"
+    },
+    {
+      "path": "skills/northstar-re/specialists/performance-benchmarking/references/usage.md",
+      "bytes": 767,
+      "sha256": "500d9aa953312779b5db00a638d16e837fafc55d7ab0dec4ff300f0a0b210937"
+    },
+    {
+      "path": "skills/northstar-re/specialists/performance-memory-engineering/SKILL.md",
+      "bytes": 2204,
+      "sha256": "0775e24d58d3fcb9be80c11f155686cc00b06af90329f98c86390b7b7f61d7c0"
+    },
+    {
+      "path": "skills/northstar-re/specialists/performance-memory-engineering/references/usage.md",
+      "bytes": 2206,
+      "sha256": "92bfa70125c35dacb56877e2478774acc56116ef8f1982f618874b963af023cd"
+    },
+    {
+      "path": "skills/northstar-re/specialists/persistent-knowledge-base/SKILL.md",
+      "bytes": 2254,
+      "sha256": "655a76b9d1da0233a7a05b79aacbec4db59a3576dc41171f3eeda27597407cbc"
+    },
+    {
+      "path": "skills/northstar-re/specialists/persistent-knowledge-base/references/usage.md",
+      "bytes": 939,
+      "sha256": "b46c7170d09a257512a7522ef8e1f12b4cda81e273bdd3451fb6658efe9d5a51"
+    },
+    {
+      "path": "skills/northstar-re/specialists/project-lifecycle-management/SKILL.md",
+      "bytes": 1235,
+      "sha256": "d470101085fbfea9c1460e1967239b05eb697b2ad9a6ab352948de5bbe0dcd5e"
+    },
+    {
+      "path": "skills/northstar-re/specialists/project-lifecycle-management/references/usage.md",
+      "bytes": 687,
+      "sha256": "cd3804664c07a98bb8a53e09681c199c39566836ef4c476302b754b7b369a99c"
+    },
+    {
+      "path": "skills/northstar-re/specialists/requirements-traceability/SKILL.md",
+      "bytes": 1216,
+      "sha256": "79d7da200fc88055f66cddc7474d6262dfd917fcde9071a7d05a112badc4d2ba"
+    },
+    {
+      "path": "skills/northstar-re/specialists/requirements-traceability/references/usage.md",
+      "bytes": 673,
+      "sha256": "f268a15d84cfa60b0b852a098bbf3ca565dafe45f9dc7ad395ebecbe8344d27d"
+    },
+    {
+      "path": "skills/northstar-re/specialists/reverse-engineering-preflight/SKILL.md",
+      "bytes": 8769,
+      "sha256": "f8bc7eca2948149636daf793c4236383f7528ab54266c2a002c89888a3fbf87a"
+    },
+    {
+      "path": "skills/northstar-re/specialists/reverse-engineering-preflight/references/install-windows.md",
+      "bytes": 1511,
+      "sha256": "27f0851904d79978ea887b0799f4e40b7e99795478297a1b7a1a4e97f6fd4755"
+    },
+    {
+      "path": "skills/northstar-re/specialists/reverse-engineering-preflight/references/operational-reference.md",
+      "bytes": 602,
+      "sha256": "ec9ad6cb175f9bbce48aaf0b0859cdc0a3254974c6221c4492035547bcac8910"
+    },
+    {
+      "path": "skills/northstar-re/specialists/reverse-engineering-preflight/references/requirements.md",
+      "bytes": 1083,
+      "sha256": "686343986ced4c176c5f65b16b55de41b4295a696fc620ccf8677141d95aa278"
+    },
+    {
+      "path": "skills/northstar-re/specialists/root-cause-analysis/SKILL.md",
+      "bytes": 1213,
+      "sha256": "d59ab97ee1bb8ea23c1231605d8bb4dbbbe89ec9c1b2b3fb58d9a9fabecd186b"
+    },
+    {
+      "path": "skills/northstar-re/specialists/root-cause-analysis/references/usage.md",
+      "bytes": 686,
+      "sha256": "545b31db19a6ae494f905b5fa1488cb887ccfa8680f419fa05308b0ec5e8cffe"
+    },
+    {
+      "path": "skills/northstar-re/specialists/rust-cpp-interoperability/SKILL.md",
+      "bytes": 1021,
+      "sha256": "2a9286b5623072c355ad681dc217a5034facd6ed0f48b5f7e624cc955f3cdd94"
+    },
+    {
+      "path": "skills/northstar-re/specialists/rust-cpp-interoperability/references/usage.md",
+      "bytes": 662,
+      "sha256": "f71d54f5f955749dfe72db4be1211d5618ae7231c5294bc5d2357e9e1d6dd1b1"
+    },
+    {
+      "path": "skills/northstar-re/specialists/rust-systems-engineering/SKILL.md",
+      "bytes": 1117,
+      "sha256": "c376e935eb0d51f638eb9f6ba18294ee57795854c3b3e6d05743cb4791f5a50f"
+    },
+    {
+      "path": "skills/northstar-re/specialists/rust-systems-engineering/references/usage.md",
+      "bytes": 686,
+      "sha256": "f00754117af52f598a4d35f136b54257e24d529e66313a0d70dfd2514f1a48b1"
+    },
+    {
+      "path": "skills/northstar-re/specialists/session-continuity/SKILL.md",
+      "bytes": 1255,
+      "sha256": "0b0e9972cd8de048d313b8c23da905500cc6e5a5fc4d6e00a33ee6909dab1e9e"
+    },
+    {
+      "path": "skills/northstar-re/specialists/session-continuity/references/usage.md",
+      "bytes": 722,
+      "sha256": "97417ad7349f1ceed608f0bab40425a3e5c43faabe2d20fba164ca2cee10b201"
+    },
+    {
+      "path": "skills/northstar-re/specialists/source-code-reconstruction/SKILL.md",
+      "bytes": 2224,
+      "sha256": "6e4324aa1dc09d037e483c5f5411c46c5379909b4cfbee7995797ddf4ced3ee1"
+    },
+    {
+      "path": "skills/northstar-re/specialists/source-code-reconstruction/references/usage.md",
+      "bytes": 1620,
+      "sha256": "9f9e08f2b581ad845b19397d1c4e178f5fdd3f3f119706874fdb19ce7168e5c4"
+    },
+    {
+      "path": "skills/northstar-re/specialists/visual-studio-dev/SKILL.md",
+      "bytes": 5215,
+      "sha256": "133e53830612390d5f13c0bc474f140bff77b7a00b76fee09f2072eb460a30ee"
+    },
+    {
+      "path": "skills/northstar-re/specialists/visual-studio-dev/references/operational-reference.md",
+      "bytes": 1258,
+      "sha256": "14782ead2a57a09f28afb2e9974a347e7fae51f03eccf9c8487d471634b76ec6"
+    }
+  ]
+}

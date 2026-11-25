@@ -16,3 +16,5 @@
 ## نتائج CI الأولى والإصلاحات
 
 نجحت بوابات Rust وEXE وdoctor على Windows Server 2022 (10 اختبارات) وLinux (11). فشلت دورة المثبت بسبب تفسير Windows PowerShell 5.1 لملف ps1 عربي بلا UTF-8 BOM؛ عولجت جميع سكريبتات PowerShell بترميز UTF-8 BOM وقراءات UTF-8 صريحة. لا يعد بناء Windows وحده نجاح دورة التثبيت. أعيدت اختبارات Rust وClippy والبناء بعد تحديث SQLite الأمني؛ CI جديد مطلوب للقبول النهائي.
+
+في دورة Windows الثانية نجحت clean install وidempotency ورفض العبث بالبصمة والنسخ الاحتياطي وفشل الترقية المصطنع واستعادته، ثم كشف اختبار Rollback اختلاف ربط null في Windows PowerShell 5.1 عند File.Replace. استبدل بملف backup مسمى بدل null، وأصلحت تسطيح مصفوفة JSON في validator وعميل تنزيل الإصدارات بين PowerShell 5.1 و7. يعاد الاختبار الكامل دون حذف الاختبار الكاشف.

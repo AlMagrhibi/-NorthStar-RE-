@@ -139,7 +139,7 @@ try {
   try {
    if (Test-Path -LiteralPath $dest) { Move-Item -LiteralPath $dest -Destination $prior; $moved=$true }
    Move-Item -LiteralPath $stage -Destination $dest; $placed=$true
-   if (Test-Path -LiteralPath $Reg) { [IO.File]::Replace($savedReg,$Reg,$null) } else { Move-Item -LiteralPath $savedReg -Destination $Reg }
+   if (Test-Path -LiteralPath $Reg) { [IO.File]::Replace($savedReg,$Reg,(Join-Path $HomeRoot "registration-rollback-$stamp.bak")) } else { Move-Item -LiteralPath $savedReg -Destination $Reg }
   } catch {
    if ($placed) { Move-Item -LiteralPath $dest -Destination (Join-Path $HomeRoot "backups\rollback-failed-$stamp") }
    if ($moved) { Move-Item -LiteralPath $prior -Destination $dest }; throw

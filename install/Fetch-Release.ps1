@@ -7,7 +7,8 @@ if (!(Get-Command gh -ErrorAction SilentlyContinue)) { throw 'Authenticated GitH
 $repo='AlMagrhibi/-NorthStar-RE-'
 if (!$Tag) {
  $json=& gh api "repos/$repo/releases"; if ($LASTEXITCODE -ne 0) { throw 'Release discovery failed' }
- $releases=@($json|ConvertFrom-Json|Where-Object {!$_.draft -and ($AllowPrerelease -or !$_.prerelease) -and $_.tag_name -match '^v11\.'})
+ $parsed=$json|ConvertFrom-Json
+ $releases=@($parsed|Where-Object {!$_.draft -and ($AllowPrerelease -or !$_.prerelease) -and $_.tag_name -match '^v11\.'})
  if (!$releases.Count) { throw 'No compatible release. Local installation remains usable offline.' }; $Tag=$releases[0].tag_name
 }
 if ($Tag -notmatch '^v11\.[0-9]+\.[0-9]+(?:-rc\.[0-9]+)?$') { throw 'Unsupported tag' }

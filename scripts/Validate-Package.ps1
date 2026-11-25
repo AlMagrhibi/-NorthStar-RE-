@@ -22,7 +22,8 @@ foreach ($d in @((Get-Item -LiteralPath $master))+$skills) {
 $registry=Get-Content -LiteralPath (Join-Path $Root 'schemas/specialists.json') -Raw|ConvertFrom-Json
 $names=@($skills.Name|Sort-Object)
 if (@(Compare-Object $names @($registry.specialists|ForEach-Object {$_.id}|Sort-Object)).Count) { throw 'Specialist registry drift' }
-$tools=@(Get-Content -LiteralPath (Join-Path $master 'specialists/environment-discovery-setup/references/tool-catalog.json') -Raw|ConvertFrom-Json)
+$tools=Get-Content -LiteralPath (Join-Path $master 'specialists/environment-discovery-setup/references/tool-catalog.json') -Raw -Encoding UTF8|ConvertFrom-Json
+if ($tools.Count -ne 108) { throw 'Tool catalog count mismatch' }
 if (@($tools|Group-Object id|Where-Object Count -gt 1).Count) { throw 'Duplicate tool identifier' }
 foreach ($t in $tools) { if (!$t.id -or !$t.name -or $t.official_url -notmatch '^https://') { throw 'Invalid tool entry' } }
 # Validate tracked Markdown file links, excluding external URLs and local anchors.
