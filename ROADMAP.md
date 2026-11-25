@@ -26,3 +26,17 @@ Status is evidence-based. All instruction modules require agent/tool execution; 
 ## خارطة التطوير بالعربية
 
 المنفذ فعليًا هو الجرد والتجزئة والفهرسة والحوكمة والذاكرة المحلية، ضمن الحدود الموثقة. الإضافات الموزعة وSDK والجدولة التنفيذية ومحلل PE/CLR الكامل أهداف تطوير وليست إمكانيات مكتملة. توجد حالات جزئية وتجريبية موضحة في الجدول، مع المصدر والاختبارات والحدود ومعيار القبول. راجع تقارير الأدلة قبل اعتماد أي حالة.
+
+## Approved next-stage work (development branch)
+
+See [engineering foundations](skills/northstar-re/references/next-engineering-foundations.md) for requirements and acceptance gates.
+
+| Work item | Status |
+|---|---|
+| FW-001 Tool discovery | Candidate source + synthetic unit test; CI/Windows acceptance pending |
+| FW-002 True incremental index | PLANNED; strict full hashing unchanged |
+| FW-003 Generic semantic adapter | DESIGN; reviewed generalized source and synthetic acceptance pending |
+| FW-004 Resource measurements and recovery | PLANNED extension to existing lab |
+| FW-005 MCP/API host interoperability | PLANNED verification; existing read-only candidate unchanged |
+
+No new published release or desktop acceptance is implied.
