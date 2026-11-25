@@ -1,5 +1,5 @@
 {
   "authorized": true,
-  "tag": "v11.0.0-rc.1",
+  "tag": "v11.0.0-rc.2",
   "basis": "Owner execution directive: publish only after all mandatory CI, Windows executable and installer gates pass; retain prerelease status until actual Windows 11 and agent acceptance."
 }

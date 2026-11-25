@@ -1,4 +1,4 @@
-# NorthStar RE Framework V11 — مرشح الإصدار الأول
+# NorthStar RE Framework V11 — مرشح الإصدار الثاني
 
 ماستر واحدة northstar-re، 52 تخصصًا داخليًا، 108 مدخلات أدوات ومراجع، محرك Rust 0.3.0، دون اعتماد تشغيل على Python.
 

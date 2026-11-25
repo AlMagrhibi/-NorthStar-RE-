@@ -11,6 +11,9 @@ foreach ($f in $all) {
  if ($text -match '(?m)(gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|AKIA[0-9A-Z]{16}|-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----)') { throw "Potential credential in $($f.Name); do not publish" }
  if ($f.Extension -in @('.ps1','.cmd','.yml','.yaml','.toml') -and $text -match '(?im)^\s*(?:-\s*run:\s*)?(?:python[23]?|py\s+-3|pip[23]?)\s') { throw 'Interpreter invocation forbidden' }
 }
+$meta=Get-Content -LiteralPath (Join-Path $Root 'framework.json') -Raw -Encoding UTF8|ConvertFrom-Json
+$request=Get-Content -LiteralPath (Join-Path $Root '.github/release-request.json') -Raw -Encoding UTF8|ConvertFrom-Json
+if ($meta.generation -ne 11 -or $meta.engine_version -ne '0.3.0' -or $meta.master -ne 'northstar-re' -or $meta.specialists -ne 52 -or $meta.tool_catalog_entries -ne 108 -or $meta.python_runtime_required -or $request.tag -ne ('v'+$meta.version)) { throw 'Framework/release metadata drift' }
 $master=Join-Path $Root 'skills/northstar-re'
 $skills=@(Get-ChildItem -LiteralPath (Join-Path $master 'specialists') -Directory)
 if ($skills.Count -ne 52) { throw "Expected 52 specialists; found $($skills.Count)" }

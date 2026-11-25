@@ -15,3 +15,7 @@
 
 ## Engine flags
 scan uses --root/--out/--jobs. index uses --root/--db/--jobs/--mode strict|reuse-metadata. export uses --db/--run; diff --db/--old/--new. Project commands use --project, optional --input and explicit --reviewed-redacted. Unknown/duplicate flags are rejected in ordinary project/index commands. No unattended update policy is enabled.
+
+## Framework version metadata
+
+framework.json defines product generation, candidate version, engine version, target, toolchain and catalog counts. The validator requires its version to match .github/release-request.json. The installer records that declared version instead of a hardcoded old candidate. Project database schema versions remain separate and unchanged.

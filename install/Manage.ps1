@@ -13,6 +13,8 @@ $Package=Split-Path -Parent $PSScriptRoot
 $Master=Join-Path $Package 'skills\northstar-re'
 $HomeRoot=Join-Path $env:LOCALAPPDATA 'NorthStarRE'
 $Reg=Join-Path $HomeRoot 'registration.json'
+$Metadata=Get-Content -LiteralPath (Join-Path $Package 'framework.json') -Raw -Encoding UTF8|ConvertFrom-Json
+if ($Metadata.product -ne 'NorthStar RE Framework' -or $Metadata.engine_version -ne '0.3.0' -or $Metadata.version -notmatch '^11\.[0-9]+\.[0-9]+-rc\.[0-9]+$') { throw 'Incompatible framework metadata' }
 function Assert-Normal([string]$Path) {
  $p=[IO.Path]::GetFullPath($Path)
  while ($p) {
@@ -196,7 +198,7 @@ try {
  Add-Content -LiteralPath (Join-Path $stage 'SKILL.md') -Value "`n## Installed native engine`nAbsolute executable: ``$exePath``. Run doctor first; no fallback." -Encoding UTF8
  Set-Content -LiteralPath (Join-Path $stage '.northstar-framework-owner') -Value 'NorthStarRE V11' -Encoding UTF8
  $regTemp=Join-Path $HomeRoot "registration-$stamp.tmp"
- @{skill=$target;release=$work;version='11.0.0-rc.1';engine_sha256=(Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash;package_sha256=$digest;agent=$Agent}|ConvertTo-Json|Set-Content -LiteralPath $regTemp -Encoding UTF8
+ @{skill=$target;release=$work;version=[string]$Metadata.version;engine_sha256=(Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash;package_sha256=$digest;agent=$Agent}|ConvertTo-Json|Set-Content -LiteralPath $regTemp -Encoding UTF8
  $backup=$null; if ($old) { $backup=Save-Backup $old }
  $prior=Join-Path $SkillRoot ".northstar-prior-$stamp"; $moved=$false; $placed=$false
  try {

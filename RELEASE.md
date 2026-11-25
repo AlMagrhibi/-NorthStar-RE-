@@ -1,6 +1,6 @@
 # Release engineering
 
-The owner authorized initial candidate v11.0.0-rc.1 in .github/release-request.json. A push to main or the exact approved tag runs the complete pipeline. Native Linux/Windows formatting, check, tests, Clippy, build and doctor, package validation, Windows installer lifecycle, dependency audit and license checks must pass before packaging. Only the final publish job has contents:write; pull requests cannot publish. Existing releases are never overwritten. Change the explicit release request for a new owner-authorized candidate.
+The owner authorized initial candidate v11.0.0-rc.2 in .github/release-request.json. A push to main or the exact approved tag runs the complete pipeline. Native Linux/Windows formatting, check, tests, Clippy, build and doctor, package validation, Windows installer lifecycle, dependency audit and license checks must pass before packaging. Only the final publish job has contents:write; pull requests cannot publish. Existing releases are never overwritten. Change the explicit release request for a new owner-authorized candidate.
 
 Pinned action commit SHAs and Rust 1.91.1 are used. cargo-audit is pinned to 0.23.0 with its own locked build. Dependency-review SaaS availability depends on repository plan; locked dependency audit is mandatory independently. Framework licensing remains owner-controlled; no public Pages deployment or visibility change is configured.
 

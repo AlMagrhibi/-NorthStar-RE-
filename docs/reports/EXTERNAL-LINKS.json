@@ -1,0 +1,774 @@
+{
+  "checked_utc": "2026-11-25T20:07:17.315Z",
+  "method": "unauthenticated HTTP HEAD with redirects; not semantic certification",
+  "results": [
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/package-manager/winget/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://visualstudio.microsoft.com/downloads/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://git-scm.com/download/win",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/microsoft/vswhere",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/visualstudio/msbuild/msbuild",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/cpp/build/reference/linker-options",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/cpp/build/building-on-the-command-line",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/cpp/build/reference/dumpbin-reference",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://dotnet.microsoft.com/download",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://cmake.org/download/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/ninja-build/ninja/releases",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/icsharpcode/ILSpy/releases",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://adoptium.net/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.nuget.org/packages/ilspycmd",
+      "http_status": 404,
+      "status": "REACHABLE_GET_CONFIRMED",
+      "head_status": 404,
+      "get_status": 200
+    },
+    {
+      "url": "https://github.com/NationalSecurityAgency/ghidra",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/NationalSecurityAgency/ghidra/releases",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/dotnet/framework/tools/ildasm-exe-il-disassembler",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/sysinternals/downloads/sigcheck",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/horsicq/Detect-It-Easy/releases",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/lucasg/Dependencies/releases",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/hasherezade/pe-bear/releases",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/drivers/debugger/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/security/application-security/application-isolation/windows-sandbox/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/sysinternals/downloads/procmon",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://cmake.org/cmake/help/latest/manual/ctest.1.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://docs.werwolv.net/imhex",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/WerWolv/ImHex",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/visualstudio/test/vstest-console-options",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://kaitai.io/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://doc.kaitai.io/user_guide",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/microsoft/DirectXTex/wiki",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/microsoft/DirectXTex",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/microsoft/DirectXTex/wiki/texconv",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.angusj.com/resourcehacker/",
+      "http_status": 406,
+      "status": "UNVERIFIED_ACCESS"
+    },
+    {
+      "url": "https://mh-nexus.de/en/hxd/",
+      "http_status": 502,
+      "status": "UNVERIFIED_ACCESS"
+    },
+    {
+      "url": "https://www.7-zip.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.7-zip.org/faq.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/jindrapetrik/jpexs-decompiler/wiki/Commandline-arguments",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/jindrapetrik/jpexs-decompiler",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://conquer-online.github.io/wiki/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://conquer-online.github.io/wiki/files/formats/dat.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/darkfoxdeveloper/ConquerToolsKit",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/conquer-online/co2_core_dll",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/abdouthematrix/C3Studio",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/SantasCode/Tiled2Dmap",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://docs.openssl.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.mapeditor.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://openssl-library.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://doc.mapeditor.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.wireshark.org/docs/man-pages/tshark.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.wireshark.org/download.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.wireshark.org/docs/wsug_html_chunked/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows-server/networking/technologies/pktmon/pktmon",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://dev.mysql.com/downloads/mysql/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/refman/8.4/en/windows-installation.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.sqlite.org/cli.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.sqlite.org/download.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://dev.mysql.com/downloads/shell/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://dev.mysql.com/downloads/workbench/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/workbench/en/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/mysql-shell/en/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/ssms/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/ssms/install/install",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.postgresql.org/download/windows/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/sql/tools/sqlcmd/sqlcmd-download-install",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/current/app-psql.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/aspnet/core/security/authentication/identity",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/win32/winsock/getting-started-with-winsock",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/win32/seccng/cng-portal",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/dotnet/api/system.net.security.sslstream",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://help.x64dbg.com/en/latest/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://hex-rays.com/ida-free",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://x64dbg.com/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://docs.hex-rays.com/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://docs.binary.ninja/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://binary.ninja/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://rizin.re/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://book.rizin.re/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://cutter.re/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://cutter.re/docs/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/dnSpyEx/dnSpy/wiki",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/joxeankoret/diaphora",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/dnSpyEx/dnSpy",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.winitor.com/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://yara.readthedocs.io/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/VirusTotal/yara",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.rohitab.com/apimonitor",
+      "http_status": 503,
+      "status": "UNVERIFIED_ACCESS"
+    },
+    {
+      "url": "https://learn.microsoft.com/sysinternals/downloads/process-explorer",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/sysinternals/downloads/winobj",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://renderdoc.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://renderdoc.org/docs/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://devblogs.microsoft.com/pix/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/pix",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/test/wpt/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/test/wpt/windows-performance-analyzer",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/microsoft/vcpkg",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows-hardware/test/wpt/windows-performance-recorder",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/cpp/sanitizers/asan",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/vcpkg/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/nuget/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://google.github.io/googletest/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.nuget.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/google/googletest",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/xunit/xunit",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://xunit.net/docs/getting-started",
+      "http_status": 404,
+      "status": "REPLACED_AFTER_CONFIRMED_404",
+      "replacement": "https://xunit.net/docs/getting-started/v3/getting-started"
+    },
+    {
+      "url": "https://clang.llvm.org/docs/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.doxygen.nl/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://llvm.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/windows/win32/debug/pe-format",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://learn.microsoft.com/dotnet/core/diagnostics/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.doxygen.nl/manual/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://json-schema.org/learn/getting-started-step-by-step",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://json-schema.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://mermaid.js.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://mermaid.js.org/intro/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://graphviz.org/documentation/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://graphviz.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://plantuml.com/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://plantuml.com/starting",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.mkdocs.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.mkdocs.org/getting-started/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://dotnet.github.io/docfx/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/igorshubovych/markdownlint-cli",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://docs.github.com/actions",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://cppcheck.sourceforge.io/manual.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://cppcheck.sourceforge.io/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://clang.llvm.org/extra/clang-tidy/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://www.sonarsource.com/products/sonarqube/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://docs.sonarsource.com/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://benchmarkdotnet.org/articles/overview.html",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://benchmarkdotnet.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/coverlet-coverage/coverlet",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/google/benchmark",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://rust-lang.org/install",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/anchore/grype",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/anchore/syft",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/gitleaks/gitleaks",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://rust-lang.github.io/rustup/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://rust-lang.org/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://doc.rust-lang.org/rustc/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://doc.rust-lang.org/cargo/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/rust-lang/rust-clippy",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/RustSec/rustsec",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/rust-lang/rustfmt",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://doc.rust-lang.org/clippy/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/RustSec/rustsec/tree/main/cargo-audit",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/bheisler/criterion.rs",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/EmbarkStudios/cargo-deny",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://embarkstudios.github.io/cargo-deny/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://bheisler.github.io/criterion.rs/book/",
+      "http_status": 200,
+      "status": "REACHABLE"
+    },
+    {
+      "url": "https://github.com/AlMagrhibi/-NorthStar-RE-",
+      "http_status": 404,
+      "status": "PRIVATE_AUTH_REQUIRED"
+    },
+    {
+      "url": "https://github.com/AlMagrhibi/-NorthStar-RE-/blob/main/docs/en/cli.md",
+      "http_status": 404,
+      "status": "PRIVATE_AUTH_REQUIRED"
+    }
+  ]
+}

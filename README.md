@@ -7,9 +7,10 @@
 **[العربية الكاملة](README.ar.md)** · [Install](INSTALL.md) · [Agent installation](INSTALL-FOR-AGENTS.md) · [Documentation](docs/README.md) · [Releases](https://github.com/AlMagrhibi/-NorthStar-RE-/releases)
 
 [![Build](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/workflows/ci.yml/badge.svg)](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/workflows/ci.yml)
-![Generation V11](https://img.shields.io/badge/Generation-V11%20RC-087d76)
+![Candidate v11.0.0-rc.2](https://img.shields.io/badge/Candidate-v11.0.0--rc.2-087d76)
 ![Windows 11 x64](https://img.shields.io/badge/Target-Windows%2011%20x64-2563eb)
 ![Rust 1.91.1](https://img.shields.io/badge/Rust-1.91.1-b7410e)
+[![RustSec snapshot 2026-11-25](https://img.shields.io/badge/RustSec%202026--11--25-0%20findings-087d76)](docs/reports/cargo-audit.json)
 ![No Python runtime](https://img.shields.io/badge/Python%20runtime-None-087d76)
 
 **Release candidate, with explicit verification boundaries.** The source contains one master, 52 specialist instruction modules, 108 tool/reference entries and the native Rust engine 0.3.0. Local Linux build/tests are verified. Windows distributions are published only after mandatory Windows CI, executable and installer checks pass. Real Windows 11 desktop and all coding-agent integrations remain **UNVERIFIED** until observed. [Acceptance evidence](docs/reports/ACCEPTANCE-AR.md).

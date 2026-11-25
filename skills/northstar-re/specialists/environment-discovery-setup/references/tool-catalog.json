@@ -1142,7 +1142,7 @@
     "version_args": [],
     "verification": "Restore reviewed package, run dotnet test on a minimal test project.",
     "kind": "source",
-    "documentation_url": "https://xunit.net/docs/getting-started",
+    "documentation_url": "https://xunit.net/docs/getting-started/v3/getting-started",
     "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
   },
   {

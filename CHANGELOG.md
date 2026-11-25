@@ -64,3 +64,10 @@
 
 ### Installation and upgrade guidance
 - Added `docs/INSTALL-UPGRADE.md` with private-repository authentication, staged install/upgrade, preservation of project memory, verification and rollback instructions, and reusable agent prompt.
+
+### Candidate 2 verification refinements
+
+- Patch the SQLite security advisory through rusqlite 0.43.0 / libsqlite3-sys 0.40.0; retain schema compatibility and native features.
+- Fix Windows PowerShell 5.1 UTF-8 parsing, JSON-array handling and explicit rollback registration replacement; add real failure-injection and source-build lifecycle coverage.
+- Pin source installation to Rust 1.91.1 x64 MSVC, statically link the VC runtime and verify EXE dependencies.
+- Bind installed framework version and release request to framework.json; include measured 1k/10k/100k/1M results and audited upstream links.

@@ -9,7 +9,7 @@ Read exact installed-version docs before use. No automatic downloads or executio
 
 ## xUnit.net (`xunit`)
 - Official: https://github.com/xunit/xunit
-- Usage: https://xunit.net/docs/getting-started
+- Usage: https://xunit.net/docs/getting-started/v3/getting-started
 - Local check: Restore reviewed package, run dotnet test on a minimal test project.
 
 ## CTest (`ctest`)

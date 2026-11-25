@@ -41,7 +41,7 @@ try {
   $check=Join-Path $stage 'verify'; [IO.Compression.ZipFile]::ExtractToDirectory($binary,$check)
   & (Join-Path $root 'scripts/Validate-Package.ps1') -Root $check -CheckHashes|Out-Host
   Copy-Item -LiteralPath $exe -Destination (Join-Path $Output 'nsre-windows-x64.exe')
-  foreach ($name in @('sbom.json','build-report.md','test-report.md','audit.json','installer.log')) { Copy-Item -LiteralPath (Join-Path $Reports $name) -Destination (Join-Path $Output $name) }
+  foreach ($name in @('sbom.json','build-report.md','test-report.md','audit.json','installer.log','windows-dependencies.txt')) { Copy-Item -LiteralPath (Join-Path $Reports $name) -Destination (Join-Path $Output $name) }
  }
  $assets=@(Get-ChildItem -LiteralPath $Output -File|Sort-Object Name|ForEach-Object {@{name=$_.Name;sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant();bytes=$_.Length}})
  @{schema_version=1;tag=$Tag;framework_major=11;engine_version='0.3.0';platform=if($SourceOnly){'source'}else{'windows-x64'};required_checks_passed=(!$SourceOnly);status='RELEASE_CANDIDATE';commit=$env:GITHUB_SHA;assets=$assets;limitations=@('Actual Windows 11 desktop and agent integration UNVERIFIED','MCP candidate only; no exact resume or distributed scheduler')}|ConvertTo-Json -Depth 10|Set-Content -LiteralPath (Join-Path $Output 'release-manifest.json') -Encoding UTF8

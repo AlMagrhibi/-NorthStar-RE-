@@ -1,0 +1,10 @@
+{
+  "state": "DESIRED_NOT_APPLIED",
+  "description": "NorthStar RE Framework V11 — native Rust engineering intelligence for Windows 11, one master and 52 specialist guides.",
+  "topics": ["rust", "windows-11", "reverse-engineering", "agent-skills", "engineering-intelligence", "sqlite", "evidence-management"],
+  "visibility": "private",
+  "default_branch": "main",
+  "required_status_checks": ["Native (windows-2022)", "Native (ubuntu-24.04)", "Security and licenses", "Verified Windows distributions"],
+  "protection_intent": "Require pull request review and passing checks; disallow force pushes and branch deletion. No collaborators or visibility changes.",
+  "blocker": "Connected GitHub tools expose Git contents and read-only metadata, not administration writes. Browser has no authenticated repository session. This file records intent only."
+}

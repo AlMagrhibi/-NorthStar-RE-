@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "product": "NorthStar RE Framework",
+  "generation": 11,
+  "version": "11.0.0-rc.2",
+  "engine_version": "0.3.0",
+  "binary": "nsre.exe",
+  "master": "northstar-re",
+  "specialists": 52,
+  "tool_catalog_entries": 108,
+  "platform": "windows-x64",
+  "rust_toolchain": "1.91.1",
+  "rust_msrv": "1.89",
+  "python_runtime_required": false,
+  "status": "RELEASE_CANDIDATE"
+}

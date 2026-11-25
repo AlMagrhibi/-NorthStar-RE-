@@ -7,9 +7,10 @@
 **[English](README.md)** · [التثبيت](INSTALL.md) · [تثبيت الأيجنت](INSTALL-FOR-AGENTS.md) · [التوثيق](docs/README.md) · [الإصدارات](https://github.com/AlMagrhibi/-NorthStar-RE-/releases)
 
 [![حالة البناء](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/workflows/ci.yml/badge.svg)](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/workflows/ci.yml)
-![V11](https://img.shields.io/badge/Generation-V11%20RC-087d76)
+![Candidate v11.0.0-rc.2](https://img.shields.io/badge/Candidate-v11.0.0--rc.2-087d76)
 ![Windows 11](https://img.shields.io/badge/Target-Windows%2011%20x64-2563eb)
 ![Rust](https://img.shields.io/badge/Rust-1.91.1-b7410e)
+[![RustSec snapshot 2026-11-25](https://img.shields.io/badge/RustSec%202026--11--25-0%20findings-087d76)](docs/reports/cargo-audit.json)
 ![دون Python](https://img.shields.io/badge/Python%20runtime-None-087d76)
 
 **مرشح إصدار بحدود تحقق واضحة.** توجد ماستر واحدة و52 تخصصًا إرشاديًا و108 مدخلات أدوات ومراجع ومحرك Rust 0.3.0. نجح البناء واختبارات Linux محليًا. لا تنشر حزم Windows إلا بعد نجاح بوابات CI والمحرك والمثبت. قبول Windows 11 الفعلي وتكامل جميع الأيجنتات يظلان **UNVERIFIED** حتى إثباتهما. [تقرير القبول](docs/reports/ACCEPTANCE-AR.md).

@@ -620,7 +620,7 @@ Candidates only; not installed or verified. Confirm compatibility and license.
 ## 79. xUnit.net — `xunit`
 - Type: source; group: engineering-v7
 - Upstream: https://github.com/xunit/xunit
-- Usage reference: https://xunit.net/docs/getting-started
+- Usage reference: https://xunit.net/docs/getting-started/v3/getting-started
 - Discovery names: Not a standalone executable
 - Verification: Restore reviewed package, run dotnet test on a minimal test project.
 - Acquisition: Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps.
