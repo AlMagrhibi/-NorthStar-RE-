@@ -39,13 +39,13 @@ jobs:
           Copy-Item skills/northstar-re/engine/nsre/target/release/nsre.exe skills/northstar-re/engine/bin/nsre.exe
           ./scripts/Write-Checksums.ps1
           ./scripts/Test-Installer.ps1 2>&1 | Tee-Object -FilePath "${{ runner.temp }}/native-reports/installer.log"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: evidence-${{ matrix.os }}
           path: ${{ runner.temp }}/native-reports
           if-no-files-found: error
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: success() && runner.os == 'Windows'
         with:
           name: windows-engine
@@ -76,7 +76,7 @@ jobs:
           ./scripts/Check-Licenses.ps1 | Set-Content "${{ runner.temp }}/security/licenses.json"
           ./scripts/Write-Sbom.ps1 -Output "${{ runner.temp }}/security/sbom.json"
           ./scripts/Validate-Package.ps1 -CheckHashes
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: security-evidence
@@ -108,7 +108,7 @@ jobs:
         run: |
           $tag=(Get-Content .github/release-request.json -Raw | ConvertFrom-Json).tag
           ./install/Package-Release.ps1 -Tag $tag -Output "${{ runner.temp }}/release-assets" -Reports "${{ runner.temp }}/release-reports"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: verified-release-assets
           path: ${{ runner.temp }}/release-assets
