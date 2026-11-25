@@ -13,7 +13,7 @@
 [![RustSec snapshot 2026-11-25](https://img.shields.io/badge/RustSec%202026--11--25-0%20findings-087d76)](docs/reports/cargo-audit.json)
 ![No Python runtime](https://img.shields.io/badge/Python%20runtime-None-087d76)
 
-**Release candidate, with explicit verification boundaries.** The source contains one master, 52 specialist instruction modules, 108 tool/reference entries and the native Rust engine 0.3.0. Local Linux build/tests are verified. Windows distributions are published only after mandatory Windows CI, executable and installer checks pass. Real Windows 11 desktop and all coding-agent integrations remain **UNVERIFIED** until observed. [Acceptance evidence](docs/reports/ACCEPTANCE-AR.md).
+**Release candidate, with explicit verification boundaries.** The source contains one master, 52 specialist instruction modules, 108 tool/reference entries and the native Rust engine 0.3.0. Linux and Windows MSVC builds, mandatory CI, executable checks and the full installer/source-build lifecycle are verified. Real Windows 11 desktop and all coding-agent integrations remain **UNVERIFIED** until observed. [Acceptance evidence](docs/reports/ACCEPTANCE-AR.md).
 
 ## Contents
 
@@ -124,6 +124,8 @@ Read-only target inspection, explicit project scope, bounded reads, SQL paramete
 Advanced parsers, plugin architecture, adapter SDK, distributed workers, executable scheduler, resource governance and automated research are explicitly planned or partial. [Implementation ledger](ROADMAP.md) records source, evidence, limitations and acceptance criteria for every component.
 
 ## Release downloads
+
+**Latest verified candidate: [v11.0.0-rc.2](https://github.com/AlMagrhibi/-NorthStar-RE-/releases/tag/v11.0.0-rc.2).** [Windows x64 ZIP](https://github.com/AlMagrhibi/-NorthStar-RE-/releases/download/v11.0.0-rc.2/NorthStar-RE-Framework-v11-Windows11-x64.zip) · [Source ZIP](https://github.com/AlMagrhibi/-NorthStar-RE-/releases/download/v11.0.0-rc.2/NorthStar-RE-Framework-v11-Windows11-Source.zip) · [Final verification report](docs/reports/FINAL-DELIVERY-AR.md).
 
 [Official release list](https://github.com/AlMagrhibi/-NorthStar-RE-/releases) · [GitHub Actions](https://github.com/AlMagrhibi/-NorthStar-RE-/actions) · [Release process](RELEASE.md) · [Changelog](CHANGELOG.md).
 

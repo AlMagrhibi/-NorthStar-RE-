@@ -1,6 +1,6 @@
 # بوابات القبول والعوائق
 
-اجتاز مرشح الإصدار الأول جميع وظائف GitHub Actions في [التشغيل 45692129487](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45692129487)، ونُشرت حزم فعلية على [v11.0.0-rc.1](https://github.com/AlMagrhibi/-NorthStar-RE-/releases/tag/v11.0.0-rc.1). يجمع مرشح 2 القياسات والتوثيق وبيانات النسخة؛ بوابة نشره تعيد جميع الفحوص وتربط manifest بالـcommit، ولا تعتمد هذا التقرير بديلًا عن دليل التشغيل الخاص بإصداره.
+اجتاز **v11.0.0-rc.2** جميع وظائف [CI 45694720601](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45694720601) ونُشرت حزمته من commit `e44c67c9e78d1c5f72e17cc91943387aa6e61344`. أُعيد تنزيل الأصول ومقارنة بصماتها وأحجامها ببيانات GitHub وبصمات كل ملف داخل Source/Windows ZIP؛ نجح التحقق المستقل. [التسليم النهائي](FINAL-DELIVERY-AR.md) و[سجل التحقق](PUBLISHED-VERIFICATION.json).
 
 | البوابة | الدليل المتحقق | الحدود |
 |---|---|---|
@@ -19,7 +19,7 @@
 | ثغرات وتراخيص وSBOM | PASS بعد تحديث SQLite | فحص تصريحات وتسجيل أدلة، لا شهادة أمان/مراجعة قانونية |
 | سعات 1k/10k/100k/1M | PASS على Linux، strict وcache ودقة كل سجل | لا تعميم على Windows أو ملفات كبيرة |
 | روابط ومراجع | تحقق محلي + 153 upstream URL | روابط محجوبة/خاصة موثقة UNVERIFIED |
-| GitHub Actions وحزم الإصدار | PASS للمرشح الأول؛ مرشح 2 معلق على بوابته | راجع manifest وChecksums وCI للإصدار المختار |
+| GitHub Actions وحزم الإصدار | PASS للمرشح النهائي rc.2 | الأصول المنشورة وبصماتها والتحقق المستقل مكتملة |
 | Windows 11 فعلي | UNVERIFIED | يتطلب جلسة على جهاز Windows 11 |
 | FreePi/Codex/Pi/Claude | UNVERIFIED | لا إصدار مضيف مختبر فعليًا |
 | About/Topics/Social Preview/حماية الفرع | BLOCKED BY AVAILABLE CAPABILITY | [التفاصيل والإعدادات الجاهزة](REPOSITORY-SETTINGS-AR.md) |

@@ -13,7 +13,7 @@
 [![RustSec snapshot 2026-11-25](https://img.shields.io/badge/RustSec%202026--11--25-0%20findings-087d76)](docs/reports/cargo-audit.json)
 ![دون Python](https://img.shields.io/badge/Python%20runtime-None-087d76)
 
-**مرشح إصدار بحدود تحقق واضحة.** توجد ماستر واحدة و52 تخصصًا إرشاديًا و108 مدخلات أدوات ومراجع ومحرك Rust 0.3.0. نجح البناء واختبارات Linux محليًا. لا تنشر حزم Windows إلا بعد نجاح بوابات CI والمحرك والمثبت. قبول Windows 11 الفعلي وتكامل جميع الأيجنتات يظلان **UNVERIFIED** حتى إثباتهما. [تقرير القبول](docs/reports/ACCEPTANCE-AR.md).
+**مرشح إصدار بحدود تحقق واضحة.** توجد ماستر واحدة و52 تخصصًا إرشاديًا و108 مدخلات أدوات ومراجع ومحرك Rust 0.3.0. نجح بناء Linux وWindows MSVC واختباراتهما وجميع بوابات CI ودورة المثبت وبناء السورس. قبول Windows 11 الفعلي وتكامل جميع الأيجنتات يظلان **UNVERIFIED** حتى إثباتهما. [تقرير القبول](docs/reports/ACCEPTANCE-AR.md).
 
 ## الفهرس
 
@@ -124,6 +124,8 @@ Windows 11 x64 وأيجنت متوافق ومسارات مستخدم قابلة 
 المحلل المتقدم وبنية الإضافات وSDK والعمال الموزعون والجدولة التنفيذية وحاكم الموارد والبحث الآلي أهداف مخططة أو جزئية بوضوح. [سجل التنفيذ](ROADMAP.md) يربط كل مكون بالمصدر والدليل والحدود ومعيار القبول.
 
 ## تنزيل الإصدارات
+
+**أحدث مرشح متحقق: [v11.0.0-rc.2](https://github.com/AlMagrhibi/-NorthStar-RE-/releases/tag/v11.0.0-rc.2).** [حزمة Windows](https://github.com/AlMagrhibi/-NorthStar-RE-/releases/download/v11.0.0-rc.2/NorthStar-RE-Framework-v11-Windows11-x64.zip) · [السورس](https://github.com/AlMagrhibi/-NorthStar-RE-/releases/download/v11.0.0-rc.2/NorthStar-RE-Framework-v11-Windows11-Source.zip) · [تقرير التسليم النهائي](docs/reports/FINAL-DELIVERY-AR.md).
 
 [قائمة الإصدارات](https://github.com/AlMagrhibi/-NorthStar-RE-/releases) · [GitHub Actions](https://github.com/AlMagrhibi/-NorthStar-RE-/actions) · [هندسة النشر](RELEASE.md) · [سجل التغييرات](CHANGELOG.md).
 

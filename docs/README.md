@@ -26,3 +26,5 @@
 [V10 research, historical](V10-RESEARCH-AR.md) · [Original V11 status, historical](V11-STATUS-AR.md) · [Native contract](../skills/northstar-re/references/v11-native-contract.md) · [Governance](../skills/northstar-re/references/v8-project-governance.md) · [Tool selection](../skills/northstar-re/references/tool-selection.md)
 
 Historical source validation reports describe the input package only. Current verification evidence is in reports/. Documentation distinguishes implemented CLI behavior, instruction-only capabilities, experimental MCP and planned services.
+
+[التسليم النهائي وروابط الحزم والبصمات والتحقق المستقل](reports/FINAL-DELIVERY-AR.md).

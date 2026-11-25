@@ -1,0 +1,70 @@
+{
+  "status": "PASS",
+  "tag": "v11.0.0-rc.2",
+  "commit": "e44c67c9e78d1c5f72e17cc91943387aa6e61344",
+  "prerelease": true,
+  "release_url": "https://github.com/AlMagrhibi/-NorthStar-RE-/releases/tag/v11.0.0-rc.2",
+  "checked_utc": "2026-11-25T20:32:00.959Z",
+  "checks": [
+    "GitHub published asset SHA-256 and size",
+    "SHA256SUMS full coverage",
+    "release manifest contract, tag and commit"
+  ],
+  "assets": [
+    {
+      "name": "audit.json",
+      "bytes": 374,
+      "sha256": "60b50698941dcae4c57757ca2ff912f6d51b55def181d5132ec0b4e262b04c33"
+    },
+    {
+      "name": "build-report.md",
+      "bytes": 476,
+      "sha256": "16252ccd4ec6435c24de1557b419f44284f804e36e8439599646f8a3bdee62ba"
+    },
+    {
+      "name": "installer.log",
+      "bytes": 21235,
+      "sha256": "26e5f7681243f0c1e83c1e1997aa99dcbc948d299a94b01ea19720c3d136e757"
+    },
+    {
+      "name": "NorthStar-RE-Framework-v11-Windows11-Source.zip",
+      "bytes": 571290,
+      "sha256": "37ea57d251e521a36c356ff69e5bb141cb99e2af3faa46604d74ac32eb6b115f"
+    },
+    {
+      "name": "NorthStar-RE-Framework-v11-Windows11-x64.zip",
+      "bytes": 1972557,
+      "sha256": "ee0de9e6a26a5bedebeb498306f15fbf0f178191164f0991af0815aec4e76a55"
+    },
+    {
+      "name": "nsre-windows-x64.exe",
+      "bytes": 2703360,
+      "sha256": "2ddcdf9af6084994268d38e72db627011b6f7cabf7039edc8558ce08ce1bed0e"
+    },
+    {
+      "name": "release-manifest.json",
+      "bytes": 1910,
+      "sha256": "9cf590a7ae35b6d3da1f1344cda0cc76eb8b00e39ee6d1934f9c8954c0cd1772"
+    },
+    {
+      "name": "sbom.json",
+      "bytes": 25714,
+      "sha256": "a0f3aa5e5efb29888e13ad5339bcd237e504fea2adcde9b0d2f377f7a67222c3"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 897,
+      "sha256": "d3e7c9fef3b37373523100937487c7eaa7b4fbfe6575698ee025728e8000846b"
+    },
+    {
+      "name": "test-report.md",
+      "bytes": 476,
+      "sha256": "16252ccd4ec6435c24de1557b419f44284f804e36e8439599646f8a3bdee62ba"
+    },
+    {
+      "name": "windows-dependencies.txt",
+      "bytes": 460,
+      "sha256": "7df7daea7c732dcd64762397e20180bf644eb2b467a240ad53efd183c5f5ca08"
+    }
+  ]
+}
