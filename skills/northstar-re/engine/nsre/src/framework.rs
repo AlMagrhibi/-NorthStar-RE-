@@ -613,49 +613,6 @@ fn tool_paths() -> Value {
         .collect::<Vec<_>>())
 }
 
-#[cfg(test)]
-mod discovery_tests {
-    use super::*;
-
-    #[test]
-    fn explicit_path_precedes_path_and_hints_and_invalid_override_fails_closed() {
-        let dir = env::temp_dir().join(format!("nsre-discovery-{}", id()));
-        let path = dir.join("path");
-        let hints = dir.join("hints");
-        fs::create_dir_all(&path).unwrap();
-        fs::create_dir_all(&hints).unwrap();
-        let explicit = dir.join("explicit.exe");
-        let candidate = path.join("testtool.exe");
-        let hint = hints.join("testtool.exe");
-        for p in [&explicit, &candidate, &hint] {
-            fs::write(p, b"synthetic fixture; never executed").unwrap();
-        }
-        let paths = [path];
-        let hint_dirs = [hints];
-        assert_eq!(
-            tool_candidate("testtool", Some(&explicit), &paths, &hint_dirs),
-            (Some(explicit), "explicit")
-        );
-        assert_eq!(
-            tool_candidate("testtool", Some(Path::new("relative.exe")), &paths, &hint_dirs),
-            (None, "invalid_override")
-        );
-        assert_eq!(
-            tool_candidate("testtool", None, &paths, &hint_dirs),
-            (Some(candidate), "path")
-        );
-        assert_eq!(
-            tool_candidate("testtool", None, &[], &hint_dirs),
-            (Some(hint), "environment_hint")
-        );
-        assert_eq!(
-            tool_candidate("missing", None, &[], &[]),
-            (None, "not_found")
-        );
-        fs::remove_dir_all(dir).unwrap();
-    }
-}
-
 pub fn doctor() -> Value {
     json!({"framework":"NorthStar RE V11","engine_version":env!("CARGO_PKG_VERSION"),"os":env::consts::OS,"arch":env::consts::ARCH,"parallelism":std::thread::available_parallelism().map(|n|n.get()).unwrap_or(1),"tools":tool_paths(),"tool_smoke_tests_required":true,"python_required":false})
 }
@@ -871,4 +828,52 @@ pub fn command(cmd: &str, args: impl Iterator<Item = OsString>) -> R<bool> {
 }
 pub fn rpc_status(p: &Path) -> R<Value> {
     status(&root(p)?)
+}
+
+#[cfg(test)]
+mod discovery_tests {
+    use super::*;
+
+    #[test]
+    fn explicit_path_precedes_path_and_hints_and_invalid_override_fails_closed() {
+        let dir = env::temp_dir().join(format!("nsre-discovery-{}", id()));
+        let path = dir.join("path");
+        let hints = dir.join("hints");
+        fs::create_dir_all(&path).unwrap();
+        fs::create_dir_all(&hints).unwrap();
+        let explicit = dir.join("explicit.exe");
+        let candidate = path.join("testtool.exe");
+        let hint = hints.join("testtool.exe");
+        for p in [&explicit, &candidate, &hint] {
+            fs::write(p, b"synthetic fixture; never executed").unwrap();
+        }
+        let paths = [path];
+        let hint_dirs = [hints];
+        assert_eq!(
+            tool_candidate("testtool", Some(&explicit), &paths, &hint_dirs),
+            (Some(explicit), "explicit")
+        );
+        assert_eq!(
+            tool_candidate(
+                "testtool",
+                Some(Path::new("relative.exe")),
+                &paths,
+                &hint_dirs
+            ),
+            (None, "invalid_override")
+        );
+        assert_eq!(
+            tool_candidate("testtool", None, &paths, &hint_dirs),
+            (Some(candidate), "path")
+        );
+        assert_eq!(
+            tool_candidate("testtool", None, &[], &hint_dirs),
+            (Some(hint), "environment_hint")
+        );
+        assert_eq!(
+            tool_candidate("missing", None, &[], &[]),
+            (None, "not_found")
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
 }
