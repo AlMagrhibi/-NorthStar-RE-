@@ -1,0 +1,2 @@
+# Operational reference
+Read compatibility-playbook.md; inspect actual workspace and observed version, language, build system and file format. Use preflight plus managed/native specialists as evidence collectors, Visual Studio or actual build toolchain for trusted implementations. Use observed fixtures and reproducible tests, no hardcoded client variants. Report tested scope, unknowns and incompatibilities. No proprietary code copying or unauthorized protocol access.

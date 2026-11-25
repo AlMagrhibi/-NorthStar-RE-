@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "master": "northstar-re",
+  "count": 52,
+  "specialists": [
+    {
+      "id": "account-server-engineering",
+      "description": "Design, inspect and test authorized account/login services in C, C++ or C#.",
+      "path": "skills/northstar-re/specialists/account-server-engineering/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "advanced-binary-intelligence",
+      "description": "Static classification and corroborated binary understanding for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/advanced-binary-intelligence/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "automated-quality-assurance",
+      "description": "Layered verification and regression prevention for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/automated-quality-assurance/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "automated-regression-testing",
+      "description": "Prevent recurring defects for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/automated-regression-testing/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "binary-diffing-version-migration",
+      "description": "Version-aware binary and schema comparison for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/binary-diffing-version-migration/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "binary-format-engineering",
+      "description": "Build evidence-backed, bounds-checked parsers for unknown binary file formats.",
+      "path": "skills/northstar-re/specialists/binary-format-engineering/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "build-release-engineering",
+      "description": "Reproducible builds, dependencies, release and rollback for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/build-release-engineering/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "checkpoint-recovery",
+      "description": "Create and validate checkpoints for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/checkpoint-recovery/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "ci-cd-engineering",
+      "description": "Reproducible CI/CD for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/ci-cd-engineering/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "client-compatibility-analysis",
+      "description": "Evidence-based compatibility research for any authorized client, library, application or plugin, without assumed product, version, implementation language or graphics API.",
+      "path": "skills/northstar-re/specialists/client-compatibility-analysis/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "client-data-discovery",
+      "description": "Inventory arbitrary client folders and identify actual content without assuming product or release.",
+      "path": "skills/northstar-re/specialists/client-data-discovery/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "client-server-interoperability",
+      "description": "Validate compatibility among owned clients, account services, game services and databases.",
+      "path": "skills/northstar-re/specialists/client-server-interoperability/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "conquer-domain-knowledge",
+      "description": "Optional Conquer Online format and tooling knowledge; no fixed client version.",
+      "path": "skills/northstar-re/specialists/conquer-domain-knowledge/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "cross-version-analysis",
+      "description": "Compare any authorized releases without hardcoded version assumptions.",
+      "path": "skills/northstar-re/specialists/cross-version-analysis/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "custom-tool-development",
+      "description": "Build missing read-only analysis, conversion and validation tools in Visual Studio C++/C#.",
+      "path": "skills/northstar-re/specialists/custom-tool-development/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "data-cryptography-analysis",
+      "description": "Distinguish encoding, compression, encryption and obfuscation; perform authorized documented data recovery.",
+      "path": "skills/northstar-re/specialists/data-cryptography-analysis/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "database-engineering",
+      "description": "Inspect and design owned account/world schemas and safe migrations.",
+      "path": "skills/northstar-re/specialists/database-engineering/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "dependency-mapping",
+      "description": "Dependency graph for client, server, SDK and data for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/dependency-mapping/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "dependency-security",
+      "description": "Review supply chain for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/dependency-security/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "dll-unpacking-triage",
+      "description": "Classify authorized DLL packaging, encryption, compression and managed obfuscation, and validate legitimate owner-provided recovery workflows.",
+      "path": "skills/northstar-re/specialists/dll-unpacking-triage/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "dynamic-runtime-analysis",
+      "description": "Isolated runtime observation of authorized fixtures for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/dynamic-runtime-analysis/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "engineering-documentation",
+      "description": "Document every material action for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/engineering-documentation/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "engineering-observability",
+      "description": "Collect engineering evidence for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/engineering-observability/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "environment-discovery-setup",
+      "description": "Mandatory Windows 11 environment discovery, acquisition planning, installation validation, architecture/workload checks and reproducible toolchain readiness for every NorthStar RE task.",
+      "path": "skills/northstar-re/specialists/environment-discovery-setup/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "game-archive-analysis",
+      "description": "Recognize and safely examine standard archives and custom game containers.",
+      "path": "skills/northstar-re/specialists/game-archive-analysis/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "game-assets-analysis",
+      "description": "Analyze authorized textures, models, animations, maps, UI and media without execution.",
+      "path": "skills/northstar-re/specialists/game-assets-analysis/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "game-server-engineering",
+      "description": "Develop and diagnose owned game/world services in C, C++ and C# without assuming a game version.",
+      "path": "skills/northstar-re/specialists/game-server-engineering/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "ghidra-native-analysis",
+      "description": "Analyze authorized native binaries and firmware with Ghidra disassembly, decompilation and cross references; automate with Java and record evidence without executing unknown inputs.",
+      "path": "skills/northstar-re/specialists/ghidra-native-analysis/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "git-version-control",
+      "description": "Manage version control for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/git-version-control/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "graphics-game-engine-engineering",
+      "description": "Graphics API and asset pipeline diagnosis for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/graphics-game-engine-engineering/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "high-performance-file-processing",
+      "description": "Streaming file inventory and SHA-256 for authorized Windows engineering.",
+      "path": "skills/northstar-re/specialists/high-performance-file-processing/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "ilspy-dotnet-decompilation",
+      "description": "Analyze authorized managed .NET assemblies (C#, VB, F#) with ilspycmd, the official command-line ILSpy decompiler, on Windows 11. Covers triage of types and resources, targeted decompilation of one type or member, IL view, full-project export, single-file bundles, obfuscation signals, and evidence-labelled reporting. Use after reverse-engineering-preflight routes a file to ilspy, and whenever the user mentions ILSpy, ilspycmd, decompiling a .NET DLL or EXE, recovering C# from an assembly, reading IL, Unity Assembly-CSharp.dll, or legacy .NET Framework game clients, even if they do not name the tool.",
+      "path": "skills/northstar-re/specialists/ilspy-dotnet-decompilation/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "independent-code-review",
+      "description": "Review changes independently for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/independent-code-review/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "intelligent-task-orchestrator",
+      "description": "Evidence-based task routing and bounded recovery for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/intelligent-task-orchestrator/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "intelligent-technical-research",
+      "description": "Source evaluation and version-aware reference research for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/intelligent-technical-research/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "large-scale-data-processing",
+      "description": "Incremental index and bounded corpus processing for authorized Windows engineering.",
+      "path": "skills/northstar-re/specialists/large-scale-data-processing/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "native-windows-engineering",
+      "description": "Windows paths, diagnostics and MSVC interoperability for authorized Windows engineering.",
+      "path": "skills/northstar-re/specialists/native-windows-engineering/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "network-cryptography",
+      "description": "Design and validate secure transport and authorized cryptographic fixtures.",
+      "path": "skills/northstar-re/specialists/network-cryptography/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "network-protocol-analysis",
+      "description": "Document authorized client-server transport and message schemas using local fixtures.",
+      "path": "skills/northstar-re/specialists/network-protocol-analysis/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "parallel-computing",
+      "description": "Bounded parallel execution and backpressure for authorized Windows engineering.",
+      "path": "skills/northstar-re/specialists/parallel-computing/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "performance-benchmarking",
+      "description": "Reproducible migration benchmarks for authorized Windows engineering.",
+      "path": "skills/northstar-re/specialists/performance-benchmarking/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "performance-memory-engineering",
+      "description": "Reproducible performance and memory profiling for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/performance-memory-engineering/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "persistent-knowledge-base",
+      "description": "Project-scoped evidence and reusable engineering memory for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/persistent-knowledge-base/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "project-lifecycle-management",
+      "description": "Manage lifecycle and stage gates for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/project-lifecycle-management/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "requirements-traceability",
+      "description": "Trace requirements to evidence for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/requirements-traceability/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "reverse-engineering-preflight",
+      "description": "Mandatory read-only gate before any ILSpy/ilspycmd or Ghidra work on EXE, DLL, ELF, firmware or game-client binaries. Confirms authorization and scope, hashes and classifies the file from its headers, checks the toolchain against official requirements (the JDK Ghidra needs is read from the install itself, ilspycmd needs .NET SDK 10), produces a PASS / NEEDS_REVIEW / BLOCKED decision with JSON and PREFLIGHT.md reports, and routes to the right tool skill. Use whenever the user wants to decompile, disassemble or analyze a binary, asks if ILSpy or Ghidra is ready, or is about to install them, even if they never say \"preflight\".",
+      "path": "skills/northstar-re/specialists/reverse-engineering-preflight/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "root-cause-analysis",
+      "description": "Diagnose root causes for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/root-cause-analysis/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "rust-cpp-interoperability",
+      "description": "Rust, C++ and C# boundary design for authorized Windows engineering.",
+      "path": "skills/northstar-re/specialists/rust-cpp-interoperability/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "rust-systems-engineering",
+      "description": "Rust/Cargo architecture and reproducible builds for authorized Windows engineering.",
+      "path": "skills/northstar-re/specialists/rust-systems-engineering/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "session-continuity",
+      "description": "Resume from persisted state for authorized Windows 11 engineering projects.",
+      "path": "skills/northstar-re/specialists/session-continuity/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "source-code-reconstruction",
+      "description": "Clean-room compatible implementation for authorized software for authorized Windows 11 engineering workflows.",
+      "path": "skills/northstar-re/specialists/source-code-reconstruction/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    },
+    {
+      "id": "visual-studio-dev",
+      "description": "Windows 11 native and managed development with Visual Studio, MSVC C/C++, C#/.NET, MSBuild, CMake, debugging, testing and C++/C# interoperability.",
+      "path": "skills/northstar-re/specialists/visual-studio-dev/SKILL.md",
+      "status": "INSTRUCTION_ONLY; agent and tool execution required"
+    }
+  ]
+}

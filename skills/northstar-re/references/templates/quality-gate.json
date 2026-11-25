@@ -1,0 +1,49 @@
+{
+  "gates": {
+    "requirements": {
+      "status": "pending",
+      "reason": "Replace after actual verification",
+      "evidence": []
+    },
+    "review": {
+      "status": "pending",
+      "reason": "Replace after actual verification",
+      "evidence": []
+    },
+    "build": {
+      "status": "pending",
+      "reason": "Replace after actual verification",
+      "evidence": []
+    },
+    "tests": {
+      "status": "pending",
+      "reason": "Replace after actual verification",
+      "evidence": []
+    },
+    "regression": {
+      "status": "pending",
+      "reason": "Replace after actual verification",
+      "evidence": []
+    },
+    "evidence": {
+      "status": "pending",
+      "reason": "Replace after actual verification",
+      "evidence": []
+    },
+    "documentation": {
+      "status": "pending",
+      "reason": "Replace after actual verification",
+      "evidence": []
+    },
+    "memory": {
+      "status": "pending",
+      "reason": "Replace after actual verification",
+      "evidence": []
+    },
+    "checkpoint": {
+      "status": "pending",
+      "reason": "Replace after actual verification",
+      "evidence": []
+    }
+  }
+}

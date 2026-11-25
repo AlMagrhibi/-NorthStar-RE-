@@ -1,0 +1,1582 @@
+[
+  {
+    "id": "winget",
+    "name": "WinGet",
+    "executables": [
+      "winget.exe"
+    ],
+    "group": "foundation",
+    "official_url": "https://learn.microsoft.com/en-us/windows/package-manager/winget/",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "App Installer; inspect source and package publisher",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/en-us/windows/package-manager/winget/",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "git",
+    "name": "Git",
+    "executables": [
+      "git.exe"
+    ],
+    "group": "development",
+    "official_url": "https://git-scm.com/download/win",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Git.Git candidate; confirm live",
+    "kind": "application",
+    "documentation_url": "https://git-scm.com/download/win",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "vswhere",
+    "name": "Visual Studio Locator",
+    "executables": [
+      "vswhere.exe"
+    ],
+    "group": "development",
+    "official_url": "https://github.com/microsoft/vswhere",
+    "version_args": [
+      "-help"
+    ],
+    "verification": "Visual Studio Installer directory; query instances and workloads",
+    "kind": "application",
+    "documentation_url": "https://github.com/microsoft/vswhere",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "devenv",
+    "name": "Visual Studio IDE",
+    "executables": [
+      "devenv.exe"
+    ],
+    "group": "development",
+    "official_url": "https://visualstudio.microsoft.com/downloads/",
+    "version_args": [],
+    "verification": "Check installed instance and About; not required for Build Tools",
+    "kind": "application",
+    "documentation_url": "https://visualstudio.microsoft.com/downloads/",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "msbuild",
+    "name": "MSBuild",
+    "executables": [
+      "MSBuild.exe"
+    ],
+    "group": "development",
+    "official_url": "https://learn.microsoft.com/visualstudio/msbuild/msbuild",
+    "version_args": [
+      "-version"
+    ],
+    "verification": "Developer PowerShell; build synthetic project",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/visualstudio/msbuild/msbuild",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "msvc",
+    "name": "MSVC compiler",
+    "executables": [
+      "cl.exe"
+    ],
+    "group": "native-dev",
+    "official_url": "https://learn.microsoft.com/cpp/build/building-on-the-command-line",
+    "version_args": [
+      "/?"
+    ],
+    "verification": "Developer PowerShell; compile trusted fixture for target arch",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/cpp/build/building-on-the-command-line",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "link",
+    "name": "MSVC linker",
+    "executables": [
+      "link.exe"
+    ],
+    "group": "native-dev",
+    "official_url": "https://learn.microsoft.com/cpp/build/reference/linker-options",
+    "version_args": [
+      "/?"
+    ],
+    "verification": "Verify with trusted fixture",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/cpp/build/reference/linker-options",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "dumpbin",
+    "name": "DUMPBIN",
+    "executables": [
+      "dumpbin.exe"
+    ],
+    "group": "native-analysis",
+    "official_url": "https://learn.microsoft.com/cpp/build/reference/dumpbin-reference",
+    "version_args": [
+      "/?"
+    ],
+    "verification": "Developer PowerShell; inspect trusted PE fixture",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/cpp/build/reference/dumpbin-reference",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "cmake",
+    "name": "CMake",
+    "executables": [
+      "cmake.exe"
+    ],
+    "group": "native-dev",
+    "official_url": "https://cmake.org/download/",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Validate project presets",
+    "kind": "application",
+    "documentation_url": "https://cmake.org/download/",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "ninja",
+    "name": "Ninja",
+    "executables": [
+      "ninja.exe"
+    ],
+    "group": "native-dev",
+    "official_url": "https://github.com/ninja-build/ninja/releases",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Optional generator",
+    "kind": "application",
+    "documentation_url": "https://github.com/ninja-build/ninja/releases",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "dotnet",
+    "name": ".NET SDK/runtime",
+    "executables": [
+      "dotnet.exe"
+    ],
+    "group": "managed-dev",
+    "official_url": "https://dotnet.microsoft.com/download",
+    "version_args": [
+      "--info"
+    ],
+    "verification": "Inspect --list-sdks and --list-runtimes, project global.json",
+    "kind": "application",
+    "documentation_url": "https://dotnet.microsoft.com/download",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "ilspy",
+    "name": "ILSpy GUI",
+    "executables": [
+      "ILSpy.exe"
+    ],
+    "group": "managed-analysis",
+    "official_url": "https://github.com/icsharpcode/ILSpy/releases",
+    "version_args": [],
+    "verification": "About/version and known managed fixture",
+    "kind": "application",
+    "documentation_url": "https://github.com/icsharpcode/ILSpy/releases",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "ilspycmd",
+    "name": "ILSpy CLI",
+    "executables": [
+      "ilspycmd.exe"
+    ],
+    "group": "managed-analysis",
+    "official_url": "https://www.nuget.org/packages/ilspycmd",
+    "version_args": [
+      "--disable-updatecheck",
+      "-v"
+    ],
+    "verification": "Pin compatible release; use installed help",
+    "kind": "application",
+    "documentation_url": "https://www.nuget.org/packages/ilspycmd",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "ildasm",
+    "name": "IL Disassembler",
+    "executables": [
+      "ildasm.exe"
+    ],
+    "group": "managed-analysis",
+    "official_url": "https://learn.microsoft.com/dotnet/framework/tools/ildasm-exe-il-disassembler",
+    "version_args": [
+      "/?"
+    ],
+    "verification": "Optional SDK tool; compare IL",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/dotnet/framework/tools/ildasm-exe-il-disassembler",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "java",
+    "name": "Java runtime",
+    "executables": [
+      "java.exe"
+    ],
+    "group": "native-analysis",
+    "official_url": "https://adoptium.net/",
+    "version_args": [
+      "-version"
+    ],
+    "verification": "Match Ghidra release requirement",
+    "kind": "application",
+    "documentation_url": "https://adoptium.net/",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "javac",
+    "name": "Java compiler",
+    "executables": [
+      "javac.exe"
+    ],
+    "group": "native-analysis",
+    "official_url": "https://adoptium.net/",
+    "version_args": [
+      "-version"
+    ],
+    "verification": "Full JDK matching Java runtime",
+    "kind": "application",
+    "documentation_url": "https://adoptium.net/",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "ghidra",
+    "name": "Ghidra",
+    "executables": [
+      "ghidraRun.bat"
+    ],
+    "group": "native-analysis",
+    "official_url": "https://github.com/NationalSecurityAgency/ghidra/releases",
+    "version_args": [],
+    "verification": "Read application.properties and installed docs; trusted fixture headless",
+    "kind": "application",
+    "documentation_url": "https://github.com/NationalSecurityAgency/ghidra/releases",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "ghidra-headless",
+    "name": "Ghidra headless",
+    "executables": [
+      "analyzeHeadless.bat"
+    ],
+    "group": "native-analysis",
+    "official_url": "https://github.com/NationalSecurityAgency/ghidra",
+    "version_args": [],
+    "verification": "Use local help and known fixture",
+    "kind": "application",
+    "documentation_url": "https://github.com/NationalSecurityAgency/ghidra",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "die",
+    "name": "Detect It Easy",
+    "executables": [
+      "die.exe",
+      "diec.exe"
+    ],
+    "group": "dll-triage",
+    "official_url": "https://github.com/horsicq/Detect-It-Easy/releases",
+    "version_args": [],
+    "verification": "Check release/build and signature scan on synthetic fixture",
+    "kind": "application",
+    "documentation_url": "https://github.com/horsicq/Detect-It-Easy/releases",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "sigcheck",
+    "name": "Sigcheck",
+    "executables": [
+      "sigcheck.exe",
+      "sigcheck64.exe",
+      "sigcheck64a.exe"
+    ],
+    "group": "dll-triage",
+    "official_url": "https://learn.microsoft.com/sysinternals/downloads/sigcheck",
+    "version_args": [
+      "-?"
+    ],
+    "verification": "Offline signature inspection; no VirusTotal upload",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/sysinternals/downloads/sigcheck",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "pe-bear",
+    "name": "PE-bear",
+    "executables": [
+      "PE-bear.exe"
+    ],
+    "group": "dll-triage",
+    "official_url": "https://github.com/hasherezade/pe-bear/releases",
+    "version_args": [],
+    "verification": "Optional static PE viewer, verify About and fixture",
+    "kind": "application",
+    "documentation_url": "https://github.com/hasherezade/pe-bear/releases",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "dependencies",
+    "name": "Dependencies",
+    "executables": [
+      "DependenciesGui.exe",
+      "Dependencies.exe"
+    ],
+    "group": "native-analysis",
+    "official_url": "https://github.com/lucasg/Dependencies/releases",
+    "version_args": [],
+    "verification": "Optional import graph; static only, no profiling/loading target",
+    "kind": "application",
+    "documentation_url": "https://github.com/lucasg/Dependencies/releases",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "windbg",
+    "name": "WinDbg",
+    "executables": [
+      "WinDbgX.exe",
+      "windbg.exe"
+    ],
+    "group": "debugging",
+    "official_url": "https://learn.microsoft.com/windows-hardware/drivers/debugger/",
+    "version_args": [],
+    "verification": "Trusted dump or owned fixture; no unknown execution",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/windows-hardware/drivers/debugger/",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "procmon",
+    "name": "Process Monitor",
+    "executables": [
+      "Procmon.exe",
+      "Procmon64.exe"
+    ],
+    "group": "debugging",
+    "official_url": "https://learn.microsoft.com/sysinternals/downloads/procmon",
+    "version_args": [],
+    "verification": "Optional trusted diagnostic; approval for driver/elevation",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/sysinternals/downloads/procmon",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "sandbox",
+    "name": "Windows Sandbox",
+    "executables": [
+      "WindowsSandbox.exe"
+    ],
+    "group": "isolation",
+    "official_url": "https://learn.microsoft.com/windows/security/application-security/application-isolation/windows-sandbox/",
+    "version_args": [],
+    "verification": "Feature presence is not isolation proof; verify configuration",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/windows/security/application-security/application-isolation/windows-sandbox/",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "ctest",
+    "name": "CTest",
+    "executables": [
+      "ctest.exe"
+    ],
+    "group": "native-dev",
+    "official_url": "https://cmake.org/cmake/help/latest/manual/ctest.1.html",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Run tests only for trusted source",
+    "kind": "application",
+    "documentation_url": "https://cmake.org/cmake/help/latest/manual/ctest.1.html",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "vstest",
+    "name": "Visual Studio Test",
+    "executables": [
+      "vstest.console.exe"
+    ],
+    "group": "managed-dev",
+    "official_url": "https://learn.microsoft.com/visualstudio/test/vstest-console-options",
+    "version_args": [
+      "/?"
+    ],
+    "verification": "Legacy or VS test workflows",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/visualstudio/test/vstest-console-options",
+    "acquisition": "Follow setup runbook; validate exact package and publisher before installing."
+  },
+  {
+    "id": "imhex",
+    "name": "ImHex",
+    "executables": [
+      "imhex.exe"
+    ],
+    "group": "binary",
+    "official_url": "https://github.com/WerWolv/ImHex",
+    "documentation_url": "https://docs.werwolv.net/imhex",
+    "version_args": [],
+    "verification": "Open a synthetic binary read-only; inspect offsets, bytes, entropy and an audited local pattern.",
+    "kind": "application",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "kaitai",
+    "name": "Kaitai Struct Compiler",
+    "executables": [
+      "kaitai-struct-compiler.bat",
+      "kaitai-struct-compiler.exe",
+      "kaitai-struct-compiler"
+    ],
+    "group": "binary",
+    "official_url": "https://kaitai.io/",
+    "documentation_url": "https://doc.kaitai.io/user_guide",
+    "version_args": [],
+    "verification": "Compile an original minimal .ksy to C# or C++ and parse valid/truncated fixtures.",
+    "kind": "application",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "texconv",
+    "name": "DirectXTex texconv",
+    "executables": [
+      "texconv.exe"
+    ],
+    "group": "assets",
+    "official_url": "https://github.com/microsoft/DirectXTex",
+    "documentation_url": "https://github.com/microsoft/DirectXTex/wiki/texconv",
+    "version_args": [],
+    "verification": "Convert an owned test DDS to PNG in scratch; check dimensions and output.",
+    "kind": "application",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "texdiag",
+    "name": "DirectXTex texdiag",
+    "executables": [
+      "texdiag.exe"
+    ],
+    "group": "assets",
+    "official_url": "https://github.com/microsoft/DirectXTex",
+    "documentation_url": "https://github.com/microsoft/DirectXTex/wiki",
+    "version_args": [],
+    "verification": "Inspect metadata of a known DDS fixture; compare dimensions, format, mip count.",
+    "kind": "application",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "7zip",
+    "name": "7-Zip",
+    "executables": [
+      "7z.exe",
+      "7za.exe",
+      "7zz.exe"
+    ],
+    "group": "archive",
+    "official_url": "https://www.7-zip.org/",
+    "documentation_url": "https://www.7-zip.org/faq.html",
+    "version_args": [],
+    "verification": "List and test a synthetic archive with installed CLI help; check results without extraction.",
+    "kind": "application",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "resource-hacker",
+    "name": "Resource Hacker",
+    "executables": [
+      "ResourceHacker.exe"
+    ],
+    "group": "binary",
+    "official_url": "https://www.angusj.com/resourcehacker/",
+    "documentation_url": "https://www.angusj.com/resourcehacker/",
+    "version_args": [],
+    "verification": "Open an owned PE fixture and compare version/icon resources to known values.",
+    "kind": "application",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "hxd",
+    "name": "HxD",
+    "executables": [
+      "HxD.exe",
+      "HxD64.exe"
+    ],
+    "group": "binary",
+    "official_url": "https://mh-nexus.de/en/hxd/",
+    "documentation_url": "https://mh-nexus.de/en/hxd/",
+    "version_args": [],
+    "verification": "Open a synthetic file read-only and verify byte offsets and selected range.",
+    "kind": "application",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "jpexs",
+    "name": "JPEXS Free Flash Decompiler",
+    "executables": [
+      "ffdec.exe",
+      "ffdec.bat",
+      "ffdec.jar"
+    ],
+    "group": "assets",
+    "official_url": "https://github.com/jindrapetrik/jpexs-decompiler",
+    "documentation_url": "https://github.com/jindrapetrik/jpexs-decompiler/wiki/Commandline-arguments",
+    "version_args": [],
+    "verification": "Inspect tags in a trusted SWF without playback or script execution; export permitted resources to scratch.",
+    "kind": "application",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "conquer-wiki",
+    "name": "Conquer Online Development Wiki",
+    "executables": [],
+    "group": "domain-reference",
+    "official_url": "https://conquer-online.github.io/wiki/",
+    "documentation_url": "https://conquer-online.github.io/wiki/files/formats/dat.html",
+    "version_args": [],
+    "verification": "Reference only; record exact page, date and documented variant; compare to sample evidence.",
+    "kind": "reference",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "co2-core-dll",
+    "name": "CO2 Core DLL",
+    "executables": [],
+    "group": "community-source",
+    "official_url": "https://github.com/conquer-online/co2_core_dll",
+    "documentation_url": "https://github.com/conquer-online/co2_core_dll",
+    "version_args": [],
+    "verification": "Source reference; review license, dependencies, commit and relevant file-format code before considering a build; no protection bypass.",
+    "kind": "source",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "conquer-tools-kit",
+    "name": "ConquerToolsKit",
+    "executables": [],
+    "group": "community-source",
+    "official_url": "https://github.com/darkfoxdeveloper/ConquerToolsKit",
+    "documentation_url": "https://github.com/darkfoxdeveloper/ConquerToolsKit",
+    "version_args": [],
+    "verification": "Review individual utilities, license and source; test read-only on owned fixtures; do not run bundled unknown executables.",
+    "kind": "source",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "c3studio",
+    "name": "C3Studio",
+    "executables": [
+      "C3Studio.exe"
+    ],
+    "group": "community-source",
+    "official_url": "https://github.com/abdouthematrix/C3Studio",
+    "documentation_url": "https://github.com/abdouthematrix/C3Studio",
+    "version_args": [],
+    "verification": "Review project requirements, license and source; verify display of an owned C3 fixture in isolated environment.",
+    "kind": "source",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "tiled2dmap",
+    "name": "Tiled2Dmap",
+    "executables": [
+      "Tiled2Dmap.exe"
+    ],
+    "group": "community-source",
+    "official_url": "https://github.com/SantasCode/Tiled2Dmap",
+    "documentation_url": "https://github.com/SantasCode/Tiled2Dmap",
+    "version_args": [],
+    "verification": "Review project and dependency paths (including 7z library); verify map dimensions on an authorized fixture.",
+    "kind": "source",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "tiled",
+    "name": "Tiled Map Editor",
+    "executables": [
+      "tiled.exe"
+    ],
+    "group": "assets",
+    "official_url": "https://www.mapeditor.org/",
+    "documentation_url": "https://doc.mapeditor.org/",
+    "version_args": [],
+    "verification": "Open a synthetic TMX map; validate tile dimensions and layer count.",
+    "kind": "application",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "openssl",
+    "name": "OpenSSL",
+    "executables": [
+      "openssl.exe"
+    ],
+    "group": "crypto",
+    "official_url": "https://openssl-library.org/",
+    "documentation_url": "https://docs.openssl.org/",
+    "version_args": [],
+    "verification": "Verify provenance of Windows distribution; compare digest of synthetic data against known answer; use documented cryptography only with authorized keys.",
+    "kind": "application",
+    "acquisition": "Review upstream documentation, license and dependencies; obtain approved official release or audited source; do not assume a WinGet ID."
+  },
+  {
+    "id": "wireshark",
+    "name": "Wireshark",
+    "executables": [
+      "Wireshark.exe"
+    ],
+    "group": "network",
+    "official_url": "https://www.wireshark.org/download.html",
+    "documentation_url": "https://www.wireshark.org/docs/wsug_html_chunked/",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Open sanitized offline synthetic capture; no live capture by default.",
+    "kind": "application",
+    "acquisition": "Confirm exact source, publisher, compatibility and scoped approval; no automatic installation."
+  },
+  {
+    "id": "tshark",
+    "name": "TShark",
+    "executables": [
+      "tshark.exe"
+    ],
+    "group": "network",
+    "official_url": "https://www.wireshark.org/download.html",
+    "documentation_url": "https://www.wireshark.org/docs/man-pages/tshark.html",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Read sanitized pcapng fixture; verify frame count.",
+    "kind": "application",
+    "acquisition": "Confirm exact source, publisher, compatibility and scoped approval; no automatic installation."
+  },
+  {
+    "id": "pktmon",
+    "name": "Windows Packet Monitor",
+    "executables": [
+      "pktmon.exe"
+    ],
+    "group": "network",
+    "official_url": "https://learn.microsoft.com/en-us/windows-server/networking/technologies/pktmon/pktmon",
+    "documentation_url": "https://learn.microsoft.com/en-us/windows-server/networking/technologies/pktmon/pktmon",
+    "version_args": [
+      "help"
+    ],
+    "verification": "Built-in candidate; help only; capture needs scoped approval.",
+    "kind": "application",
+    "acquisition": "Confirm exact source, publisher, compatibility and scoped approval; no automatic installation."
+  },
+  {
+    "id": "sqlite",
+    "name": "SQLite CLI",
+    "executables": [
+      "sqlite3.exe"
+    ],
+    "group": "database",
+    "official_url": "https://www.sqlite.org/download.html",
+    "documentation_url": "https://www.sqlite.org/cli.html",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "In-memory SELECT 1 fixture.",
+    "kind": "application",
+    "acquisition": "Confirm exact source, publisher, compatibility and scoped approval; no automatic installation."
+  },
+  {
+    "id": "mysql",
+    "name": "MySQL client",
+    "executables": [
+      "mysql.exe"
+    ],
+    "group": "database",
+    "official_url": "https://dev.mysql.com/downloads/mysql/",
+    "documentation_url": "https://dev.mysql.com/doc/refman/8.4/en/windows-installation.html",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Check variant and connect only to disposable DB.",
+    "kind": "application",
+    "acquisition": "Confirm exact source, publisher, compatibility and scoped approval; no automatic installation."
+  },
+  {
+    "id": "mysqlsh",
+    "name": "MySQL Shell",
+    "executables": [
+      "mysqlsh.exe"
+    ],
+    "group": "database",
+    "official_url": "https://dev.mysql.com/downloads/shell/",
+    "documentation_url": "https://dev.mysql.com/doc/mysql-shell/en/",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Verify version and synthetic SELECT 1.",
+    "kind": "application",
+    "acquisition": "Confirm exact source, publisher, compatibility and scoped approval; no automatic installation."
+  },
+  {
+    "id": "mysql-workbench",
+    "name": "MySQL Workbench",
+    "executables": [
+      "MySQLWorkbench.exe"
+    ],
+    "group": "database",
+    "official_url": "https://dev.mysql.com/downloads/workbench/",
+    "documentation_url": "https://dev.mysql.com/doc/workbench/en/",
+    "version_args": [],
+    "verification": "Confirm About and disposable DB connection.",
+    "kind": "application",
+    "acquisition": "Confirm exact source, publisher, compatibility and scoped approval; no automatic installation."
+  },
+  {
+    "id": "sqlcmd",
+    "name": "SQL Server sqlcmd",
+    "executables": [
+      "sqlcmd.exe"
+    ],
+    "group": "database",
+    "official_url": "https://learn.microsoft.com/en-us/sql/tools/sqlcmd/sqlcmd-download-install",
+    "documentation_url": "https://learn.microsoft.com/en-us/sql/tools/sqlcmd/sqlcmd-download-install",
+    "version_args": [
+      "-?"
+    ],
+    "verification": "Identify variant, verify on disposable instance.",
+    "kind": "application",
+    "acquisition": "Confirm exact source, publisher, compatibility and scoped approval; no automatic installation."
+  },
+  {
+    "id": "ssms",
+    "name": "SQL Server Management Studio",
+    "executables": [
+      "Ssms.exe"
+    ],
+    "group": "database",
+    "official_url": "https://learn.microsoft.com/en-us/ssms/install/install",
+    "documentation_url": "https://learn.microsoft.com/en-us/ssms/",
+    "version_args": [],
+    "verification": "Confirm About and disposable DB connection.",
+    "kind": "application",
+    "acquisition": "Confirm exact source, publisher, compatibility and scoped approval; no automatic installation."
+  },
+  {
+    "id": "psql",
+    "name": "PostgreSQL psql",
+    "executables": [
+      "psql.exe"
+    ],
+    "group": "database",
+    "official_url": "https://www.postgresql.org/download/windows/",
+    "documentation_url": "https://www.postgresql.org/docs/current/app-psql.html",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Connect only to disposable test DB.",
+    "kind": "application",
+    "acquisition": "Confirm exact source, publisher, compatibility and scoped approval; no automatic installation."
+  },
+  {
+    "id": "winsock",
+    "name": "Windows SDK Winsock",
+    "executables": [],
+    "group": "network",
+    "official_url": "https://learn.microsoft.com/en-us/windows/win32/winsock/getting-started-with-winsock",
+    "documentation_url": "https://learn.microsoft.com/en-us/windows/win32/winsock/getting-started-with-winsock",
+    "version_args": [],
+    "verification": "Reference; verify SDK headers and compile owned loopback fixture.",
+    "kind": "reference",
+    "acquisition": "Documentation only; verify dependent SDK/runtime separately."
+  },
+  {
+    "id": "aspnet-identity",
+    "name": "ASP.NET Core Identity",
+    "executables": [],
+    "group": "authentication",
+    "official_url": "https://learn.microsoft.com/en-us/aspnet/core/security/authentication/identity",
+    "documentation_url": "https://learn.microsoft.com/en-us/aspnet/core/security/authentication/identity",
+    "version_args": [],
+    "verification": "Reference; verify matching framework and synthetic account tests.",
+    "kind": "reference",
+    "acquisition": "Documentation only; verify dependent SDK/runtime separately."
+  },
+  {
+    "id": "sslstream",
+    "name": ".NET SslStream",
+    "executables": [],
+    "group": "crypto",
+    "official_url": "https://learn.microsoft.com/en-us/dotnet/api/system.net.security.sslstream",
+    "documentation_url": "https://learn.microsoft.com/en-us/dotnet/api/system.net.security.sslstream",
+    "version_args": [],
+    "verification": "Reference; verify local trusted TLS fixture.",
+    "kind": "reference",
+    "acquisition": "Documentation only; verify dependent SDK/runtime separately."
+  },
+  {
+    "id": "windows-cng",
+    "name": "Windows Cryptography API: Next Generation",
+    "executables": [],
+    "group": "crypto",
+    "official_url": "https://learn.microsoft.com/en-us/windows/win32/seccng/cng-portal",
+    "documentation_url": "https://learn.microsoft.com/en-us/windows/win32/seccng/cng-portal",
+    "version_args": [],
+    "verification": "Reference; verify SDK and known-answer synthetic fixture.",
+    "kind": "reference",
+    "acquisition": "Documentation only; verify dependent SDK/runtime separately."
+  },
+  {
+    "id": "owasp-auth",
+    "name": "OWASP Authentication Cheat Sheet",
+    "executables": [],
+    "group": "authentication",
+    "official_url": "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html",
+    "documentation_url": "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html",
+    "version_args": [],
+    "verification": "Reference; review controls against owned service.",
+    "kind": "reference",
+    "acquisition": "Documentation only; verify dependent SDK/runtime separately."
+  },
+  {
+    "id": "x64dbg",
+    "name": "x64dbg",
+    "executables": [
+      "x64dbg.exe",
+      "x32dbg.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://x64dbg.com/",
+    "version_args": [],
+    "verification": "Check signed or release-hashed distribution, debug a locally built arithmetic fixture in an isolated guest.",
+    "kind": "application",
+    "documentation_url": "https://help.x64dbg.com/en/latest/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "ida-free",
+    "name": "IDA Free",
+    "executables": [
+      "ida.exe",
+      "ida64.exe",
+      "idafree.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://hex-rays.com/ida-free",
+    "version_args": [],
+    "verification": "Confirm edition, licensing and offline restrictions; inspect owned arithmetic fixture without uploading.",
+    "kind": "application",
+    "documentation_url": "https://docs.hex-rays.com/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "binary-ninja",
+    "name": "Binary Ninja",
+    "executables": [
+      "binaryninja.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://binary.ninja/",
+    "version_args": [],
+    "verification": "Confirm edition and local-only processing; open locally built fixture and compare symbols.",
+    "kind": "application",
+    "documentation_url": "https://docs.binary.ninja/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "rizin",
+    "name": "Rizin",
+    "executables": [
+      "rizin.exe",
+      "rz-bin.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://rizin.re/",
+    "version_args": [],
+    "verification": "Check version and identify architecture of known PE fixture.",
+    "kind": "application",
+    "documentation_url": "https://book.rizin.re/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "cutter",
+    "name": "Cutter",
+    "executables": [
+      "cutter.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://cutter.re/",
+    "version_args": [],
+    "verification": "Open known PE fixture read-only; verify architecture and sections.",
+    "kind": "application",
+    "documentation_url": "https://cutter.re/docs/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "diaphora",
+    "name": "Diaphora",
+    "executables": [],
+    "group": "engineering-v7",
+    "official_url": "https://github.com/joxeankoret/diaphora",
+    "version_args": [],
+    "verification": "Check IDA edition and native tooling compatibility; compare two locally built versions.",
+    "kind": "source",
+    "documentation_url": "https://github.com/joxeankoret/diaphora",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "dnspyex",
+    "name": "dnSpyEx",
+    "executables": [
+      "dnSpy.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://github.com/dnSpyEx/dnSpy",
+    "version_args": [],
+    "verification": "Inspect a locally built managed assembly; debug only the owned fixture.",
+    "kind": "application",
+    "documentation_url": "https://github.com/dnSpyEx/dnSpy/wiki",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "pestudio",
+    "name": "PEStudio",
+    "executables": [
+      "pestudio.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://www.winitor.com/",
+    "version_args": [],
+    "verification": "Open known PE fixture offline; compare imports and sections; verify edition.",
+    "kind": "application",
+    "documentation_url": "https://www.winitor.com/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "yara",
+    "name": "YARA",
+    "executables": [
+      "yara.exe",
+      "yarac.exe",
+      "yara64.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://github.com/VirusTotal/yara",
+    "version_args": [],
+    "verification": "Match a benign synthetic marker against one positive and one negative fixture.",
+    "kind": "application",
+    "documentation_url": "https://yara.readthedocs.io/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "api-monitor",
+    "name": "API Monitor",
+    "executables": [
+      "apimonitor-x86.exe",
+      "apimonitor-x64.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://www.rohitab.com/apimonitor",
+    "version_args": [],
+    "verification": "Confirm current Windows compatibility; observe only owned synthetic test process.",
+    "kind": "application",
+    "documentation_url": "https://www.rohitab.com/apimonitor",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "process-explorer",
+    "name": "Process Explorer",
+    "executables": [
+      "procexp.exe",
+      "procexp64.exe",
+      "procexp64a.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://learn.microsoft.com/sysinternals/downloads/process-explorer",
+    "version_args": [],
+    "verification": "Observe own fixture process and expected modules.",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/sysinternals/downloads/process-explorer",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "winobj",
+    "name": "WinObj",
+    "executables": [
+      "Winobj.exe",
+      "Winobj64.exe",
+      "Winobj64a.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://learn.microsoft.com/sysinternals/downloads/winobj",
+    "version_args": [],
+    "verification": "Read-only inspect object namespace in disposable lab.",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/sysinternals/downloads/winobj",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "renderdoc",
+    "name": "RenderDoc",
+    "executables": [
+      "qrenderdoc.exe",
+      "renderdoccmd.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://renderdoc.org/",
+    "version_args": [],
+    "verification": "Capture a self-built triangle demo with no external service.",
+    "kind": "application",
+    "documentation_url": "https://renderdoc.org/docs/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "pix",
+    "name": "PIX on Windows",
+    "executables": [
+      "WinPixGpuCapturer.exe",
+      "PIX.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://devblogs.microsoft.com/pix/",
+    "version_args": [],
+    "verification": "Confirm compatible GPU/API; capture owned Direct3D demo.",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/windows/pix",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "wpa",
+    "name": "Windows Performance Analyzer",
+    "executables": [
+      "wpa.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://learn.microsoft.com/windows-hardware/test/wpt/",
+    "version_args": [],
+    "verification": "Open an ETL trace generated by a local benchmark; validate time units.",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/windows-hardware/test/wpt/windows-performance-analyzer",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "wpr",
+    "name": "Windows Performance Recorder",
+    "executables": [
+      "wpr.exe",
+      "wprui.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://learn.microsoft.com/windows-hardware/test/wpt/",
+    "version_args": [],
+    "verification": "Record bounded local test workload; stop capture and review data sensitivity.",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/windows-hardware/test/wpt/windows-performance-recorder",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "asan",
+    "name": "AddressSanitizer",
+    "executables": [],
+    "group": "engineering-v7",
+    "official_url": "https://learn.microsoft.com/cpp/sanitizers/asan",
+    "version_args": [],
+    "verification": "Compile a clean owned fixture with sanitizer enabled; check compiler and architecture support.",
+    "kind": "reference",
+    "documentation_url": "https://learn.microsoft.com/cpp/sanitizers/asan",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "vcpkg",
+    "name": "vcpkg",
+    "executables": [
+      "vcpkg.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://github.com/microsoft/vcpkg",
+    "version_args": [],
+    "verification": "Check baseline and manifest; restore a reviewed dependency in disposable project.",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/vcpkg/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "nuget",
+    "name": "NuGet",
+    "executables": [
+      "nuget.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://www.nuget.org/",
+    "version_args": [],
+    "verification": "Check nuget.exe or dotnet nuget; restore reviewed locked dependency in fixture.",
+    "kind": "application",
+    "documentation_url": "https://learn.microsoft.com/nuget/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "googletest",
+    "name": "GoogleTest",
+    "executables": [],
+    "group": "engineering-v7",
+    "official_url": "https://github.com/google/googletest",
+    "version_args": [],
+    "verification": "Build and run positive/negative assertions in owned test project.",
+    "kind": "source",
+    "documentation_url": "https://google.github.io/googletest/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "xunit",
+    "name": "xUnit.net",
+    "executables": [],
+    "group": "engineering-v7",
+    "official_url": "https://github.com/xunit/xunit",
+    "version_args": [],
+    "verification": "Restore reviewed package, run dotnet test on a minimal test project.",
+    "kind": "source",
+    "documentation_url": "https://xunit.net/docs/getting-started",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "llvm-clang",
+    "name": "LLVM / Clang",
+    "executables": [
+      "clang.exe",
+      "clang-cl.exe",
+      "llvm-readobj.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://llvm.org/",
+    "version_args": [],
+    "verification": "Verify toolchain version and target; compile a small owned source fixture.",
+    "kind": "application",
+    "documentation_url": "https://clang.llvm.org/docs/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "doxygen",
+    "name": "Doxygen",
+    "executables": [
+      "doxygen.exe"
+    ],
+    "group": "engineering-v7",
+    "official_url": "https://www.doxygen.nl/",
+    "version_args": [],
+    "verification": "Generate local documentation from tiny owned project.",
+    "kind": "application",
+    "documentation_url": "https://www.doxygen.nl/manual/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "pe-spec",
+    "name": "Microsoft PE/COFF format",
+    "executables": [],
+    "group": "engineering-v7",
+    "official_url": "https://learn.microsoft.com/windows/win32/debug/pe-format",
+    "version_args": [],
+    "verification": "Cross-check headers and field sizes against known PE fixture.",
+    "kind": "reference",
+    "documentation_url": "https://learn.microsoft.com/windows/win32/debug/pe-format",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "dotnet-diagnostics",
+    "name": ".NET diagnostics",
+    "executables": [],
+    "group": "engineering-v7",
+    "official_url": "https://learn.microsoft.com/dotnet/core/diagnostics/",
+    "version_args": [],
+    "verification": "Collect counters only from owned local test process; avoid secrets and dumps by default.",
+    "kind": "reference",
+    "documentation_url": "https://learn.microsoft.com/dotnet/core/diagnostics/",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "json-schema",
+    "name": "JSON Schema",
+    "executables": [],
+    "group": "engineering-v7",
+    "official_url": "https://json-schema.org/",
+    "version_args": [],
+    "verification": "Validate sample record against schema; reject missing evidence fields.",
+    "kind": "reference",
+    "documentation_url": "https://json-schema.org/learn/getting-started-step-by-step",
+    "acquisition": "Review license, publisher, platform, release integrity and dependencies; use approved acquisition only. Reference/source entries are not standalone installed apps."
+  },
+  {
+    "id": "mermaid",
+    "name": "Mermaid",
+    "executables": [],
+    "group": "engineering-governance",
+    "official_url": "https://mermaid.js.org/",
+    "documentation_url": "https://mermaid.js.org/intro/",
+    "kind": "reference",
+    "version_args": [],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "plantuml",
+    "name": "PlantUML",
+    "executables": [],
+    "group": "engineering-governance",
+    "official_url": "https://plantuml.com/",
+    "documentation_url": "https://plantuml.com/starting",
+    "kind": "reference",
+    "version_args": [],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "graphviz",
+    "name": "Graphviz",
+    "executables": [
+      "dot.exe"
+    ],
+    "group": "engineering-governance",
+    "official_url": "https://graphviz.org/",
+    "documentation_url": "https://graphviz.org/documentation/",
+    "kind": "application",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "docfx",
+    "name": "DocFX",
+    "executables": [
+      "docfx.exe"
+    ],
+    "group": "engineering-governance",
+    "official_url": "https://dotnet.github.io/docfx/",
+    "documentation_url": "https://dotnet.github.io/docfx/",
+    "kind": "application",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "mkdocs",
+    "name": "MkDocs",
+    "executables": [
+      "mkdocs.exe"
+    ],
+    "group": "engineering-governance",
+    "official_url": "https://www.mkdocs.org/",
+    "documentation_url": "https://www.mkdocs.org/getting-started/",
+    "kind": "application",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "markdownlint",
+    "name": "markdownlint-cli",
+    "executables": [
+      "markdownlint.cmd"
+    ],
+    "group": "engineering-governance",
+    "official_url": "https://github.com/igorshubovych/markdownlint-cli",
+    "documentation_url": "https://github.com/igorshubovych/markdownlint-cli",
+    "kind": "application",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "github-actions",
+    "name": "GitHub Actions",
+    "executables": [],
+    "group": "engineering-governance",
+    "official_url": "https://docs.github.com/actions",
+    "documentation_url": "https://docs.github.com/actions",
+    "kind": "reference",
+    "version_args": [],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "cppcheck",
+    "name": "Cppcheck",
+    "executables": [
+      "cppcheck.exe"
+    ],
+    "group": "engineering-governance",
+    "official_url": "https://cppcheck.sourceforge.io/",
+    "documentation_url": "https://cppcheck.sourceforge.io/manual.html",
+    "kind": "application",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "clang-tidy",
+    "name": "Clang-Tidy",
+    "executables": [
+      "clang-tidy.exe"
+    ],
+    "group": "engineering-governance",
+    "official_url": "https://clang.llvm.org/extra/clang-tidy/",
+    "documentation_url": "https://clang.llvm.org/extra/clang-tidy/",
+    "kind": "application",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "sonarqube",
+    "name": "SonarQube",
+    "executables": [],
+    "group": "engineering-governance",
+    "official_url": "https://www.sonarsource.com/products/sonarqube/",
+    "documentation_url": "https://docs.sonarsource.com/",
+    "kind": "reference",
+    "version_args": [],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "coverlet",
+    "name": "Coverlet",
+    "executables": [],
+    "group": "engineering-governance",
+    "official_url": "https://github.com/coverlet-coverage/coverlet",
+    "documentation_url": "https://github.com/coverlet-coverage/coverlet",
+    "kind": "reference",
+    "version_args": [],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "benchmarkdotnet",
+    "name": "BenchmarkDotNet",
+    "executables": [],
+    "group": "engineering-governance",
+    "official_url": "https://benchmarkdotnet.org/",
+    "documentation_url": "https://benchmarkdotnet.org/articles/overview.html",
+    "kind": "reference",
+    "version_args": [],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "google-benchmark",
+    "name": "Google Benchmark",
+    "executables": [],
+    "group": "engineering-governance",
+    "official_url": "https://github.com/google/benchmark",
+    "documentation_url": "https://github.com/google/benchmark",
+    "kind": "source",
+    "version_args": [],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "gitleaks",
+    "name": "Gitleaks",
+    "executables": [
+      "gitleaks.exe"
+    ],
+    "group": "engineering-governance",
+    "official_url": "https://github.com/gitleaks/gitleaks",
+    "documentation_url": "https://github.com/gitleaks/gitleaks",
+    "kind": "application",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "syft",
+    "name": "Syft",
+    "executables": [
+      "syft.exe"
+    ],
+    "group": "engineering-governance",
+    "official_url": "https://github.com/anchore/syft",
+    "documentation_url": "https://github.com/anchore/syft",
+    "kind": "application",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "grype",
+    "name": "Grype",
+    "executables": [
+      "grype.exe"
+    ],
+    "group": "engineering-governance",
+    "official_url": "https://github.com/anchore/grype",
+    "documentation_url": "https://github.com/anchore/grype",
+    "kind": "application",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Confirm upstream provenance, local version and license; test on a synthetic fixture or read reference; no readiness inferred.",
+    "acquisition": "Use official documentation and approved install path; review exact version, publisher and hashes."
+  },
+  {
+    "id": "rustup",
+    "name": "Rustup",
+    "executables": [
+      "rustup.exe"
+    ],
+    "group": "rust",
+    "official_url": "https://rust-lang.org/install",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Review publisher and run trusted fixture; optional tools only when required.",
+    "kind": "application",
+    "documentation_url": "https://rust-lang.github.io/rustup/",
+    "acquisition": "Review source, version, license and dependencies; install only after scoped approval."
+  },
+  {
+    "id": "rustc",
+    "name": "Rust compiler",
+    "executables": [
+      "rustc.exe"
+    ],
+    "group": "rust",
+    "official_url": "https://rust-lang.org/",
+    "version_args": [
+      "-Vv"
+    ],
+    "verification": "Review publisher and run trusted fixture; optional tools only when required.",
+    "kind": "application",
+    "documentation_url": "https://doc.rust-lang.org/rustc/",
+    "acquisition": "Review source, version, license and dependencies; install only after scoped approval."
+  },
+  {
+    "id": "cargo",
+    "name": "Cargo",
+    "executables": [
+      "cargo.exe"
+    ],
+    "group": "rust",
+    "official_url": "https://doc.rust-lang.org/cargo/",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Review publisher and run trusted fixture; optional tools only when required.",
+    "kind": "application",
+    "documentation_url": "https://doc.rust-lang.org/cargo/",
+    "acquisition": "Review source, version, license and dependencies; install only after scoped approval."
+  },
+  {
+    "id": "rustfmt",
+    "name": "Rustfmt",
+    "executables": [
+      "rustfmt.exe"
+    ],
+    "group": "rust",
+    "official_url": "https://github.com/rust-lang/rustfmt",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Review publisher and run trusted fixture; optional tools only when required.",
+    "kind": "application",
+    "documentation_url": "https://github.com/rust-lang/rustfmt",
+    "acquisition": "Review source, version, license and dependencies; install only after scoped approval."
+  },
+  {
+    "id": "clippy",
+    "name": "Clippy",
+    "executables": [
+      "cargo-clippy.exe"
+    ],
+    "group": "rust",
+    "official_url": "https://github.com/rust-lang/rust-clippy",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Review publisher and run trusted fixture; optional tools only when required.",
+    "kind": "application",
+    "documentation_url": "https://doc.rust-lang.org/clippy/",
+    "acquisition": "Review source, version, license and dependencies; install only after scoped approval."
+  },
+  {
+    "id": "cargo-audit",
+    "name": "Cargo audit",
+    "executables": [
+      "cargo-audit.exe"
+    ],
+    "group": "rust",
+    "official_url": "https://github.com/RustSec/rustsec",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Review publisher and run trusted fixture; optional tools only when required.",
+    "kind": "application",
+    "documentation_url": "https://github.com/RustSec/rustsec/tree/main/cargo-audit",
+    "acquisition": "Review source, version, license and dependencies; install only after scoped approval."
+  },
+  {
+    "id": "cargo-deny",
+    "name": "Cargo deny",
+    "executables": [
+      "cargo-deny.exe"
+    ],
+    "group": "rust",
+    "official_url": "https://github.com/EmbarkStudios/cargo-deny",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Review publisher and run trusted fixture; optional tools only when required.",
+    "kind": "application",
+    "documentation_url": "https://embarkstudios.github.io/cargo-deny/",
+    "acquisition": "Review source, version, license and dependencies; install only after scoped approval."
+  },
+  {
+    "id": "criterion",
+    "name": "Criterion benchmark reference",
+    "executables": [],
+    "group": "rust",
+    "official_url": "https://github.com/bheisler/criterion.rs",
+    "version_args": [],
+    "verification": "Review publisher and run trusted fixture; optional tools only when required.",
+    "kind": "reference",
+    "documentation_url": "https://bheisler.github.io/criterion.rs/book/",
+    "acquisition": "Review source, version, license and dependencies; install only after scoped approval."
+  },
+  {
+    "id": "nsre",
+    "name": "NorthStar Native Engine",
+    "executables": [
+      "nsre.exe"
+    ],
+    "group": "foundation",
+    "official_url": "https://github.com/AlMagrhibi/-NorthStar-RE-",
+    "version_args": [
+      "--version"
+    ],
+    "verification": "Installed absolute path; cargo tests and doctor; no fallback",
+    "kind": "application",
+    "documentation_url": "https://github.com/AlMagrhibi/-NorthStar-RE-/blob/main/docs/en/cli.md",
+    "acquisition": "Bundled source; local tested build via installer."
+  }
+]

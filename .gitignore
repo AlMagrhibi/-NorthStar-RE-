@@ -1,0 +1,14 @@
+**/target/
+.northstar/
+**/.northstar/
+.env
+.env.*
+*.sqlite*
+*.db
+*.log
+/dist/
+/reports/
+*.exe
+*.zip
+.DS_Store
+Thumbs.db

@@ -1,0 +1,2 @@
+# Windows native discovery
+Run `nsre doctor` and `nsre tools`; record candidate paths and confirm real versions and fixture tests manually. Compare with tool-catalog.json. For MSVC use Visual Studio Installer and vswhere; find Ghidra through its installed directory and Java version. Do not run unknown executables found in a target directory. Get scoped approval before installation, network access, or elevation. No automatic tool install.

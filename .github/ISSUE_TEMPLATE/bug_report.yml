@@ -1,0 +1,20 @@
+name: Bug report
+description: Report a reproducible framework issue without private data
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: Framework, engine, Windows and agent versions
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction, expected and actual behavior
+      description: Synthetic fixtures only. No credentials, private binaries or project databases.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted command, exit code and evidence

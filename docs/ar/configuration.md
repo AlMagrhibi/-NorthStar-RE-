@@ -1,0 +1,9 @@
+# مرجع الإعداد
+
+[فهرس التوثيق](../README.md) · [English](../en/configuration.md)
+
+## معاملات الإدارة
+تدعم -Action قيم Install وUpdate وDoctor وBuild-Engine وBackup وUninstall وRollback. يحدد -Agent المسار التقليدي للأيجنت، و-SkillRoot مسارًا مطلقًا صريحًا. يعني -NonInteractive أن المستدعي أجاز العملية ووجهتها؛ لا يتجاوز رفض الالتباس أو الملكية. يسمح -AllowDependencyDownload بتنزيل اعتماديات بناء السورس لهذه العملية فقط. يحدد -BackupPath نسخة الاستعادة المركزية.
+
+## الملفات المحلية والمعاملات
+يحفظ registration.json مسارات المهارة والإصدار والبصمات والأيجنت. تحفظ releases نسخ المحرك وbackups نسخ المهارات والتسجيل. يسجل installation.jsonl الأحداث ومسارات محلية خاصة دون مفاتيح؛ لا ترفعها. scan يستخدم --root و--out و--jobs؛ index يضيف --db و--mode؛ export يحدد --run وdiff يحدد --old و--new. أوامر المشروع تحتاج --project ومدخل JSON مراجعا عند اللزوم عبر --input و--reviewed-redacted. لا توجد سياسة تحديث صامت مفعلة.

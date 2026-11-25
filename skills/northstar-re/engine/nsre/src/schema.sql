@@ -1,0 +1,10 @@
+BEGIN IMMEDIATE;
+PRAGMA application_id=1314083397;
+PRAGMA user_version=1;
+CREATE TABLE runs(id INTEGER PRIMARY KEY, root TEXT NOT NULL, mode TEXT NOT NULL CHECK(mode IN ('strict','reuse-metadata')), state TEXT NOT NULL CHECK(state IN ('running','complete','partial')), jobs INTEGER NOT NULL, started TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, finished TEXT, fresh INTEGER, reused INTEGER, bytes INTEGER, errors INTEGER, skipped INTEGER, elapsed_ms INTEGER);
+CREATE TABLE files(run_id INTEGER NOT NULL REFERENCES runs(id), path TEXT NOT NULL, size INTEGER NOT NULL, mtime TEXT NOT NULL, sha256 TEXT NOT NULL, source TEXT NOT NULL CHECK(source IN ('fresh','metadata-cache','error')), error TEXT, PRIMARY KEY(run_id,path)) WITHOUT ROWID;
+CREATE INDEX files_cache_lookup ON files(path,run_id DESC) WHERE source='fresh';
+CREATE INDEX runs_root_lookup ON runs(root,id DESC);
+CREATE TABLE issues(id INTEGER PRIMARY KEY,run_id INTEGER NOT NULL REFERENCES runs(id),path TEXT NOT NULL,kind TEXT NOT NULL,detail TEXT NOT NULL);
+CREATE INDEX issues_run_lookup ON issues(run_id,id);
+COMMIT;

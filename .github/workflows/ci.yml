@@ -1,0 +1,143 @@
+name: NorthStar RE CI
+on:
+  push:
+    branches: [main]
+    tags: ['v11.*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: northstar-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  native:
+    name: Native (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust
+        run: rustup toolchain install 1.91.1 --profile minimal --component rustfmt,clippy
+      - name: Manifests, references, integrity and Python-free policy
+        shell: pwsh
+        run: ./scripts/Validate-Package.ps1 -CheckHashes
+      - name: Build, tests, Clippy and doctor
+        shell: pwsh
+        run: ./scripts/Run-Native-Checks.ps1 -Reports "${{ runner.temp }}/native-reports"
+      - name: Prepare real Windows engine for lifecycle test
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path skills/northstar-re/engine/bin -Force | Out-Null
+          Copy-Item skills/northstar-re/engine/nsre/target/release/nsre.exe skills/northstar-re/engine/bin/nsre.exe
+          ./scripts/Write-Checksums.ps1
+          ./scripts/Test-Installer.ps1 2>&1 | Tee-Object -FilePath "${{ runner.temp }}/native-reports/installer.log"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: evidence-${{ matrix.os }}
+          path: ${{ runner.temp }}/native-reports
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: success() && runner.os == 'Windows'
+        with:
+          name: windows-engine
+          path: skills/northstar-re/engine/nsre/target/release/nsre.exe
+          if-no-files-found: error
+  security:
+    name: Security and licenses
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - run: rustup toolchain install 1.91.1 --profile minimal
+      - run: cargo install cargo-audit --version 0.23.0 --locked
+      - name: Audit locked dependencies and licenses
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "${{ runner.temp }}/security" -Force | Out-Null
+          cargo audit --file skills/northstar-re/engine/nsre/Cargo.lock --json | Set-Content "${{ runner.temp }}/security/audit.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency audit failed' }
+          ./scripts/Check-Licenses.ps1 | Set-Content "${{ runner.temp }}/security/licenses.json"
+          ./scripts/Write-Sbom.ps1 -Output "${{ runner.temp }}/security/sbom.json"
+          ./scripts/Validate-Package.ps1 -CheckHashes
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: security-evidence
+          path: ${{ runner.temp }}/security
+          if-no-files-found: error
+  package:
+    name: Verified Windows distributions
+    needs: [native, security]
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: windows-engine
+          path: skills/northstar-re/engine/nsre/target/release
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: evidence-windows-2022
+          path: ${{ runner.temp }}/release-reports
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: security-evidence
+          path: ${{ runner.temp }}/release-reports
+      - name: Assemble and independently verify both archives
+        shell: pwsh
+        run: ./install/Package-Release.ps1 -Output "${{ runner.temp }}/release-assets" -Reports "${{ runner.temp }}/release-reports"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: verified-release-assets
+          path: ${{ runner.temp }}/release-assets
+          if-no-files-found: error
+  publish:
+    name: Publish authorized candidate
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v11.'))
+    needs: [package]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: verified-release-assets
+          path: release-assets
+      - name: Create release only after all mandatory gates
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $request=Get-Content .github/release-request.json -Raw | ConvertFrom-Json
+          if (!$request.authorized -or $request.tag -notmatch '^v11\.[0-9]+\.[0-9]+-rc\.[0-9]+$') { throw 'No authorized candidate tag' }
+          $tag=if ($env:GITHUB_REF -like 'refs/tags/*') {$env:GITHUB_REF -replace '^refs/tags/',''} else {$request.tag}
+          if ($tag -ne $request.tag) { throw 'Tag not approved by release request' }
+          gh release view $tag --json tagName 2>$null
+          if ($LASTEXITCODE -eq 0) { Write-Host 'Existing release retained; no overwrite'; exit 0 }
+          $manifest=Get-Content release-assets/release-manifest.json -Raw | ConvertFrom-Json
+          if (!$manifest.required_checks_passed -or $manifest.commit -ne $env:GITHUB_SHA -or $manifest.tag -ne $tag) { throw 'Release evidence mismatch' }
+          foreach ($line in Get-Content release-assets/SHA256SUMS.txt) {
+            if ($line -notmatch '^([a-f0-9]{64})  ([A-Za-z0-9._-]+)$') { throw 'Invalid checksum entry' }
+            $hash=$Matches[1]; $name=$Matches[2]
+            if ((Get-FileHash (Join-Path release-assets $name) -Algorithm SHA256).Hash.ToLowerInvariant() -ne $hash) { throw 'Artifact hash mismatch' }
+          }
+          gh release create $tag ./release-assets/* --target $env:GITHUB_SHA --prerelease --title 'NorthStar RE Framework V11 — Release Candidate 1' --notes-file docs/RELEASE-NOTES-AR.md
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
