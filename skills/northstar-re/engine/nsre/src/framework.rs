@@ -664,6 +664,7 @@ fn progress(r: &Path, v: &Value) -> R<Value> {
 pub const COMMANDS: &[&str] = &[
     "doctor",
     "tools",
+    "lab",
     "init",
     "resume",
     "status",
@@ -717,6 +718,11 @@ pub fn command(cmd: &str, args: impl Iterator<Item = OsString>) -> R<bool> {
     } else {
         Value::Null
     };
+    if cmd == "lab" {
+        let result = crate::lab::evaluate(&v)?;
+        println!("{}", serde_json::to_string_pretty(&result)?);
+        return Ok(result["passed"] == true);
+    }
     if cmd == "doctor" || cmd == "tools" {
         println!(
             "{}",

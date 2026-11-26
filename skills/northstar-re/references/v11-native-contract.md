@@ -26,3 +26,5 @@ Use the absolute installed executable. No legacy interpreter or fallback. CLI is
 Read specialist references before routing. Use Java Ghidra scripts and trusted native utilities for full PE/CLR analysis, diagnostics and format parsing; native probe does not replace full preflight. Do not bypass security controls or connect to production services. No project-specific version assumptions. Arabic reports by default.
 
 Development branch note: candidate discovery may expose `source` and `override_env` fields and accept explicit absolute NSRE_TOOL_* paths and bounded environment hints. All results remain unverified; check the actual installed version/contract before relying on this behavior. See [next engineering foundations](next-engineering-foundations.md).
+
+Development candidate: `nsre lab --input FILE --reviewed-redacted` evaluates local JSON checks and does not execute target processes. See [engineering validation lab](engineering-validation-lab.md) for scope and examples. Not present in published RC2.

@@ -29,3 +29,6 @@ Read `references/v10-engineering-engine.md` first for engine capabilities; it su
 
 ## Next engineering foundations (development guidance)
 Read `references/next-engineering-foundations.md` when evaluating framework improvements, semantic indexing, open-format parsers, performance/recovery or host interoperability. Treat planned features as unavailable until verified; do not modify an installed engine or project data automatically.
+
+## Engineering validation lab (development candidate)
+Read `references/engineering-validation-lab.md` for FW-011 through FW-020. Use the lab only when the actual engine exposes it; distinguish local metadata checks from independent runtime evidence. Continue independent tasks while resolving blockers. Preserve originals and record evidence, results, and improvement candidates.
