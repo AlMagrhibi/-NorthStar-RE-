@@ -21,7 +21,8 @@
       "name": "Binary Intelligence",
       "foundation": "existing-probe-and-offline-candidate",
       "batch_operations": [
-        "binary-header"
+        "binary-header",
+        "pe-layout"
       ],
       "complete": false,
       "shared_collect_cli": [

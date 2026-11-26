@@ -108,12 +108,30 @@ fn inspect(root: &Path, task: &Value) -> io::Result<Value> {
         return Err(invalid("file changed during collection"));
     }
     let sha256 = format!("{:x}", digest.finalize());
-    let passed = expected.is_none_or(|value| sha256.eq_ignore_ascii_case(value));
+    let require_pe = match task.get("require_pe_layout") {
+        None => false,
+        Some(value) => value
+            .as_bool()
+            .ok_or_else(|| invalid("require_pe_layout must be boolean"))?,
+    };
+    let pe_layout = if header.starts_with(b"MZ") {
+        match crate::pe::layout(&header, bytes) {
+            Ok(layout) => layout,
+            Err(error) => {
+                json!({"validated":false,"error":error.to_string(),"prefix_bytes":header.len(),"full_format_validated":false})
+            }
+        }
+    } else {
+        Value::Null
+    };
+    let passed = expected.is_none_or(|value| sha256.eq_ignore_ascii_case(value))
+        && (!require_pe || pe_layout["validated"] == true);
     Ok(json!({
         "passed":passed,"path":relative,"bytes":bytes,"sha256":sha256,
         "expected_sha256":expected,"hash_recomputed":true,
         "signature_hint":crate::probe::signature(&header),
         "sample_bytes":header.len(),"sample_entropy_bits":crate::probe::entropy(&header),
+        "pe_layout":pe_layout,"require_pe_layout":require_pe,
         "full_format_validated":false,"source_modified":false
     }))
 }
@@ -182,6 +200,12 @@ pub(crate) fn validate_job(input: &Value, jobs: usize) -> io::Result<()> {
         ));
     }
     for task in input["manifest"]["files"].as_array().unwrap() {
+        if task
+            .get("require_pe_layout")
+            .is_some_and(|v| !v.is_boolean())
+        {
+            return Err(invalid("require_pe_layout must be boolean"));
+        }
         let relative = task["path"]
             .as_str()
             .filter(|s| !s.is_empty() && s.len() <= 4096)
@@ -273,6 +297,36 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pe_layout_requires_real_bounds_without_overstating_hash_evidence() {
+        let dir = std::env::temp_dir().join(format!(
+            "nsre-pe-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&dir).unwrap();
+        let root = normal_dir(&dir).unwrap();
+        fs::write(root.join("x86.exe"), crate::pe::fixture(false)).unwrap();
+        fs::write(root.join("x64.exe"), crate::pe::fixture(true)).unwrap();
+        fs::write(root.join("broken.exe"), b"MZ").unwrap();
+        let manifest = json!({"schema":1,"files":[
+            {"path":"x86.exe","require_pe_layout":true},
+            {"path":"x64.exe","require_pe_layout":true},
+            {"path":"broken.exe","require_pe_layout":true},
+            {"path":"broken.exe"}]});
+        let r = evaluate(&root, &manifest, 2).unwrap();
+        assert_eq!(r["results"][0]["pe_layout"]["architecture"], "x86");
+        assert_eq!(r["results"][1]["pe_layout"]["architecture"], "x64");
+        assert_eq!(r["results"][0]["passed"], true);
+        assert_eq!(r["results"][2]["passed"], false);
+        assert_eq!(r["results"][3]["passed"], true); // hashing MZ bytes is still valid evidence
+        assert_eq!(r["results"][3]["full_format_validated"], false);
+        fs::remove_dir_all(dir).unwrap();
+    }
 
     #[test]
     fn independent_hash_and_scope() {

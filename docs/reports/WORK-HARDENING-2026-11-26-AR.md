@@ -30,3 +30,9 @@
 ## الحدود الحالية
 
 لا تساوي هذه الإضافة اكتمال المحركات الـ12 أو قبول FreePi. جميع complete=false باقية. لا يزال supervision/leases/cancel الجاري وJob Objects والميزانيات المقاسة وUIA/capture واختبارات Windows 11/FreePi غير مكتملة. البيئة المتاحة Linux ولا يوجد اتصال متاح بجهاز Windows للمستخدم؛ لا دليل تفاعلي أو G04/G05 أو تثبيت على جهازه. لا merge أو tag أو نشر إصدار نهائي قبل إغلاق جميع البوابات.
+
+## توسعة Binary Intelligence
+
+أضيف [محلل PE محدود](../architecture/bounded-pe-layout.md) لـPE32/PE32+ وجداول الأقسام وربط فعلي بجامع الملفات وbatch registry. يتحقق من حدود offsets والأقسام والمحاذاة والتداخل، مع اختبارات x86/x64 وtruncation وoverflow وnegative fixtures. خيار require_pe_layout يميز نجاح حساب البصمة عن نجاح تحليل البنية؛ full_format_validated=false محفوظة. فحص Windows يقرأ nsre.exe المبني فعليًا ويقارن SHA-256 مستقلًا. ليست هذه imports/exports/CLR أو Authenticode أو قبول loader، ولا يغلق المحرك كاملًا.
+
+على السورس المدمج بعد `3c61558` وتصحيحات النطاق ثم إضافة PE: نجحت محليًا Rust 1.91.1 وfmt/check/test/Clippy/release؛ 26 unit + 3 engine_cli + 2 framework_cli + 5 queue_cli + 4 security_regression = 40 اختبارًا فريدًا على Linux. منها اختبار reparse إضافي خاص بـUnix؛ لا تنقل هذا العدد إلى Windows دون سجله. فحوص الإصدار والسطح التفاعلي ما زالت مستقلة.

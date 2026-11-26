@@ -233,7 +233,7 @@ fn content_digest(v: &Value) -> io::Result<Value> {
     }))
 }
 
-fn binary_header(v: &Value) -> io::Result<Value> {
+fn hex_bytes(v: &Value) -> io::Result<Vec<u8>> {
     let hex = text(v, "hex")?;
     if hex.len() > 131072
         || !hex.len().is_multiple_of(2)
@@ -241,10 +241,14 @@ fn binary_header(v: &Value) -> io::Result<Value> {
     {
         return Err(invalid("expected bounded even-length hexadecimal input"));
     }
-    let bytes = (0..hex.len())
+    (0..hex.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).map_err(io::Error::other))
-        .collect::<io::Result<Vec<_>>>()?;
+        .collect::<io::Result<Vec<_>>>()
+}
+
+fn binary_header(v: &Value) -> io::Result<Value> {
+    let bytes = hex_bytes(v)?;
     let kind = if bytes.starts_with(b"MZ") {
         "dos-mz"
     } else if bytes.starts_with(b"PK\x03\x04") {
@@ -361,6 +365,10 @@ pub fn evaluate(v: &Value) -> io::Result<Value> {
     match text(v, "operation")? {
         "content-digest" => content_digest(v),
         "binary-header" => binary_header(v),
+        "pe-layout" => {
+            let bytes = hex_bytes(v)?;
+            crate::pe::layout(&bytes, bytes.len() as u64)
+        }
         "semantic-reachability" => semantic_graph(v),
         "checkpoint-compare" => checkpoint_compare(v),
         "load-report" => metric_summary(v, "latency_samples"),

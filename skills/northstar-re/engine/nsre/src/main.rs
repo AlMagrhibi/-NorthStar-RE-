@@ -6,6 +6,7 @@ mod desktop;
 mod framework;
 mod index;
 mod lab;
+mod pe;
 mod probe;
 mod queue;
 mod rpc;
