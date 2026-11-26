@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "scope": "candidate capability registry; batch operations are offline only",
+  "engines": [
+    {
+      "id": "native-core",
+      "name": "Native Core",
+      "foundation": "existing-cli",
+      "batch_operations": [],
+      "complete": false
+    },
+    {
+      "id": "binary-intelligence",
+      "name": "Binary Intelligence",
+      "foundation": "existing-probe",
+      "batch_operations": [],
+      "complete": false
+    },
+    {
+      "id": "semantic-intelligence",
+      "name": "Semantic Intelligence",
+      "foundation": "planned",
+      "batch_operations": [],
+      "complete": false
+    },
+    {
+      "id": "algorithm-intelligence",
+      "name": "Algorithm Intelligence",
+      "foundation": "offline-lab",
+      "batch_operations": [
+        "algorithm-catalog",
+        "sha256-kat",
+        "assembly-summary"
+      ],
+      "complete": false
+    },
+    {
+      "id": "data-engineering",
+      "name": "Data Engineering",
+      "foundation": "offline-lab",
+      "batch_operations": [
+        "json-roundtrip",
+        "config-check"
+      ],
+      "complete": false
+    },
+    {
+      "id": "runtime-diagnostics",
+      "name": "Runtime Diagnostics",
+      "foundation": "offline-lab",
+      "batch_operations": [
+        "isolation-plan"
+      ],
+      "complete": false
+    },
+    {
+      "id": "compatibility",
+      "name": "Compatibility",
+      "foundation": "offline-lab",
+      "batch_operations": [
+        "protocol-check"
+      ],
+      "complete": false
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "foundation": "existing-gates",
+      "batch_operations": [],
+      "complete": false
+    },
+    {
+      "id": "performance",
+      "name": "Performance",
+      "foundation": "existing-benchmark",
+      "batch_operations": [],
+      "complete": false
+    },
+    {
+      "id": "knowledge",
+      "name": "Knowledge",
+      "foundation": "offline-lab",
+      "batch_operations": [
+        "evidence-check"
+      ],
+      "complete": false
+    },
+    {
+      "id": "recovery",
+      "name": "Recovery",
+      "foundation": "partial",
+      "batch_operations": [],
+      "complete": false
+    },
+    {
+      "id": "quality-assurance",
+      "name": "Quality Assurance",
+      "foundation": "offline-lab",
+      "batch_operations": [
+        "gate-summary",
+        "regression-check"
+      ],
+      "complete": false
+    }
+  ]
+}
