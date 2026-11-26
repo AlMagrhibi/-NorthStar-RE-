@@ -44,3 +44,7 @@ No new published release or desktop acceptance is implied.
 ## FW-011–FW-020 — engineering validation lab
 
 [Implementation and acceptance ledger](skills/northstar-re/references/engineering-validation-lab.md). All ten work items have initial offline Rust helpers on the development branch; full engines and runtime acceptance remain pending. No new release is implied.
+
+## FW-021–FW-025 — operational engineering
+
+[Operational report checks](skills/northstar-re/references/engineering-validation-lab.md) are initial offline Rust foundations. Live load, process isolation, UI diagnostics, security execution and resource collection require separate implementation and acceptance.
