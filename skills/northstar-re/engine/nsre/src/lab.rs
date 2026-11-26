@@ -226,9 +226,7 @@ fn ui_report(v: &Value) -> io::Result<Value> {
 }
 
 fn content_digest(v: &Value) -> io::Result<Value> {
-    let data = v["utf8"]
-        .as_str()
-        .ok_or_else(|| invalid("utf8 required"))?;
+    let data = v["utf8"].as_str().ok_or_else(|| invalid("utf8 required"))?;
     Ok(json!({
         "passed":true,"bytes":data.len(),
         "sha256":format!("{:x}", Sha256::digest(data.as_bytes()))
@@ -237,7 +235,10 @@ fn content_digest(v: &Value) -> io::Result<Value> {
 
 fn binary_header(v: &Value) -> io::Result<Value> {
     let hex = text(v, "hex")?;
-    if hex.len() > 131072 || !hex.len().is_multiple_of(2) || !hex.bytes().all(|b| b.is_ascii_hexdigit()) {
+    if hex.len() > 131072
+        || !hex.len().is_multiple_of(2)
+        || !hex.bytes().all(|b| b.is_ascii_hexdigit())
+    {
         return Err(invalid("expected bounded even-length hexadecimal input"));
     }
     let bytes = (0..hex.len())
@@ -256,12 +257,9 @@ fn binary_header(v: &Value) -> io::Result<Value> {
     let mut pe_signature = false;
     if kind == "dos-mz" {
         if let Some(offset) = bytes.get(60..64) {
-            let offset =
-                u32::from_le_bytes(offset.try_into().map_err(io::Error::other)?) as usize;
-            pe_signature = offset
-                .checked_add(4)
-                .and_then(|end| bytes.get(offset..end))
-                == Some(b"PE\0\0");
+            let offset = u32::from_le_bytes(offset.try_into().map_err(io::Error::other)?) as usize;
+            pe_signature =
+                offset.checked_add(4).and_then(|end| bytes.get(offset..end)) == Some(b"PE\0\0");
         }
     }
     Ok(json!({
@@ -335,8 +333,14 @@ fn checkpoint_compare(v: &Value) -> io::Result<Value> {
     }
     let before = manifest(&v["expected"])?;
     let after = manifest(&v["actual"])?;
-    let missing: Vec<_> = before.keys().filter(|id| !after.contains_key(*id)).collect();
-    let extra: Vec<_> = after.keys().filter(|id| !before.contains_key(*id)).collect();
+    let missing: Vec<_> = before
+        .keys()
+        .filter(|id| !after.contains_key(*id))
+        .collect();
+    let extra: Vec<_> = after
+        .keys()
+        .filter(|id| !before.contains_key(*id))
+        .collect();
     let changed: Vec<_> = before
         .iter()
         .filter_map(|(id, hash)| {
@@ -399,7 +403,7 @@ mod tests {
             digest["sha256"],
             "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
         );
-        let mut pe = vec![0u8; 68];
+        let mut pe = [0u8; 68];
         pe[..2].copy_from_slice(b"MZ");
         pe[60] = 64;
         pe[64..68].copy_from_slice(b"PE\0\0");
@@ -413,7 +417,8 @@ mod tests {
         assert_eq!(evaluate(&graph).unwrap()["reachable"], json!(["a", "b"]));
         let h = "a".repeat(64);
         let report = evaluate(&json!({"operation":"checkpoint-compare",
-            "expected":[{"id":"a","sha256":h}],"actual":[{"id":"b","sha256":h}]})).unwrap();
+            "expected":[{"id":"a","sha256":h}],"actual":[{"id":"b","sha256":h}]}))
+        .unwrap();
         assert_eq!(report["passed"], false);
         assert_eq!(report["missing"], json!(["a"]));
         assert_eq!(report["restore_performed"], false);
