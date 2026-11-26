@@ -38,9 +38,7 @@ fn sha256_kat(v: &Value) -> io::Result<Value> {
 }
 
 fn json_roundtrip(v: &Value) -> io::Result<Value> {
-    let data = v
-        .get("data")
-        .ok_or_else(|| invalid("data required"))?;
+    let data = v.get("data").ok_or_else(|| invalid("data required"))?;
     let bytes = serde_json::to_vec(data).map_err(io::Error::other)?;
     let decoded: Value = serde_json::from_slice(&bytes).map_err(io::Error::other)?;
     Ok(json!({"passed":decoded == *data,"encoded_bytes":bytes.len()}))
@@ -139,7 +137,9 @@ fn gate_summary(v: &Value) -> io::Result<Value> {
             _ => return Err(invalid("invalid gate or missing evidence hash")),
         }
     }
-    Ok(json!({"passed":!gates.is_empty() && passed == gates.len(),"total":gates.len(),"reported_passes":passed,"evidence_verified":false}))
+    Ok(
+        json!({"passed":!gates.is_empty() && passed == gates.len(),"total":gates.len(),"reported_passes":passed,"evidence_verified":false}),
+    )
 }
 
 fn isolation_plan(v: &Value) -> io::Result<Value> {
@@ -172,7 +172,9 @@ pub fn evaluate(v: &Value) -> io::Result<Value> {
         "protocol-check" => schema_check(v, true),
         "config-check" => schema_check(v, false),
         "regression-check" => {
-            let baseline = v.get("baseline").ok_or_else(|| invalid("baseline required"))?;
+            let baseline = v
+                .get("baseline")
+                .ok_or_else(|| invalid("baseline required"))?;
             let actual = v.get("actual").ok_or_else(|| invalid("actual required"))?;
             Ok(json!({"passed":baseline == actual,"comparison":"JSON value equality"}))
         }
@@ -192,8 +194,8 @@ mod tests {
         let wrong = json!({"operation":"sha256-kat","utf8":"abcd","expected_sha256":expected});
         assert_eq!(evaluate(&wrong).unwrap()["passed"], false);
         assert_eq!(
-            evaluate(&json!({"operation":"json-roundtrip","data":{"x":[1,true,null]}}))
-                .unwrap()["passed"],
+            evaluate(&json!({"operation":"json-roundtrip","data":{"x":[1,true,null]}})).unwrap()
+                ["passed"],
             true
         );
     }
@@ -237,7 +239,8 @@ mod tests {
         let regression = json!({"operation":"regression-check","baseline":1,"actual":2});
         assert_eq!(evaluate(&regression).unwrap()["passed"], false);
         assert_eq!(
-            evaluate(&json!({"operation":"algorithm-catalog"})).unwrap()["automatic_identification"],
+            evaluate(&json!({"operation":"algorithm-catalog"})).unwrap()
+                ["automatic_identification"],
             false
         );
     }
