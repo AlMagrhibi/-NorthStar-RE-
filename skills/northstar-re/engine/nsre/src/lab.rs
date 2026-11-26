@@ -168,7 +168,7 @@ fn metric_summary(v: &Value, key: &str) -> io::Result<Value> {
         .collect::<io::Result<Vec<_>>>()?;
     values.sort_unstable();
     let peak = values.last().copied().ok_or_else(|| invalid("no samples"))?;
-    let p95 = values[(values.len() - 1) - (values.len() - 1) / 20];
+    let p95 = values[values.len() - 1 - values.len() / 20];
     Ok(json!({
         "passed":peak <= limit,"count":values.len(),"peak":peak,"p95":p95,
         "limit":limit,"unit":text(v,"unit")?,"measured_by_engine":false
@@ -263,7 +263,10 @@ mod tests {
             "operation":"process-report","processes":[{"pid":1,"observed":true,
             "external_connections":0}]
         });
-        assert_eq!(evaluate(&tree).unwrap()["tree_completeness_verified"], false);
+        assert_eq!(
+            evaluate(&tree).unwrap()["tree_completeness_verified"],
+            false
+        );
         let ui = json!({"operation":"ui-report","windows":[]});
         assert_eq!(evaluate(&ui).unwrap()["passed"], false);
         let security = json!({"operation":"security-regression-report","gates":[]});
