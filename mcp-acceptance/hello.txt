@@ -1,0 +1,4 @@
+free-pi GitHub MCP acceptance test
+branch: acceptance/mcp-write-test-20261126220345
+content-marker: NORTHSTAR-MCP-ACCEPT-42
+no project data
