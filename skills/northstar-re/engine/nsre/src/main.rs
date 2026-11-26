@@ -233,9 +233,17 @@ fn main() -> ExitCode {
     if let Some(cmd) = args.next().and_then(|x| x.into_string().ok()) {
         if cmd == "--help" || cmd == "help" {
             println!(
-                "nsre 0.3.0: scan index export diff probe analyze batch {}",
+                "nsre 0.3.0: scan index export diff probe analyze batch engines {}",
                 framework::COMMANDS.join(" ")
             );
+            return ExitCode::SUCCESS;
+        }
+        if cmd == "engines" {
+            if args.next().is_some() {
+                eprintln!("usage: nsre engines");
+                return ExitCode::FAILURE;
+            }
+            print!("{}", include_str!("engine-registry.json"));
             return ExitCode::SUCCESS;
         }
         if cmd == "batch" {
