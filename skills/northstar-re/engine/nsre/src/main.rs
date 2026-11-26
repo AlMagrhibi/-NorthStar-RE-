@@ -1,4 +1,5 @@
 //! Read-only inventory prototype. Never loads or executes target files.
+mod batch;
 mod framework;
 mod index;
 mod lab;
@@ -232,10 +233,20 @@ fn main() -> ExitCode {
     if let Some(cmd) = args.next().and_then(|x| x.into_string().ok()) {
         if cmd == "--help" || cmd == "help" {
             println!(
-                "nsre 0.3.0: scan index export diff probe analyze {}",
+                "nsre 0.3.0: scan index export diff probe analyze batch {}",
                 framework::COMMANDS.join(" ")
             );
             return ExitCode::SUCCESS;
+        }
+        if cmd == "batch" {
+            return match batch::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
         }
         if framework::COMMANDS.contains(&cmd.as_str()) {
             return match framework::command(&cmd, args) {
