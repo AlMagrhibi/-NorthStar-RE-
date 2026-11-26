@@ -156,8 +156,72 @@ fn isolation_plan(v: &Value) -> io::Result<Value> {
     Ok(json!({"passed":missing.is_empty(),"missing":missing,"enforced":false}))
 }
 
+// Report-only checks: input is collected independently; never execute a process.
+fn metric_summary(v: &Value, key: &str) -> io::Result<Value> {
+    let samples = array(v, key)?;
+    let limit = v["limit"]
+        .as_u64()
+        .ok_or_else(|| invalid("integer limit required"))?;
+    let mut values = samples
+        .iter()
+        .map(|sample| sample.as_u64().ok_or_else(|| invalid("integer sample required")))
+        .collect::<io::Result<Vec<_>>>()?;
+    values.sort_unstable();
+    let peak = values.last().copied().ok_or_else(|| invalid("no samples"))?;
+    let p95 = values[(values.len() - 1) - (values.len() - 1) / 20];
+    Ok(json!({
+        "passed":peak <= limit,"count":values.len(),"peak":peak,"p95":p95,
+        "limit":limit,"unit":text(v,"unit")?,"measured_by_engine":false
+    }))
+}
+
+fn process_report(v: &Value) -> io::Result<Value> {
+    let processes = array(v, "processes")?;
+    let mut ids = BTreeSet::new();
+    let mut unverified = 0usize;
+    for process in processes {
+        let pid = process["pid"]
+            .as_u64()
+            .filter(|pid| *pid > 0)
+            .ok_or_else(|| invalid("invalid pid"))?;
+        if !ids.insert(pid) {
+            return Err(invalid("duplicate pid"));
+        }
+        if process["external_connections"].as_u64() != Some(0)
+            || process["observed"].as_bool() != Some(true)
+        {
+            unverified += 1;
+        }
+    }
+    Ok(json!({
+        "passed":!processes.is_empty() && unverified == 0,
+        "observed_processes":ids.len(),"unverified_or_external":unverified,
+        "tree_completeness_verified":false,"isolation_enforced":false
+    }))
+}
+
+fn ui_report(v: &Value) -> io::Result<Value> {
+    let windows = array(v, "windows")?;
+    let mut responsive = 0usize;
+    for window in windows {
+        text(window, "id")?;
+        if window["responsive"].as_bool() == Some(true) {
+            responsive += 1;
+        }
+    }
+    Ok(json!({
+        "passed":!windows.is_empty() && responsive == windows.len(),
+        "windows":windows.len(),"reported_responsive":responsive,"live_probe":false
+    }))
+}
+
 pub fn evaluate(v: &Value) -> io::Result<Value> {
     match text(v, "operation")? {
+        "load-report" => metric_summary(v, "latency_samples"),
+        "process-report" => process_report(v),
+        "ui-report" => ui_report(v),
+        "security-regression-report" => gate_summary(v),
+        "resource-report" => metric_summary(v, "resource_samples"),
         "algorithm-catalog" => Ok(json!({
             "passed":true,
             "algorithms":[{"name":"SHA-256","kind":"digest","reference":"FIPS 180-4"}],
@@ -185,6 +249,30 @@ pub fn evaluate(v: &Value) -> io::Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn operational_reports_are_not_live_evidence() {
+        let load = json!({
+            "operation":"load-report","latency_samples":[5,10,20],"limit":15,"unit":"ms"
+        });
+        let result = evaluate(&load).unwrap();
+        assert_eq!(result["passed"], false);
+        assert_eq!(result["peak"], 20);
+        assert_eq!(result["measured_by_engine"], false);
+        let tree = json!({
+            "operation":"process-report","processes":[{"pid":1,"observed":true,
+            "external_connections":0}]
+        });
+        assert_eq!(evaluate(&tree).unwrap()["tree_completeness_verified"], false);
+        let ui = json!({"operation":"ui-report","windows":[]});
+        assert_eq!(evaluate(&ui).unwrap()["passed"], false);
+        let security = json!({"operation":"security-regression-report","gates":[]});
+        assert_eq!(evaluate(&security).unwrap()["passed"], false);
+        let resources = json!({
+            "operation":"resource-report","resource_samples":[1,2],"limit":2,"unit":"MiB"
+        });
+        assert_eq!(evaluate(&resources).unwrap()["passed"], true);
+    }
 
     #[test]
     fn digest_and_roundtrip() {
