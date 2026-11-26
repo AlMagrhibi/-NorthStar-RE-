@@ -21,6 +21,23 @@ fn digest(s: &str) -> String {
     format!("{:x}", Sha256::digest(s.as_bytes()))
 }
 
+fn validate_source_scope(c: &Connection, value: &Value) -> io::Result<()> {
+    if value["schema"] == 2 {
+        let root = value["root"]
+            .as_str()
+            .ok_or_else(|| invalid("collector root required"))?;
+        let root = crate::collect::normal_dir(Path::new(root))?;
+        if let Some(db) = c.path().filter(|s| !s.is_empty()) {
+            if Path::new(db).canonicalize()?.starts_with(root) {
+                return Err(invalid(
+                    "queue database must be outside collection source root",
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
 fn init(path: &Path) -> io::Result<()> {
     let parent = path.parent().filter(|p| !p.as_os_str().is_empty());
     if let Some(parent) = parent {
@@ -102,6 +119,7 @@ fn submit(c: &Connection, id: &str, input: &str, priority: i64, workers: usize) 
     let value: Value = serde_json::from_str(input).map_err(io::Error::other)?;
     if value["schema"] == 2 {
         crate::collect::validate_job(&value, workers)?;
+        validate_source_scope(c, &value)?;
     } else {
         crate::batch::validate(&value, workers)?;
     }
@@ -272,36 +290,44 @@ fn run_one(c: &mut Connection) -> io::Result<Value> {
     let Some((id, input, expected, workers)) = claim(c)? else {
         return Ok(json!({"state":"idle"}));
     };
-    let dependencies_passed = (|| -> io::Result<()> {
+    let dependencies_passed = (|| -> io::Result<Vec<Value>> {
+        if digest(&input) != expected {
+            return Err(invalid("input hash mismatch"));
+        }
         let value: Value = serde_json::from_str(&input).map_err(io::Error::other)?;
         let (dependencies, _) = scheduling(&value)?;
+        let mut provenance = Vec::new();
         for dependency in dependencies {
-            if status(c, &dependency)?["state"] != "completed" {
+            let report = status(c, &dependency)?;
+            if report["state"] != "completed" {
                 return Err(invalid("queue dependency did not pass"));
             }
+            provenance.push(json!({"id":report["id"],"input_sha256":report["input_sha256"],"result_sha256":report["result_sha256"]}));
         }
-        Ok(())
+        Ok(provenance)
     })();
-    let result = if let Err(error) = dependencies_passed {
-        Err(error)
-    } else if digest(&input) != expected {
-        Err(invalid("input hash mismatch"))
-    } else {
-        serde_json::from_str(&input)
-            .map_err(io::Error::other)
-            .and_then(|v: Value| {
-                if v["schema"] == 2 {
-                    crate::collect::evaluate_job(&v, workers as usize)
-                } else {
-                    crate::batch::evaluate(&v, workers as usize)
-                }
-            })
+    let (result, dependencies) = match dependencies_passed {
+        Err(error) => (Err(error), vec![]),
+        Ok(dependencies) => (
+            serde_json::from_str(&input)
+                .map_err(io::Error::other)
+                .and_then(|v: Value| {
+                    if v["schema"] == 2 {
+                        validate_source_scope(c, &v)?;
+                        crate::collect::evaluate_job(&v, workers as usize)
+                    } else {
+                        crate::batch::evaluate(&v, workers as usize)
+                    }
+                }),
+            dependencies,
+        ),
     };
-    let (state, report) = match result {
+    let (state, mut report) = match result {
         Ok(report) if report["passed"] == true => ("completed", report),
         Ok(report) => ("failed", report),
         Err(e) => ("failed", json!({"error":e.to_string()})),
     };
+    report["queue_provenance"] = json!({"schema":1,"producer":"nsre","producer_version":env!("CARGO_PKG_VERSION"),"input_sha256":expected,"dependencies":dependencies});
     let body = serde_json::to_string(&report).map_err(io::Error::other)?;
     let changed = c
         .execute(
@@ -395,6 +421,7 @@ fn wait(c: &Connection, id: &str, seconds: u64) -> io::Result<Value> {
 }
 
 fn retry(c: &Connection, old_id: &str, new_id: &str) -> io::Result<()> {
+    status(c, old_id)?;
     let (input, expected, priority, workers, state) = c
         .query_row(
             "SELECT input,input_sha256,priority,workers,state FROM jobs WHERE id=?1",
@@ -691,8 +718,8 @@ mod tests {
             digest("changed")
         );
         input["manifest"]["files"][0]["path"] = json!("../queue.sqlite");
-        submit(&c, "escape", &input.to_string(), 50, 1).unwrap();
-        assert_eq!(run_one(&mut c).unwrap()["state"], "failed");
+        assert!(submit(&c, "escape", &input.to_string(), 50, 1).is_err());
+        assert!(status(&c, "escape").is_err());
         input["root"] = json!("relative");
         assert!(submit(&c, "relative", &input.to_string(), 50, 1).is_err());
         input["kind"] = json!("shell");

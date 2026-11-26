@@ -17,19 +17,19 @@ fn invalid(message: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, message)
 }
 
-fn normal_dir(path: &Path) -> io::Result<PathBuf> {
+pub(crate) fn normal_dir(path: &Path) -> io::Result<PathBuf> {
     let meta = fs::symlink_metadata(path)?;
     if !meta.is_dir() || crate::unsafe_entry(&meta) {
         return Err(invalid("normal directory required"));
     }
-    let path = path.canonicalize()?;
-    for ancestor in path.ancestors() {
+    let absolute = std::path::absolute(path)?;
+    for ancestor in absolute.ancestors() {
         let meta = fs::symlink_metadata(ancestor)?;
         if crate::unsafe_entry(&meta) {
             return Err(invalid("reparse directory rejected"));
         }
     }
-    Ok(path)
+    path.canonicalize()
 }
 
 fn scoped_file(root: &Path, relative: &str) -> io::Result<PathBuf> {
@@ -180,6 +180,27 @@ pub(crate) fn validate_job(input: &Value, jobs: usize) -> io::Result<()> {
         return Err(invalid(
             "collector manifest requires 1..=64 files and schema 1",
         ));
+    }
+    for task in input["manifest"]["files"].as_array().unwrap() {
+        let relative = task["path"]
+            .as_str()
+            .filter(|s| !s.is_empty() && s.len() <= 4096)
+            .ok_or_else(|| invalid("collector relative path required"))?;
+        if relative.contains(':')
+            || Path::new(relative)
+                .components()
+                .any(|c| !matches!(c, Component::Normal(_)))
+        {
+            return Err(invalid("collector relative normal path required"));
+        }
+        if let Some(expected) = task.get("expected_sha256") {
+            if !expected
+                .as_str()
+                .is_some_and(|s| s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit()))
+            {
+                return Err(invalid("invalid expected collector hash"));
+            }
+        }
     }
     Ok(())
 }
