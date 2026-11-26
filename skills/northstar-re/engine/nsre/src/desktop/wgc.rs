@@ -22,7 +22,16 @@ use windows::{
     },
 };
 fn failure(e: windows::core::Error) -> io::Error {
-    io::Error::other(e.to_string())
+    io::Error::other(format!("{} (HRESULT 0x{:08x})", e, e.code().0 as u32))
+}
+fn stage(label: &'static str) -> impl FnOnce(windows::core::Error) -> io::Error {
+    move |e| {
+        io::Error::other(format!(
+            "{label}: {} (HRESULT 0x{:08x})",
+            e,
+            e.code().0 as u32
+        ))
+    }
 }
 struct Runtime;
 impl Runtime {
@@ -67,9 +76,11 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
         ));
     }
     let interop: IGraphicsCaptureItemInterop =
-        factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>().map_err(failure)?;
+        factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()
+            .map_err(stage("capture item factory"))?;
     let item: GraphicsCaptureItem =
-        unsafe { interop.CreateForWindow(HWND(hwnd as *mut std::ffi::c_void)) }.map_err(failure)?;
+        unsafe { interop.CreateForWindow(HWND(hwnd as *mut std::ffi::c_void)) }
+            .map_err(stage("CreateForWindow"))?;
     let size = item.Size().map_err(failure)?;
     super::capture::dimensions(size.Width as i64, size.Height as i64)?;
     let mut device = None;
@@ -118,9 +129,14 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
         size,
     )
     .map_err(failure)?;
-    let session = pool.CreateCaptureSession(&item).map_err(failure)?;
+    let session = pool
+        .CreateCaptureSession(&item)
+        .map_err(stage("CreateCaptureSession"))?;
     let session = Session { session, pool };
-    session.session.StartCapture().map_err(failure)?;
+    session
+        .session
+        .StartCapture()
+        .map_err(stage("StartCapture"))?;
     let start = Instant::now();
     let frame = loop {
         identity(hwnd, Some(pid))?;
@@ -132,7 +148,7 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
             Err(_) if start.elapsed() < Duration::from_millis(2000) => {
                 thread::sleep(Duration::from_millis(10))
             }
-            Err(e) => return Err(failure(e)),
+            Err(e) => return Err(stage("first frame wait")(e)),
         }
     };
     let content = frame.ContentSize().map_err(failure)?;
@@ -161,7 +177,8 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
     let staging = staging.ok_or_else(|| invalid("missing staging texture"))?;
     unsafe { context.CopyResource(&staging, &texture) };
     let mut map = D3D11_MAPPED_SUBRESOURCE::default();
-    unsafe { context.Map(&staging, 0, D3D11_MAP_READ, 0, Some(&mut map)) }.map_err(failure)?;
+    unsafe { context.Map(&staging, 0, D3D11_MAP_READ, 0, Some(&mut map)) }
+        .map_err(stage("staging map"))?;
     let mapped = Mapping {
         context: &context,
         texture: &staging,

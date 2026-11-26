@@ -14,7 +14,10 @@ $Reports=(Resolve-Path -LiteralPath $Reports).Path
 $root=Join-Path ([IO.Path]::GetTempPath()) ('nsre-desktop-'+[Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $root|Out-Null
 $fixture=$null
+$bridge=$null
 $passed=$false
+$wgcVerified=$false;$bridgeEffect=$false;$keyboardVerified=$false;$clickVerified=$false
+$rightVerified=$false;$middleVerified=$false;$doubleVerified=$false;$wheelVerified=$false;$dragVerified=$false
 function Invoke-Desktop([string[]]$Arguments) {
  $raw=& $Engine desktop @Arguments
  if ($LASTEXITCODE -ne 0) { throw "Desktop command failed: $($Arguments[0])" }
@@ -52,6 +55,13 @@ $button.Size=[Drawing.Size]::new(120,60)
 $script:clickCount=0
 $button.Add_Click({$script:clickCount++;$front.Text='NSRE Desktop Fixture Clicked '+$script:clickCount})
 $front.Controls.Add($button)
+$bridgeButton=[Windows.Forms.Button]::new()
+$bridgeButton.Name='nsre-mcp-start'
+$bridgeButton.Text='Fixture MCP'
+$bridgeButton.Location=[Drawing.Point]::new(100,180)
+$bridgeButton.Size=[Drawing.Size]::new(140,40)
+$bridgeButton.Add_Click({$front.Text='NSRE MCP Invoked'})
+$front.Controls.Add($bridgeButton)
 $text=[Windows.Forms.TextBox]::new()
 $text.Name='nsre-text'
 $text.Location=[Drawing.Point]::new(20,20)
@@ -139,19 +149,44 @@ $front.Dispose()
   $pixel=$image.GetPixel([int]($backNow.client_x-$backNow.x+20),[int]($backNow.client_y-$backNow.y+200))
   if ($pixel.R -ne 192 -or $pixel.G -ne 64 -or $pixel.B -ne 32) { throw 'Covered-window image content mismatch' }
  } finally { $image.Dispose() }
- $captureCapabilities=Invoke-Desktop -Arguments @('capabilities')
- $wgcVerified=$false
- if ($captureCapabilities.wgc_supported) {
-  $wgcPath=Join-Path $root 'wgc-covered.png'
-  $wgc=Invoke-Desktop -Arguments @('capture-wgc',$back.hwnd,$owner,$wgcPath)
-  if ($wgc.method -ne 'Windows Graphics Capture' -or $wgc.sha256 -ne (Get-FileHash -LiteralPath $wgcPath -Algorithm SHA256).Hash.ToLowerInvariant()) { throw 'WGC backend/provenance mismatch' }
-  $wgcImage=[Drawing.Bitmap]::new($wgcPath)
-  try {
-   $sample=$wgcImage.GetPixel(30,230)
-   if ($sample.R -ne 192 -or $sample.G -ne 64 -or $sample.B -ne 32) { throw 'WGC covered-window content mismatch' }
-   $wgcVerified=$true
-  } finally { $wgcImage.Dispose() }
+ # Exercise the actual stdio agent bridge against only this disposable application.
+ $bridgeProject=Join-Path $root 'bridge-project'
+ New-Item -ItemType Directory -Path (Join-Path $bridgeProject '.northstar/reports') -Force|Out-Null
+ New-Item -ItemType Directory -Path (Join-Path $bridgeProject '.northstar/logs') -Force|Out-Null
+ $bridgeInfo=[Diagnostics.ProcessStartInfo]::new()
+ $bridgeInfo.FileName=$Engine;$bridgeInfo.UseShellExecute=$false
+ $bridgeInfo.RedirectStandardInput=$true;$bridgeInfo.RedirectStandardOutput=$true;$bridgeInfo.RedirectStandardError=$true
+ $bridgeInfo.StandardInputEncoding=[Text.UTF8Encoding]::new($false)
+ $bridgeInfo.StandardOutputEncoding=[Text.UTF8Encoding]::new($false)
+ foreach($argument in @('mcp','--project',$bridgeProject,'--desktop-control')){[void]$bridgeInfo.ArgumentList.Add($argument)}
+ $bridge=[Diagnostics.Process]::Start($bridgeInfo)
+ $bridgeErrors=$bridge.StandardError.ReadToEndAsync()
+ function Invoke-Mcp([hashtable]$Request){
+  $bridge.StandardInput.WriteLine(($Request|ConvertTo-Json -Depth 12 -Compress));$bridge.StandardInput.Flush()
+  $line=$bridge.StandardOutput.ReadLineAsync()
+  if(!$line.Wait(25000)){throw 'Desktop MCP response deadline exceeded'}
+  if($null -eq $line.Result){throw 'Desktop MCP terminated without response'}
+  return ($line.Result|ConvertFrom-Json)
  }
+ $initial=Invoke-Mcp @{jsonrpc='2.0';id=1;method='initialize';params=@{protocolVersion='2025-11-25'}}
+ if($initial.result.protocolVersion -ne '2025-11-25'){throw 'Desktop MCP initialization failed'}
+ $bridge.StandardInput.WriteLine('{"jsonrpc":"2.0","method":"notifications/initialized"}');$bridge.StandardInput.Flush()
+ $toolList=Invoke-Mcp @{jsonrpc='2.0';id=2;method='tools/list'}
+ if(@($toolList.result.tools|Where-Object name -like 'nsre_desktop_*').Count -ne 2){throw 'Desktop MCP tools not advertised'}
+ $bridgeInvoke=Invoke-Mcp @{jsonrpc='2.0';id=3;method='tools/call';params=@{name='nsre_desktop_act';arguments=@{action='invoke';hwnd=$front.hwnd;pid=$fixture.Id;apply=$true;automation_id='nsre-mcp-start'}}}
+ if($bridgeInvoke.result.isError){throw 'Desktop MCP invoke returned an error'}
+ $bridgeEffect=$false
+ for($i=0;$i -lt 20;$i++){$state=Invoke-Desktop -Arguments @('inspect',$front.hwnd,$owner);if($state.title -eq 'NSRE MCP Invoked'){$bridgeEffect=$true;break};Start-Sleep -Milliseconds 50}
+ if(!$bridgeEffect){throw 'Desktop MCP application effect missing'}
+ $bridgeCapture=Invoke-Mcp @{jsonrpc='2.0';id=4;method='tools/call';params=@{name='nsre_desktop_observe';arguments=@{action='capture';hwnd=$back.hwnd;pid=$fixture.Id}}}
+ if($bridgeCapture.result.isError){throw 'Desktop MCP capture returned an error'}
+ $bridgeCaptureData=$bridgeCapture.result.content[0].text|ConvertFrom-Json
+ if(!$bridgeCaptureData.command_succeeded -or $bridgeCaptureData.result.sha256 -ne (Get-FileHash -LiteralPath $bridgeCaptureData.result.output -Algorithm SHA256).Hash.ToLowerInvariant()){throw 'Desktop MCP capture integrity mismatch'}
+ if(@(Get-ChildItem -LiteralPath (Join-Path $bridgeProject '.northstar/reports') -Filter '*.png').Count -ne 1){throw 'Desktop MCP artifact scope mismatch'}
+ $audit=@(Get-Content -LiteralPath (Join-Path $bridgeProject '.northstar/logs/desktop-actions.jsonl')|ForEach-Object{$_|ConvertFrom-Json})
+ if($audit.Count -ne 4 -or @($audit|Where-Object text_logged -ne $false).Count -ne 0){throw 'Desktop MCP audit evidence mismatch'}
+ $bridge.StandardInput.Close()
+ if(!$bridge.WaitForExit(5000) -or $bridge.ExitCode -ne 0){throw 'Desktop MCP shutdown failed'}
  # Wrong owner and missing explicit apply must fail without mutation.
  & $Engine desktop move $back.hwnd 0 0 0 --apply 2>$null|Out-Null
  if ($LASTEXITCODE -ne 1) { throw 'Invalid PID accepted' }
@@ -209,13 +244,33 @@ $front.Dispose()
   for ($i=0;$i -lt 20;$i++) { $state=Invoke-Desktop -Arguments @('inspect',$front.hwnd,$owner);if($state.title -eq 'NSRE Dragged'){$dragVerified=$true;break};Start-Sleep -Milliseconds 50 }
   if (!$drag.dispatched -or !$drag.button_release_inserted -or !$dragVerified) { throw 'Drag application effect/release missing' }
  }
+ $captureCapabilities=Invoke-Desktop -Arguments @('capabilities')
+ $wgcVerified=$false
+ if ($captureCapabilities.wgc_supported) {
+  $wgcPath=Join-Path $root 'wgc-covered.png'
+  $wgc=Invoke-Desktop -Arguments @('capture-wgc',$back.hwnd,$owner,$wgcPath)
+  if ($wgc.method -ne 'Windows Graphics Capture' -or $wgc.sha256 -ne (Get-FileHash -LiteralPath $wgcPath -Algorithm SHA256).Hash.ToLowerInvariant()) { throw 'WGC backend/provenance mismatch' }
+  $wgcImage=[Drawing.Bitmap]::new($wgcPath)
+  try {
+   $sample=$wgcImage.GetPixel(30,230)
+   if ($sample.R -ne 192 -or $sample.G -ne 64 -or $sample.B -ne 32) { throw 'WGC covered-window content mismatch' }
+   $wgcVerified=$true
+  } finally { $wgcImage.Dispose() }
+ }
  $passed=$true
- @{schema=1;status='PASS';scope='interactive Windows fixture only; not FreePi or protected content acceptance';os=[Environment]::OSVersion.VersionString;covered_window_found=$true;move_verified=$true;resize_verified=$true;restore_verified=$true;unselected_window_unchanged=$true;invalid_target_rejected=$true;foreground_verified=[bool]$focus.verified;foreground_exit=$focusExit;click_effect_verified=$clickVerified;keyboard_effect_verified=$keyboardVerified;right_click_effect_verified=$rightVerified;middle_click_effect_verified=$middleVerified;double_click_effect_verified=$doubleVerified;wheel_effect_verified=$wheelVerified;drag_effect_verified=$dragVerified;uia_invoke_effect_verified=$invokeEffect;password_values_excluded=$true;covered_capture_content_verified=$true;wgc_supported=[bool]$captureCapabilities.wgc_supported;wgc_capture_content_verified=$wgcVerified;os_is_windows11=([Environment]::OSVersion.Version.Build -ge 22000)}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Reports 'desktop-control.json') -Encoding UTF8
+ @{schema=1;status='PASS';scope='interactive Windows fixture only; not FreePi or protected content acceptance';os=[Environment]::OSVersion.VersionString;covered_window_found=$true;move_verified=$true;resize_verified=$true;restore_verified=$true;unselected_window_unchanged=$true;invalid_target_rejected=$true;foreground_verified=[bool]$focus.verified;foreground_exit=$focusExit;click_effect_verified=$clickVerified;keyboard_effect_verified=$keyboardVerified;right_click_effect_verified=$rightVerified;middle_click_effect_verified=$middleVerified;double_click_effect_verified=$doubleVerified;wheel_effect_verified=$wheelVerified;drag_effect_verified=$dragVerified;uia_invoke_effect_verified=$invokeEffect;password_values_excluded=$true;mcp_invoke_effect_verified=$bridgeEffect;mcp_capture_integrity_verified=$true;mcp_scoped_audit_verified=$true;covered_capture_content_verified=$true;wgc_supported=[bool]$captureCapabilities.wgc_supported;wgc_capture_content_verified=$wgcVerified;os_is_windows11=([Environment]::OSVersion.Version.Build -ge 22000)}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Reports 'desktop-control.json') -Encoding UTF8
 } finally {
+ if ($null -ne $bridge) {
+  if (!$bridge.HasExited) { $bridge.Kill();$bridge.WaitForExit() }
+  $bridge.Dispose()
+ }
  if ($null -ne $fixture) {
   if (!$fixture.HasExited) { $fixture.Kill(); $fixture.WaitForExit() }
   $fixture.Dispose()
  }
- if (!$passed) { Write-Warning 'Desktop fixture did not pass; no acceptance claim' }
+ if (!$passed) {
+  @{schema=1;status='FAIL';scope='partial hosted fixture observations; not full acceptance';keyboard_effect_verified=$keyboardVerified;click_effect_verified=$clickVerified;mcp_invoke_effect_verified=$bridgeEffect;right_click_effect_verified=$rightVerified;middle_click_effect_verified=$middleVerified;double_click_effect_verified=$doubleVerified;wheel_effect_verified=$wheelVerified;drag_effect_verified=$dragVerified;wgc_capture_content_verified=$wgcVerified}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Reports 'desktop-control.partial.json') -Encoding UTF8
+  Write-Warning 'Desktop fixture did not pass; no overall acceptance claim'
+ }
  Remove-Item -LiteralPath $root -Recurse -Force
 }

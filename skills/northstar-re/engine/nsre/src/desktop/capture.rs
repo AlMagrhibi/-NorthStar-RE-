@@ -162,7 +162,22 @@ pub(super) fn worker(args: &[OsString]) -> io::Result<bool> {
     }
     let path = Path::new(&args[3]);
     if std::env::var_os("NSRE_CAPTURE_BACKEND").as_deref() == Some(std::ffi::OsStr::new("wgc")) {
-        let metadata = super::wgc::capture(number(&args[1])?, number(&args[2])?, path)?;
+        let metadata = match super::wgc::capture(number(&args[1])?, number(&args[2])?, path) {
+            Ok(metadata) => metadata,
+            Err(error) => {
+                let mut diagnostic = OpenOptions::new()
+                    .write(true)
+                    .create_new(true)
+                    .open(path.with_extension("error.json"))?;
+                serde_json::to_writer(
+                    &mut diagnostic,
+                    &json!({"backend":"wgc","error":error.to_string()}),
+                )
+                .map_err(io::Error::other)?;
+                diagnostic.sync_all()?;
+                return Err(error);
+            }
+        };
         let mut file = OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -247,6 +262,17 @@ pub(super) fn command_backend(hwnd: Hwnd, pid: u32, path: &Path, wgc: bool) -> i
         thread::sleep(Duration::from_millis(20));
     };
     if !status.success() {
+        let error_path = frame.with_extension("error.json");
+        if let Ok(metadata) = fs::symlink_metadata(&error_path) {
+            if metadata.is_file() && !crate::unsafe_entry(&metadata) && metadata.len() <= 8192 {
+                let error: Value =
+                    serde_json::from_slice(&fs::read(&error_path)?).map_err(io::Error::other)?;
+                return Err(io::Error::other(format!(
+                    "capture worker: {}",
+                    error["error"].as_str().unwrap_or("unknown backend error")
+                )));
+            }
+        }
         return Err(invalid(
             "window capture unsupported, protected, minimized, stale or unavailable",
         ));
