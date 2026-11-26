@@ -32,3 +32,6 @@ Read `references/next-engineering-foundations.md` when evaluating framework impr
 
 ## Engineering validation lab (development candidate)
 Read `references/engineering-validation-lab.md` for FW-011 through FW-020. Use the lab only when the actual engine exposes it; distinguish local metadata checks from independent runtime evidence. Continue independent tasks while resolving blockers. Preserve originals and record evidence, results, and improvement candidates.
+
+## Approved native engineering orchestration (candidate)
+Read `references/engine-orchestrator.md`. Verify the installed engine exposes `nsre engines` and inspect the actual registry; never infer native capabilities from specialist names. Use `nsre batch` only for reviewed redacted supported offline lab operations. If the host supports independent background processes, run independent batches while doing unrelated work; otherwise execute synchronously. Validate final exit status and full output before consuming results. A negative check is not a successful gate. Persistent submit/status/wait/cancel, live collectors and event delivery are planned; never invoke undocumented commands or claim background work survives host exit. Preserve project separation, existing state, original files, and the installed release.
