@@ -5,8 +5,13 @@ use std::{
     fs,
     path::PathBuf,
     process::{Command, Output},
+    sync::atomic::{AtomicU64, Ordering},
     time::{SystemTime, UNIX_EPOCH},
 };
+
+/// Fixtures from parallel tests in the same process share a pid, so the counter is
+/// what keeps their temporary directories distinct when the clock is too coarse.
+static FIXTURE_SEQ: AtomicU64 = AtomicU64::new(0);
 struct Fixture {
     root: PathBuf,
     db: PathBuf,
@@ -14,12 +19,13 @@ struct Fixture {
 impl Fixture {
     fn new() -> Self {
         let root = std::env::temp_dir().join(format!(
-            "nsre queue fixture-{}-{}",
+            "nsre queue fixture-{}-{}-{}",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
-                .as_nanos()
+                .as_nanos(),
+            FIXTURE_SEQ.fetch_add(1, Ordering::SeqCst)
         ));
         fs::create_dir(&root).unwrap();
         let db = root.join("jobs.sqlite");
