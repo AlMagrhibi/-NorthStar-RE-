@@ -126,6 +126,28 @@ fn append(path: &Path, event: &Value) -> io::Result<()> {
     file.write_all(&bytes)?;
     file.sync_all()
 }
+fn image_base64(bytes: &[u8]) -> String {
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let a = chunk[0];
+        let b = chunk.get(1).copied().unwrap_or(0);
+        let c = chunk.get(2).copied().unwrap_or(0);
+        out.push(ALPHABET[(a >> 2) as usize] as char);
+        out.push(ALPHABET[(((a & 3) << 4) | (b >> 4)) as usize] as char);
+        out.push(if chunk.len() > 1 {
+            ALPHABET[(((b & 15) << 2) | (c >> 6)) as usize] as char
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            ALPHABET[(c & 63) as usize] as char
+        } else {
+            '='
+        });
+    }
+    out
+}
 pub(crate) fn execute(project: &Path, value: &Value, mutating: bool) -> Result<Value, String> {
     (||->Result<Value,Box<dyn std::error::Error>>{
   let(report_dir,audit)=crate::framework::rpc_desktop_paths(project)?;
@@ -150,12 +172,38 @@ pub(crate) fn execute(project: &Path, value: &Value, mutating: bool) -> Result<V
   append(&audit,&outcome)?;
   if timeout{return Err(invalid("owned desktop action timed out; effect may be unknown; do not automatically retry").into());}
   let result=result.ok_or_else(||invalid("desktop command returned no valid bounded report"))?;
-  Ok(json!({"schema":1,"exit_code":status.code(),"command_succeeded":status.success(),"result":result,"audit_id":stamp.to_string()}))
+  let mut envelope=json!({"schema":1,"exit_code":status.code(),"command_succeeded":status.success(),"result":result,"audit_id":stamp.to_string()});
+        if status.success() && matches!(value["action"].as_str(),Some("capture"|"capture-wgc")) {
+            let metadata=std::fs::symlink_metadata(&capture_path)?;
+            if !metadata.is_file()||crate::unsafe_entry(&metadata){return Err(invalid("unsafe captured image").into());}
+            if metadata.len()<=8*1024*1024 {
+                let mut bytes=Vec::new();std::fs::File::open(&capture_path)?.take(8*1024*1024+1).read_to_end(&mut bytes)?;
+                use sha2::{Digest,Sha256};
+                if bytes.len()>8*1024*1024||!bytes.starts_with(&[137,80,78,71,13,10,26,10])||envelope["result"]["sha256"]!=format!("{:x}",Sha256::digest(&bytes)){return Err(invalid("captured PNG changed before image delivery").into());}
+                envelope["_image"]=json!({"type":"image","mimeType":"image/png","data":image_base64(&bytes)});
+                envelope["image_included"]=json!(true);
+            } else {envelope["image_included"]=json!(false);envelope["image_omitted_reason"]=json!("PNG exceeds 8 MiB inline limit; artifact retained locally");}
+        }
+        Ok(envelope)
  })().map_err(|e|e.to_string())
 }
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn base64_matches_rfc4648_vectors() {
+        for (input, expected) in [
+            ("", ""),
+            ("f", "Zg=="),
+            ("fo", "Zm8="),
+            ("foo", "Zm9v"),
+            ("foob", "Zm9vYg=="),
+            ("fooba", "Zm9vYmE="),
+            ("foobar", "Zm9vYmFy"),
+        ] {
+            assert_eq!(image_base64(input.as_bytes()), expected);
+        }
+    }
     #[test]
     fn typed_bridge_rejects_shell_paths_and_missing_apply() {
         let path = Path::new("frame.png");

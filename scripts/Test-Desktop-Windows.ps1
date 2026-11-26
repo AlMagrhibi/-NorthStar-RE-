@@ -183,6 +183,11 @@ $front.Dispose()
  $bridgeCaptureData=$bridgeCapture.result.content[0].text|ConvertFrom-Json
  if(!$bridgeCaptureData.command_succeeded -or $bridgeCaptureData.result.sha256 -ne (Get-FileHash -LiteralPath $bridgeCaptureData.result.output -Algorithm SHA256).Hash.ToLowerInvariant()){throw 'Desktop MCP capture integrity mismatch'}
  if(@(Get-ChildItem -LiteralPath (Join-Path $bridgeProject '.northstar/reports') -Filter '*.png').Count -ne 1){throw 'Desktop MCP artifact scope mismatch'}
+ $imageBlock=@($bridgeCapture.result.content|Where-Object type -eq 'image')
+ if($imageBlock.Count -ne 1 -or $imageBlock[0].mimeType -ne 'image/png'){throw 'Desktop MCP image block missing'}
+ $imageBytes=[Convert]::FromBase64String($imageBlock[0].data)
+ $imageDigest=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($imageBytes)).ToLowerInvariant()
+ if($imageDigest -ne $bridgeCaptureData.result.sha256){throw 'Desktop MCP image bytes do not match captured artifact'}
  $audit=@(Get-Content -LiteralPath (Join-Path $bridgeProject '.northstar/logs/desktop-actions.jsonl')|ForEach-Object{$_|ConvertFrom-Json})
  if($audit.Count -ne 4 -or @($audit|Where-Object text_logged -ne $false).Count -ne 0){throw 'Desktop MCP audit evidence mismatch'}
  $bridge.StandardInput.Close()

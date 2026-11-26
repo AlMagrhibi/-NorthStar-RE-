@@ -1,8 +1,17 @@
 //! Windows Graphics Capture of an explicitly selected HWND, using an owned D3D11 device.
 use super::*;
-use std::{fs::OpenOptions, path::Path, time::Instant};
+use std::{
+    fs::OpenOptions,
+    path::Path,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::Instant,
+};
 use windows::{
-    core::{factory, Interface},
+    core::{factory, Interface, IInspectable},
+    Foundation::TypedEventHandler,
     Graphics::{
         Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem, GraphicsCaptureSession},
         DirectX::{Direct3D11::IDirect3DDevice, DirectXPixelFormat},
@@ -48,10 +57,12 @@ impl Drop for Runtime {
 struct Session {
     session: GraphicsCaptureSession,
     pool: Direct3D11CaptureFramePool,
+    arrived_token: i64,
 }
 impl Drop for Session {
     fn drop(&mut self) {
         let _ = self.session.Close();
+        let _ = self.pool.RemoveFrameArrived(self.arrived_token);
         let _ = self.pool.Close();
     }
 }
@@ -64,7 +75,28 @@ impl Drop for Mapping<'_> {
         unsafe { self.context.Unmap(self.texture, 0) }
     }
 }
+struct Progress(std::fs::File);
+impl Progress {
+    fn new(path: &Path) -> io::Result<Self> {
+        Ok(Self(
+            OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(path.with_extension("progress.json"))?,
+        ))
+    }
+    fn mark(&mut self, phase: &str) -> io::Result<()> {
+        use std::io::{Seek, SeekFrom, Write};
+        self.0.seek(SeekFrom::Start(0))?;
+        self.0.set_len(0)?;
+        serde_json::to_writer(&mut self.0, &json!({"phase":phase})).map_err(io::Error::other)?;
+        self.0.flush()?;
+        self.0.sync_all()
+    }
+}
 pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
+    let mut progress = Progress::new(path)?;
+    progress.mark("initialize WinRT")?;
     let _runtime = Runtime::new()?;
     let before = snapshot(hwnd, Some(pid))?;
     if before["minimized"] == true {
@@ -75,14 +107,17 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
             "Windows Graphics Capture unavailable in this session",
         ));
     }
+    progress.mark("capture item factory")?;
     let interop: IGraphicsCaptureItemInterop =
         factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()
             .map_err(stage("capture item factory"))?;
+    progress.mark("create item for selected HWND")?;
     let item: GraphicsCaptureItem =
         unsafe { interop.CreateForWindow(HWND(hwnd as *mut std::ffi::c_void)) }
             .map_err(stage("CreateForWindow"))?;
     let size = item.Size().map_err(failure)?;
     super::capture::dimensions(size.Width as i64, size.Height as i64)?;
+    progress.mark("create D3D11 device")?;
     let mut device = None;
     let mut context = None;
     let hardware = unsafe {
@@ -122,6 +157,7 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
         .map_err(failure)?
         .cast()
         .map_err(failure)?;
+    progress.mark("create free threaded frame pool")?;
     let pool = Direct3D11CaptureFramePool::CreateFreeThreaded(
         &native,
         DirectXPixelFormat::B8G8R8A8UIntNormalized,
@@ -129,19 +165,45 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
         size,
     )
     .map_err(failure)?;
+    let arrived = Arc::new(AtomicBool::new(false));
+    let arrived_signal = Arc::clone(&arrived);
+    let arrived_token = pool
+        .FrameArrived(&TypedEventHandler::<Direct3D11CaptureFramePool, IInspectable>::new(
+            move |_, _| {
+                arrived_signal.store(true, Ordering::Release);
+                Ok(())
+            },
+        ))
+        .map_err(stage("subscribe FrameArrived"))?;
     let session = pool
         .CreateCaptureSession(&item)
         .map_err(stage("CreateCaptureSession"))?;
-    let session = Session { session, pool };
+    let session = Session {
+        session,
+        pool,
+        arrived_token,
+    };
+    progress.mark("start capture")?;
     session
         .session
         .StartCapture()
         .map_err(stage("StartCapture"))?;
     let start = Instant::now();
+    progress.mark("wait for FrameArrived")?;
     let frame = loop {
         identity(hwnd, Some(pid))?;
         if keyboard::cancelled() {
             return Err(invalid("WGC capture cancelled"));
+        }
+        if !arrived.load(Ordering::Acquire) {
+            if start.elapsed() >= Duration::from_millis(2000) {
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "no WGC FrameArrived event",
+                ));
+            }
+            thread::sleep(Duration::from_millis(10));
+            continue;
         }
         match session.pool.TryGetNextFrame() {
             Ok(frame) => break frame,
@@ -151,6 +213,7 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
             Err(e) => return Err(stage("first frame wait")(e)),
         }
     };
+    progress.mark("read capture frame surface")?;
     let content = frame.ContentSize().map_err(failure)?;
     super::capture::dimensions(content.Width as i64, content.Height as i64)?;
     let surface = frame.Surface().map_err(failure)?;
@@ -172,10 +235,12 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
     desc.BindFlags = 0;
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ.0 as u32;
     desc.MiscFlags = 0;
+    progress.mark("create staging texture")?;
     let mut staging = None;
     unsafe { device.CreateTexture2D(&desc, None, Some(&mut staging)) }.map_err(failure)?;
     let staging = staging.ok_or_else(|| invalid("missing staging texture"))?;
     unsafe { context.CopyResource(&staging, &texture) };
+    progress.mark("map staging texture")?;
     let mut map = D3D11_MAPPED_SUBRESOURCE::default();
     unsafe { context.Map(&staging, 0, D3D11_MAP_READ, 0, Some(&mut map)) }
         .map_err(stage("staging map"))?;
@@ -211,6 +276,7 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
     {
         return Err(invalid("window changed during WGC capture"));
     }
+    progress.mark("encode PNG")?;
     let mut file = OpenOptions::new().write(true).create_new(true).open(path)?;
     let mut encoder = png::Encoder::new(&mut file, width as u32, height as u32);
     encoder.set_color(png::ColorType::Rgb);

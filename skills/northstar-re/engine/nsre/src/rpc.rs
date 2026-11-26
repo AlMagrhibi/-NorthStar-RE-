@@ -88,14 +88,23 @@ fn handle_mode(
             .ok_or_else(|| "project not bound".to_owned())
             .and_then(|p| crate::desktop_api::execute(p, arguments, name == "nsre_desktop_act"));
         return Some(match result {
-            Ok(data) => reply(
-                id,
+            Ok(mut data) => {
                 if mcp {
-                    json!({"content":[{"type":"text","text":data.to_string()}],"isError":data["command_succeeded"]!=true})
+                    let image = data
+                        .as_object_mut()
+                        .and_then(|object| object.remove("_image"));
+                    let mut content = vec![json!({"type":"text","text":data.to_string()})];
+                    if let Some(image) = image {
+                        content.push(image);
+                    }
+                    reply(
+                        id,
+                        json!({"content":content,"isError":data["command_succeeded"]!=true}),
+                    )
                 } else {
-                    data
-                },
-            ),
+                    reply(id, data)
+                }
+            }
             Err(message) => {
                 if mcp {
                     reply(

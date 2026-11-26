@@ -273,9 +273,22 @@ pub(super) fn command_backend(hwnd: Hwnd, pid: u32, path: &Path, wgc: bool) -> i
                 )));
             }
         }
-        return Err(invalid(
-            "window capture unsupported, protected, minimized, stale or unavailable",
-        ));
+        let progress_path = frame.with_extension("progress.json");
+        let phase = if fs::symlink_metadata(&progress_path)
+            .is_ok_and(|m| m.is_file() && !crate::unsafe_entry(&m) && m.len() <= 8192)
+        {
+            serde_json::from_slice::<Value>(&fs::read(progress_path)?)
+                .ok()
+                .and_then(|v| v["phase"].as_str().map(str::to_owned))
+        } else {
+            None
+        };
+        return Err(io::Error::other(format!(
+            "capture worker exited with code {:?} (0x{:08x}) at phase {}; no valid frame",
+            status.code(),
+            status.code().unwrap_or(0) as u32,
+            phase.as_deref().unwrap_or("startup")
+        )));
     }
     let after = snapshot(hwnd, Some(pid))?;
     let (bytes, sha256) = crate::hash_file(&frame)?;
