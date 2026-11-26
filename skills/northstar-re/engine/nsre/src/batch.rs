@@ -39,7 +39,9 @@ pub(crate) fn validate(input: &Value, jobs: usize) -> io::Result<()> {
 
 pub(crate) fn evaluate(input: &Value, jobs: usize) -> io::Result<Value> {
     validate(input, jobs)?;
-    let tasks = input["tasks"].as_array().ok_or_else(|| invalid("expected tasks"))?;
+    let tasks = input["tasks"]
+        .as_array()
+        .ok_or_else(|| invalid("expected tasks"))?;
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(jobs)
         .build()
