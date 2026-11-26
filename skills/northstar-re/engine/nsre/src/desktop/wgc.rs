@@ -61,8 +61,10 @@ struct Session {
 }
 impl Drop for Session {
     fn drop(&mut self) {
-        let _ = self.session.Close();
+        // The callback owns Rust state. Detach it before either WinRT object can
+        // release the pool from a capture thread during teardown.
         let _ = self.pool.RemoveFrameArrived(self.arrived_token);
+        let _ = self.session.Close();
         let _ = self.pool.Close();
     }
 }
@@ -281,9 +283,13 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
     let mut encoder = png::Encoder::new(&mut file, width as u32, height as u32);
     encoder.set_color(png::ColorType::Rgb);
     encoder.set_depth(png::BitDepth::Eight);
+    progress.mark("write PNG header")?;
     let mut writer = encoder.write_header().map_err(io::Error::other)?;
+    progress.mark("write PNG data")?;
     writer.write_image_data(&rgb).map_err(io::Error::other)?;
+    progress.mark("finish PNG")?;
     writer.finish().map_err(io::Error::other)?;
+    progress.mark("sync PNG")?;
     file.sync_all()?;
     Ok(
         json!({"method":"Windows Graphics Capture","width":width,"height":height,"frame_timestamp_100ns":timestamp,"hardware_device":hardware,"content_verified":false,"protected_content_bypassed":false}),

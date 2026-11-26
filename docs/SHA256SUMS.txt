@@ -123,7 +123,7 @@ dbd323a13f9707633bc34eba3acd770850b1a38c8b72342ddc7c9e5b18193de9  skills/northst
 fd3a87bd0628fcf9af50e4f3129fa8bcd095c0987e8181fccabbf97a08ff2590  skills/northstar-re/engine/nsre/src/desktop/keyboard.rs
 802df485718c9ef160cb1dbda4f0f0f87fa3a74177ae72537b01c75e2aab1332  skills/northstar-re/engine/nsre/src/desktop/mouse.rs
 acd2e01d4fab92cec8cb7920ed86f0c7afbd257e9566a500baf815b27de912ad  skills/northstar-re/engine/nsre/src/desktop/uia.rs
-bd9df2a22f390ef3183e6473e32d8f03b8f562cade1b39ed5c8e6417a0ca3e94  skills/northstar-re/engine/nsre/src/desktop/wgc.rs
+d9a00ae363a0afc029cce6aee5f03dcb7e8331922a652d0b4ccd844bc1117121  skills/northstar-re/engine/nsre/src/desktop/wgc.rs
 9bd4640a16457393d31cbc9e8be0370d8091a148cb3d0e76ac1e6761f4cb0b71  skills/northstar-re/engine/nsre/src/desktop_api.rs
 7b939f4c8191a24f2a5d7e8edd4f72751c83623b9ea2c668d071c9d4261a62f0  skills/northstar-re/engine/nsre/src/engine-registry.json
 2e4013530eda289c876757b51bb52cc36af8de46c471c3538fc9592e9998a053  skills/northstar-re/engine/nsre/src/framework.rs
