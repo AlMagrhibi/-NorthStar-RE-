@@ -31,7 +31,7 @@ Example manifest: `{"schema":1,"tasks":[{"id":"data","input":{"operation":"json-
 
 ## Delivery sequence
 
-1. Validate bounded offline execution and stable report schema on Windows and Linux.
+1. Validate bounded offline execution and stable report schema on Windows only.
 2. Add durable job store and submit/status/wait/cancel/reconcile commands, then host background integration.
 3. Register existing native collectors and read-only adapters, enforce scope, dependencies, budgets and write locks.
 4. Grow each engine in independently reviewed slices, with actual measurement and negative/fault fixtures.
@@ -46,3 +46,7 @@ The candidate `nsre engines` prints a versioned JSON registry embedded in the bi
 ## Durable queue prototype (candidate)
 
 The new explicit queue CLI persists reviewed offline batch inputs in a dedicated SQLite database with application ID and schema version. `nsre queue init DB` creates a new database; `nsre queue submit DB ID INPUT PRIORITY WORKERS --reviewed-redacted` enqueues without executing; `nsre queue run-one DB` transactionally claims one job by priority; `nsre queue status DB ID` returns state and hash-checked results; `nsre queue cancel DB ID` cancels queued work; `nsre queue interrupt DB ID --worker-stopped` records an interrupted running job only after the operator establishes the worker stopped. The worker command is explicit: the host may launch it independently if supported. There is no autonomous daemon, lease expiry, automatic retry, running cancellation, DAG, OS quota enforcement, or live collection. Use a dedicated trusted project-local queue path and reviewed redacted inputs; no shared databases between projects. The current implementation is a candidate for NSO-02, not acceptance of NSO-02. A status query does not independently corroborate underlying lab findings.
+
+## Windows platform scope
+
+Future orchestrator work is Windows 11 x64 only. Prefer native Windows APIs and verified Windows adapters. Hosted Windows CI provides automated evidence; FreePi desktop acceptance is independent. No Linux or WSL prerequisite. Windows Job Objects, named pipes, and live diagnostics are target components, not current functionality.
