@@ -164,10 +164,17 @@ fn metric_summary(v: &Value, key: &str) -> io::Result<Value> {
         .ok_or_else(|| invalid("integer limit required"))?;
     let mut values = samples
         .iter()
-        .map(|sample| sample.as_u64().ok_or_else(|| invalid("integer sample required")))
+        .map(|sample| {
+            sample
+                .as_u64()
+                .ok_or_else(|| invalid("integer sample required"))
+        })
         .collect::<io::Result<Vec<_>>>()?;
     values.sort_unstable();
-    let peak = values.last().copied().ok_or_else(|| invalid("no samples"))?;
+    let peak = values
+        .last()
+        .copied()
+        .ok_or_else(|| invalid("no samples"))?;
     let p95 = values[values.len() - 1 - values.len() / 20];
     Ok(json!({
         "passed":peak <= limit,"count":values.len(),"peak":peak,"p95":p95,
