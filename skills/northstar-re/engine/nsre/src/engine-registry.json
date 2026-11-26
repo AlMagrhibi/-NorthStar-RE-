@@ -5,22 +5,28 @@
     {
       "id": "native-core",
       "name": "Native Core",
-      "foundation": "existing-cli",
-      "batch_operations": [],
+      "foundation": "existing-cli-and-offline-candidate",
+      "batch_operations": [
+        "content-digest"
+      ],
       "complete": false
     },
     {
       "id": "binary-intelligence",
       "name": "Binary Intelligence",
-      "foundation": "existing-probe",
-      "batch_operations": [],
+      "foundation": "existing-probe-and-offline-candidate",
+      "batch_operations": [
+        "binary-header"
+      ],
       "complete": false
     },
     {
       "id": "semantic-intelligence",
       "name": "Semantic Intelligence",
-      "foundation": "planned",
-      "batch_operations": [],
+      "foundation": "offline-graph-candidate",
+      "batch_operations": [
+        "semantic-reachability"
+      ],
       "complete": false
     },
     {
@@ -107,8 +113,10 @@
     {
       "id": "recovery",
       "name": "Recovery",
-      "foundation": "partial",
-      "batch_operations": [],
+      "foundation": "partial-and-offline-candidate",
+      "batch_operations": [
+        "checkpoint-compare"
+      ],
       "complete": false
     },
     {

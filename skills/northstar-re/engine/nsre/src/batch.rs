@@ -16,6 +16,21 @@ fn invalid(message: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, message)
 }
 
+fn engine_for(operation: &str) -> Option<&'static str> {
+    static REGISTRY: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
+    let registry = REGISTRY.get_or_init(|| {
+        serde_json::from_str(include_str!("engine-registry.json")).expect("embedded registry")
+    });
+    registry["engines"].as_array()?.iter().find_map(|engine| {
+        engine["batch_operations"]
+            .as_array()?
+            .iter()
+            .any(|value| value.as_str() == Some(operation))
+            .then(|| engine["id"].as_str())
+            .flatten()
+    })
+}
+
 fn dependency_layers(input: &Value, jobs: usize) -> io::Result<Vec<Vec<usize>>> {
     if !(1..=8).contains(&jobs) || input["schema"].as_u64() != Some(1) {
         return Err(invalid("invalid worker count or schema"));
@@ -32,6 +47,14 @@ fn dependency_layers(input: &Value, jobs: usize) -> io::Result<Vec<Vec<usize>>> 
             .ok_or_else(|| invalid("invalid task id"))?;
         if ids.insert(id, index).is_some() || !task["input"].is_object() {
             return Err(invalid("duplicate id or invalid task input"));
+        }
+        if let Some(engine) = task.get("engine") {
+            let operation = task["input"]["operation"]
+                .as_str()
+                .ok_or_else(|| invalid("engine requires operation"))?;
+            if engine.as_str().is_none() || engine.as_str() != engine_for(operation) {
+                return Err(invalid("operation is not registered to requested engine"));
+            }
         }
     }
     let dependencies = dependencies(tasks, &ids)?;
@@ -122,6 +145,11 @@ pub(crate) fn evaluate(input: &Value, jobs: usize) -> io::Result<Value> {
                             }),
                         }
                     };
+                    let mut report = report;
+                    if let Some(engine) = task["input"]["operation"].as_str().and_then(engine_for)
+                    {
+                        report["engine"] = json!(engine);
+                    }
                     (index, report)
                 })
                 .collect()
@@ -198,6 +226,32 @@ mod tests {
         assert_eq!(report["results"][1]["result"]["passed"], false);
         assert_eq!(report["results"][2]["state"], "failed");
         assert_eq!(report["results"], evaluate(&input, 1).unwrap()["results"]);
+    }
+
+    #[test]
+    fn registry_covers_all_twelve_engines_and_checks_routing() {
+        let registry: Value = serde_json::from_str(include_str!("engine-registry.json")).unwrap();
+        let engines = registry["engines"].as_array().unwrap();
+        assert_eq!(engines.len(), 12);
+        let mut operations = BTreeSet::new();
+        for engine in engines {
+            let id = engine["id"].as_str().unwrap();
+            let list = engine["batch_operations"].as_array().unwrap();
+            assert!(!list.is_empty());
+            for op in list {
+                let op = op.as_str().unwrap();
+                assert!(operations.insert(op));
+                assert_eq!(engine_for(op), Some(id));
+            }
+        }
+        let mut input = json!({"schema":1,"tasks":[{"id":"a","engine":"native-core",
+            "input":{"operation":"content-digest","utf8":"abc"}}]});
+        assert_eq!(
+            evaluate(&input, 1).unwrap()["results"][0]["engine"],
+            "native-core"
+        );
+        input["tasks"][0]["engine"] = json!("recovery");
+        assert!(validate(&input, 1).is_err());
     }
 
     #[test]

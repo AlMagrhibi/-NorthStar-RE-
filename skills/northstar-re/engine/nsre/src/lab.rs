@@ -1,7 +1,10 @@
 //! Generic, offline engineering validation helpers. No target execution or network.
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
-use std::{collections::BTreeSet, io};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    io,
+};
 
 fn invalid(message: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, message)
@@ -222,8 +225,140 @@ fn ui_report(v: &Value) -> io::Result<Value> {
     }))
 }
 
+fn content_digest(v: &Value) -> io::Result<Value> {
+    let data = v["utf8"]
+        .as_str()
+        .ok_or_else(|| invalid("utf8 required"))?;
+    Ok(json!({
+        "passed":true,"bytes":data.len(),
+        "sha256":format!("{:x}", Sha256::digest(data.as_bytes()))
+    }))
+}
+
+fn binary_header(v: &Value) -> io::Result<Value> {
+    let hex = text(v, "hex")?;
+    if hex.len() > 131072 || hex.len() % 2 != 0 || !hex.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err(invalid("expected bounded even-length hexadecimal input"));
+    }
+    let bytes = (0..hex.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).map_err(io::Error::other))
+        .collect::<io::Result<Vec<_>>>()?;
+    let kind = if bytes.starts_with(b"MZ") {
+        "dos-mz"
+    } else if bytes.starts_with(b"PK\\x03\\x04") {
+        "zip-local-header"
+    } else if bytes.starts_with(b"\\x7fELF") {
+        "elf-magic"
+    } else {
+        "unknown"
+    };
+    let mut pe_signature = false;
+    if kind == "dos-mz" {
+        if let Some(offset) = bytes.get(60..64) {
+            let offset =
+                u32::from_le_bytes(offset.try_into().map_err(io::Error::other)?) as usize;
+            pe_signature = offset
+                .checked_add(4)
+                .and_then(|end| bytes.get(offset..end))
+                == Some(b"PE\\0\\0");
+        }
+    }
+    Ok(json!({
+        "passed":true,"format_hint":kind,"pe_signature_observed":pe_signature,
+        "bytes":bytes.len(),"sha256":format!("{:x}",Sha256::digest(&bytes)),
+        "full_format_validated":false
+    }))
+}
+
+fn semantic_graph(v: &Value) -> io::Result<Value> {
+    let nodes = array(v, "nodes")?;
+    let edges = array(v, "edges")?;
+    if nodes.is_empty() || nodes.len() > 1024 || edges.len() > 4096 {
+        return Err(invalid("graph size outside bounds"));
+    }
+    let mut graph: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
+    for node in nodes {
+        let id = node
+            .as_str()
+            .filter(|s| !s.is_empty() && s.len() <= 128)
+            .ok_or_else(|| invalid("invalid node id"))?;
+        if graph.insert(id, BTreeSet::new()).is_some() {
+            return Err(invalid("duplicate node"));
+        }
+    }
+    for edge in edges {
+        let from = text(edge, "from")?;
+        let to = text(edge, "to")?;
+        if !graph.contains_key(to) {
+            return Err(invalid("unknown edge destination"));
+        }
+        let outgoing = graph
+            .get_mut(from)
+            .ok_or_else(|| invalid("unknown edge origin"))?;
+        if !outgoing.insert(to) {
+            return Err(invalid("duplicate edge"));
+        }
+    }
+    let root = text(v, "root")?;
+    if !graph.contains_key(root) {
+        return Err(invalid("unknown root"));
+    }
+    let mut seen = BTreeSet::new();
+    let mut pending = vec![root];
+    while let Some(id) = pending.pop() {
+        if seen.insert(id) {
+            pending.extend(graph[id].iter().copied());
+        }
+    }
+    Ok(json!({
+        "passed":true,"reachable":seen,"nodes":nodes.len(),"edges":edges.len(),
+        "scope":"supplied directed graph; relationships not independently extracted"
+    }))
+}
+
+fn checkpoint_compare(v: &Value) -> io::Result<Value> {
+    fn manifest(value: &Value) -> io::Result<BTreeMap<&str, &str>> {
+        let records = value
+            .as_array()
+            .filter(|r| !r.is_empty() && r.len() <= 4096)
+            .ok_or_else(|| invalid("invalid manifest size"))?;
+        let mut result = BTreeMap::new();
+        for record in records {
+            let id = text(record, "id")?;
+            let hash = text(record, "sha256")?;
+            if id.len() > 256 || !is_sha256(hash) || result.insert(id, hash).is_some() {
+                return Err(invalid("invalid or duplicate manifest entry"));
+            }
+        }
+        Ok(result)
+    }
+    let before = manifest(&v["expected"])?;
+    let after = manifest(&v["actual"])?;
+    let missing: Vec<_> = before.keys().filter(|id| !after.contains_key(*id)).collect();
+    let extra: Vec<_> = after.keys().filter(|id| !before.contains_key(*id)).collect();
+    let changed: Vec<_> = before
+        .iter()
+        .filter_map(|(id, hash)| {
+            after
+                .get(id)
+                .filter(|actual| !hash.eq_ignore_ascii_case(actual))
+                .map(|_| id)
+        })
+        .collect();
+    Ok(json!({
+        "passed":missing.is_empty() && extra.is_empty() && changed.is_empty(),
+        "missing":missing,"extra":extra,"changed":changed,
+        "files_rehashed":false,"restore_performed":false
+    }))
+}
+
 pub fn evaluate(v: &Value) -> io::Result<Value> {
     match text(v, "operation")? {
+        "content-digest" => content_digest(v),
+        "binary-header" => binary_header(v),
+        "semantic-reachability" => semantic_graph(v),
+        "checkpoint-compare" => checkpoint_compare(v),
         "load-report" => metric_summary(v, "latency_samples"),
         "process-report" => process_report(v),
         "ui-report" => ui_report(v),
@@ -256,6 +391,33 @@ pub fn evaluate(v: &Value) -> io::Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn four_new_engine_operations() {
+        let digest = evaluate(&json!({"operation":"content-digest","utf8":"abc"})).unwrap();
+        assert_eq!(
+            digest["sha256"],
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+        let mut pe = vec![0u8; 68];
+        pe[..2].copy_from_slice(b"MZ");
+        pe[60] = 64;
+        pe[64..68].copy_from_slice(b"PE\\0\\0");
+        let hex = pe.iter().map(|b| format!("{b:02x}")).collect::<String>();
+        let binary = evaluate(&json!({"operation":"binary-header","hex":hex})).unwrap();
+        assert_eq!(binary["pe_signature_observed"], true);
+        assert_eq!(binary["full_format_validated"], false);
+        assert!(evaluate(&json!({"operation":"binary-header","hex":"zz"})).is_err());
+        let graph = json!({"operation":"semantic-reachability","nodes":["a","b","c"],
+            "edges":[{"from":"a","to":"b"},{"from":"b","to":"a"}],"root":"a"});
+        assert_eq!(evaluate(&graph).unwrap()["reachable"], json!(["a", "b"]));
+        let h = "a".repeat(64);
+        let report = evaluate(&json!({"operation":"checkpoint-compare",
+            "expected":[{"id":"a","sha256":h}],"actual":[{"id":"b","sha256":h}]})).unwrap();
+        assert_eq!(report["passed"], false);
+        assert_eq!(report["missing"], json!(["a"]));
+        assert_eq!(report["restore_performed"], false);
+    }
 
     #[test]
     fn operational_reports_are_not_live_evidence() {
