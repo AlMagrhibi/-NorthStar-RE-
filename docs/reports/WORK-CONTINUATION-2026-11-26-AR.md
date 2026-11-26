@@ -52,3 +52,16 @@ cargo build --release --locked
 باتش الجدولة والجمع: commit `96d5424b895681bd6b9491b35c563050b44fcf3c`، [CI 45872473167](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45872473167). سجلات واجهة الأيجنت والإصلاحات التالية تخص أحدث commit، ويجب فحص CI الخاص به منفصلًا.
 
 مراجعة التوافق: يُرفض collector input schema 2 في DB v1 حتى الترحيل الصريح، كي لا يستهلكه عامل قديم لا يدعم عقده. أضيف اختبار تنافس متزامن لثمانية عمال على مفتاح حصري واحد؛ حجز عامل واحد فقط، وبعد interruption موثق يصبح المورد متاحًا للعامل التالي. يعلن registry الآن عقد collector القابل للجدولة دون تغيير complete flags.
+
+## سجل أدلة — إصلاح CI للـNative job (T03 / NSO-02)
+
+| الحقل | القيمة |
+|---|---|
+| المعرّف | T03 (طابور دائم) + NSO-02 (اختبار تنافس/إعادة تشغيل) |
+| ما تغيّر | `tests/queue_cli.rs`: تمييز مجلد الـfixture بعدّاد ذرّي داخل العملية، لأن pid+nanos يتكرر بين اختبارات متوازية على Windows فتفشل `create_dir` بـ`AlreadyExists` (os error 183) وتفشل `concurrent_processes_claim_distinct_durable_jobs`. أُعيد بناء `docs/SHA256SUMS.txt` على البايتات الفعلية. |
+| الـcommit | `fa3f5a0fdee08d1aecffcf33978f65826c1270bb` (الإصلاح) و`5248409235974cc70c63397c251374dd2de10d25` (البيان) |
+| أمر الاختبار | `cargo test --test queue_cli --locked` ثم `cargo test --locked` و`cargo clippy --locked --all-targets -- -D warnings` و`pwsh scripts/Validate-Package.ps1 -CheckHashes` |
+| البيئة | Windows 11 x64 · Rust 1.91.1 MSVC · محلي عبر FreePi CLI |
+| النتيجة | 4/4 لاختبارات queue_cli، ثم 49 اختبارًا ناجحًا عبر الحِزم، Clippy نظيف، Package PASS |
+| CI | [45904671068](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45904671068) — success على `5248409` (Native + Security) |
+| حدود الدليل | Windows Server 2022 runner وليس جهاز Windows 11؛ لا يغلق NSO-02 كاملًا (lease/reconciliation ما زالت مفتوحة) |
