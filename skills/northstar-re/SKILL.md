@@ -26,3 +26,9 @@ Read `references/v9-rust-workflow.md`. Route Rust build architecture to `rust-sy
 
 ## V10 engine routing (mandatory after environment/governance gate)
 Read `references/v10-engineering-engine.md` first for engine capabilities; it supersedes the historical V9 prototype status. Select `nsre scan` or strict `index` for fresh inventory, metadata reuse only for advisory triage, `probe` for bounded header hints, `export` and `diff` for local complete strict evidence workflows. Use the candidate only after local build, dependency review, Windows fixture parity and acceptance. If unavailable, stop dependent engine work; use only verified native tools where suitable. No claim of full parser, exact resume, distributed workers, decryption or tested performance. All 52 specialists continue V8 documentation and may route to the engine only when appropriate. Preserve C++ servers and C# tools; no replacement launcher or security bypass.
+
+## Next engineering foundations (development guidance)
+Read `references/next-engineering-foundations.md` when evaluating framework improvements, semantic indexing, open-format parsers, performance/recovery or host interoperability. Treat planned features as unavailable until verified; do not modify an installed engine or project data automatically.
+
+## Engineering validation lab (development candidate)
+Read `references/engineering-validation-lab.md` for FW-011 through FW-020. Use the lab only when the actual engine exposes it; distinguish local metadata checks from independent runtime evidence. Continue independent tasks while resolving blockers. Preserve originals and record evidence, results, and improvement candidates.

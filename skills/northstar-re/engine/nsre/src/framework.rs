@@ -499,6 +499,80 @@ fn checkpoint(r: &Path, v: &Value) -> R<Value> {
     )?;
     Ok(json!({"checkpoint":key,"files":entries.len(),"restore":"manual reviewed restore only"}))
 }
+// Candidate discovery is read-only. An explicit override is authoritative,
+// including when invalid; never silently fall back to a different executable.
+fn tool_candidate(
+    name: &str,
+    configured: Option<&Path>,
+    paths: &[PathBuf],
+    hints: &[PathBuf],
+) -> (Option<PathBuf>, &'static str) {
+    let valid = |p: &Path| p.is_absolute() && p.is_file();
+    if let Some(p) = configured {
+        return if valid(p) {
+            (Some(p.to_path_buf()), "explicit")
+        } else {
+            (None, "invalid_override")
+        };
+    }
+    for (dirs, source) in [(paths, "path"), (hints, "environment_hint")] {
+        for d in dirs {
+            if !d.is_absolute() {
+                continue;
+            }
+            for suffix in ["", ".exe", ".bat", ".cmd"] {
+                let candidate = d.join(format!("{name}{suffix}"));
+                if valid(&candidate) {
+                    return (Some(candidate), source);
+                }
+            }
+        }
+    }
+    (None, "not_found")
+}
+
+fn tool_hints(name: &str) -> Vec<PathBuf> {
+    let mut hints = Vec::new();
+    let mut add = |key: &str, suffix: &str| {
+        if let Some(value) = env::var_os(key) {
+            let base = PathBuf::from(value);
+            if base.is_absolute() {
+                hints.push(base.join(suffix));
+            }
+        }
+    };
+    match name {
+        "cargo" | "rustc" => {
+            add("CARGO_HOME", "bin");
+            add("USERPROFILE", ".cargo/bin");
+            add("HOME", ".cargo/bin");
+        }
+        "java" | "javac" => add("JAVA_HOME", "bin"),
+        "ghidraRun" => add("GHIDRA_HOME", ""),
+        "analyzeHeadless" => add("GHIDRA_HOME", "support"),
+        "msbuild" => add("VSINSTALLDIR", "MSBuild/Current/Bin"),
+        "cl" | "dumpbin" => {
+            add("VCToolsInstallDir", "bin/Hostx64/x64");
+            add("VCToolsInstallDir", "bin/Hostx64/x86");
+            add("VCToolsInstallDir", "bin/Hostx86/x86");
+        }
+        "7z" => {
+            add("ProgramFiles", "7-Zip");
+            add("ProgramFiles(x86)", "7-Zip");
+        }
+        "tshark" => add("ProgramFiles", "Wireshark"),
+        "git" => add("ProgramFiles", "Git/cmd"),
+        "dotnet" => {
+            add("DOTNET_ROOT", "");
+            add("ProgramFiles", "dotnet");
+        }
+        "pwsh" => add("ProgramFiles", "PowerShell/7"),
+        "ilspycmd" => add("USERPROFILE", ".dotnet/tools"),
+        _ => {}
+    }
+    hints
+}
+
 fn tool_paths() -> Value {
     let names = [
         "cargo",
@@ -524,21 +598,21 @@ fn tool_paths() -> Value {
     json!(names
         .iter()
         .map(|n| {
-            let found = paths
-                .iter()
-                .flat_map(|d| {
-                    [
-                        d.join(n),
-                        d.join(format!("{n}.exe")),
-                        d.join(format!("{n}.bat")),
-                        d.join(format!("{n}.cmd")),
-                    ]
-                })
-                .find(|p| p.is_file());
-            json!({"name":n,"path":found,"verified":false})
+            let key = format!("NSRE_TOOL_{}", n.to_ascii_uppercase());
+            let configured = env::var_os(&key).map(PathBuf::from);
+            let hints = tool_hints(n);
+            let (found, source) = tool_candidate(n, configured.as_deref(), &paths, &hints);
+            json!({
+                "name": n,
+                "path": found,
+                "verified": false,
+                "source": source,
+                "override_env": key
+            })
         })
         .collect::<Vec<_>>())
 }
+
 pub fn doctor() -> Value {
     json!({"framework":"NorthStar RE V11","engine_version":env!("CARGO_PKG_VERSION"),"os":env::consts::OS,"arch":env::consts::ARCH,"parallelism":std::thread::available_parallelism().map(|n|n.get()).unwrap_or(1),"tools":tool_paths(),"tool_smoke_tests_required":true,"python_required":false})
 }
@@ -590,6 +664,7 @@ fn progress(r: &Path, v: &Value) -> R<Value> {
 pub const COMMANDS: &[&str] = &[
     "doctor",
     "tools",
+    "lab",
     "init",
     "resume",
     "status",
@@ -643,6 +718,11 @@ pub fn command(cmd: &str, args: impl Iterator<Item = OsString>) -> R<bool> {
     } else {
         Value::Null
     };
+    if cmd == "lab" {
+        let result = crate::lab::evaluate(&v)?;
+        println!("{}", serde_json::to_string_pretty(&result)?);
+        return Ok(result["passed"] == true);
+    }
     if cmd == "doctor" || cmd == "tools" {
         println!(
             "{}",
@@ -754,4 +834,52 @@ pub fn command(cmd: &str, args: impl Iterator<Item = OsString>) -> R<bool> {
 }
 pub fn rpc_status(p: &Path) -> R<Value> {
     status(&root(p)?)
+}
+
+#[cfg(test)]
+mod discovery_tests {
+    use super::*;
+
+    #[test]
+    fn explicit_path_precedes_path_and_hints_and_invalid_override_fails_closed() {
+        let dir = env::temp_dir().join(format!("nsre-discovery-{}", id()));
+        let path = dir.join("path");
+        let hints = dir.join("hints");
+        fs::create_dir_all(&path).unwrap();
+        fs::create_dir_all(&hints).unwrap();
+        let explicit = dir.join("explicit.exe");
+        let candidate = path.join("testtool.exe");
+        let hint = hints.join("testtool.exe");
+        for p in [&explicit, &candidate, &hint] {
+            fs::write(p, b"synthetic fixture; never executed").unwrap();
+        }
+        let paths = [path];
+        let hint_dirs = [hints];
+        assert_eq!(
+            tool_candidate("testtool", Some(&explicit), &paths, &hint_dirs),
+            (Some(explicit), "explicit")
+        );
+        assert_eq!(
+            tool_candidate(
+                "testtool",
+                Some(Path::new("relative.exe")),
+                &paths,
+                &hint_dirs
+            ),
+            (None, "invalid_override")
+        );
+        assert_eq!(
+            tool_candidate("testtool", None, &paths, &hint_dirs),
+            (Some(candidate), "path")
+        );
+        assert_eq!(
+            tool_candidate("testtool", None, &[], &hint_dirs),
+            (Some(hint), "environment_hint")
+        );
+        assert_eq!(
+            tool_candidate("missing", None, &[], &[]),
+            (None, "not_found")
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
 }
