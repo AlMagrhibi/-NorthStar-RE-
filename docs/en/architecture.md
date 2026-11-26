@@ -20,3 +20,7 @@ SHA-256 verifies bytes, not truth or publisher identity. Nine quality gates requ
 ## Approved engineering intelligence architecture
 
 [Target architecture](../architecture/overview.md) · [Task lifecycle](../architecture/task-lifecycle.md). The candidate exposes an engine capability registry through `nsre engines` and offline lab batches through `nsre batch`. Use the registry to distinguish planned from available operations; a completed batch is not proof of live collection. Persistent jobs and host integration are separate acceptance gates.
+
+## Platform scope
+
+Future work targets Windows 11 x64 exclusively, with all hosted CI jobs on Windows. See [Windows platform architecture](../architecture/windows-platform.md). Historical cross-platform results remain historical evidence.
