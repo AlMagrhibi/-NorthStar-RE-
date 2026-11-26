@@ -38,3 +38,7 @@ Example manifest: `{"schema":1,"tasks":[{"id":"data","input":{"operation":"json-
 5. Verify simultaneous agent work and engine collection on Windows 11 with FreePi, preserving project state and RC2 rollback. Publish only after CI, package verification and explicit release review.
 
 No proprietary project data, credentials or binaries belong in the framework repository.
+
+## Discoverable capability registry
+
+The candidate `nsre engines` prints a versioned JSON registry embedded in the binary. Each engine has a stable ID, current foundation, offline batch operation names and an explicit incomplete flag. Existing CLI foundations are not equivalent to native orchestrator adapters. The registry is a discovery contract, not a runtime permission grant or a promise of live execution.
