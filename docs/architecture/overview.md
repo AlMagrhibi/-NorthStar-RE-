@@ -1,6 +1,6 @@
 # NorthStar RE — target engineering intelligence architecture
 
-Status: owner-approved architecture; implementation in slices. The installed RC2 remains unchanged. Current branch adds a candidate offline batch runner and a discoverable engine registry, not a persistent background service.
+Status: owner-approved architecture; implementation in slices. The installed RC2 remains unchanged. Current branch adds a candidate offline batch runner, discoverable engine registry and explicit durable queue, not a persistent background service. Windows 11 x64 is the sole target for future engineering and acceptance; Windows hosted CI is not desktop acceptance.
 
 ```mermaid
 flowchart TD
@@ -42,3 +42,7 @@ flowchart TD
 ```
 
 Stages use owned paths and per-user installation. Process-kill recovery remains an explicit acceptance concern.
+
+## Platform decision
+
+[Windows-only architecture and acceptance](windows-platform.md). Windows-native process supervision, resource governance, local IPC and diagnostics are target components; their implementation and verification remain separate gates.
