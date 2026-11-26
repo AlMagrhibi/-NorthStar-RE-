@@ -40,6 +40,8 @@ NorthStar RE Framework منظومة ذكاء هندسي للتحليل والت�
 
 ## المعمارية
 
+**نطاق التطوير المستقبلي: Windows 11 x64 فقط.** جميع اختبارات المعمارية الجديدة المستضافة على Windows، مع قبول منفصل لسطح المكتب الفعلي. [قرار المنصة](docs/architecture/windows-platform.md).
+
 ```mermaid
 flowchart TD
  A["الأيجنت"] --> B["ماستر northstar-re"]
