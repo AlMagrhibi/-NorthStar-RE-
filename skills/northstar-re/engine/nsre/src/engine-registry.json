@@ -79,10 +79,20 @@
         "move",
         "resize",
         "maximize",
-        "click"
+        "click",
+        "pointer",
+        "type",
+        "type-stdin",
+        "key",
+        "controls",
+        "invoke",
+        "capture",
+        "watch"
       ],
       "desktop_acceptance": "unverified",
-      "gui_mutations_in_queue": false
+      "gui_mutations_in_queue": false,
+      "desktop_implementation": "Win32 input/window management, bounded UIA control tree and InvokePattern, isolated PrintWindow PNG fallback; Windows 11/FreePi acceptance pending",
+      "desktop_agent_bridge": "mcp/api --desktop-control; explicit selected-window tools; no GUI queue actions"
     },
     {
       "id": "compatibility",

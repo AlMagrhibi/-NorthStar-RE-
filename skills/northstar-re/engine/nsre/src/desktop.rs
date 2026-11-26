@@ -2,6 +2,10 @@
 use serde_json::{json, Value};
 use std::{ffi::OsString, io, thread, time::Duration};
 
+mod capture;
+mod keyboard;
+mod uia;
+
 type Hwnd = isize;
 const MAX_WINDOWS: usize = 512;
 const GA_ROOT: u32 = 2;
@@ -32,6 +36,7 @@ struct Point {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 struct MouseInput {
     dx: i32,
     dy: i32,
@@ -45,7 +50,22 @@ struct MouseInput {
 #[repr(C)]
 struct Input {
     kind: u32,
+    data: InputData,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct KeyboardInput {
+    vk: u16,
+    scan: u16,
+    flags: u32,
+    time: u32,
+    extra_info: usize,
+}
+#[repr(C)]
+union InputData {
     mouse: MouseInput,
+    keyboard: KeyboardInput,
 }
 
 #[link(name = "user32")]
@@ -269,18 +289,21 @@ fn apply(hwnd: Hwnd, pid: u32, action: Action) -> io::Result<bool> {
 fn mouse_input(flags: u32) -> Input {
     Input {
         kind: 0,
-        mouse: MouseInput {
-            dx: 0,
-            dy: 0,
-            mouse_data: 0,
-            flags,
-            time: 0,
-            extra_info: 0,
+        data: InputData {
+            mouse: MouseInput {
+                dx: 0,
+                dy: 0,
+                mouse_data: 0,
+                flags,
+                time: 0,
+                extra_info: 0,
+            },
         },
     }
 }
 
 fn click(hwnd: Hwnd, pid: u32, x: i32, y: i32) -> io::Result<bool> {
+    keyboard::guard(hwnd, pid)?;
     let before = snapshot(hwnd, Some(pid))?;
     if before["foreground"] != true || before["minimized"] == true {
         return Err(invalid("target must already be foreground and restored"));
@@ -353,6 +376,20 @@ fn dimensions(w: i32, h: i32) -> io::Result<Action> {
 
 pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     let args: Vec<_> = args.collect();
+    let _dpi = keyboard::DpiContext::new()?;
+    if args.first().is_some_and(|s| s == "capture-worker") {
+        return capture::worker(&args);
+    }
+    if args.len() == 6 && args[0] == "watch" {
+        return capture::watch(
+            number(&args[1])?,
+            number(&args[2])?,
+            std::path::Path::new(&args[3]),
+            number(&args[4])?,
+            number(&args[5])?,
+        );
+    }
+    let _serialization = keyboard::DesktopLock::acquire()?;
     if args.len() == 1 && args[0] == "list" {
         println!("{}", list()?);
         return Ok(true);
@@ -370,6 +407,48 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     if args.len() == 3 && args[0] == "inspect" {
         println!("{}", snapshot(hwnd, Some(pid))?);
         return Ok(true);
+    }
+    if args.len() == 4 && args[0] == "capture" {
+        return capture::command(hwnd, pid, std::path::Path::new(&args[3]));
+    }
+    if args.len() == 3 && args[0] == "controls" {
+        println!("{}", uia::inspect(hwnd, pid)?);
+        return Ok(true);
+    }
+    if args.len() == 5 && args[0] == "invoke" && args[4] == "--apply" {
+        return uia::invoke(
+            hwnd,
+            pid,
+            args[3]
+                .to_str()
+                .ok_or_else(|| invalid("invalid selector"))?,
+        );
+    }
+    if args.len() == 4 && args[0] == "type-stdin" && args[3] == "--apply" {
+        use std::io::Read;
+        let mut text = String::new();
+        std::io::stdin().take(4097).read_to_string(&mut text)?;
+        if text.len() > 4096 {
+            return Err(invalid("text input exceeds 4096 bytes"));
+        }
+        return keyboard::text(hwnd, pid, &text);
+    }
+    if args.len() == 5 && args[0] == "type" && args[4] == "--apply" {
+        return keyboard::text(
+            hwnd,
+            pid,
+            args[3].to_str().ok_or_else(|| invalid("invalid text"))?,
+        );
+    }
+    if args.len() == 5 && args[0] == "key" && args[4] == "--apply" {
+        return keyboard::key(
+            hwnd,
+            pid,
+            args[3].to_str().ok_or_else(|| invalid("invalid key"))?,
+        );
+    }
+    if args.len() == 6 && args[0] == "pointer" && args[5] == "--apply" {
+        return keyboard::pointer(hwnd, pid, number(&args[3])?, number(&args[4])?);
     }
     if args.len() == 6 && args[0] == "click" && args[5] == "--apply" {
         return click(hwnd, pid, number(&args[3])?, number(&args[4])?);

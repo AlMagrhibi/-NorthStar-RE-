@@ -688,8 +688,16 @@ pub fn command(cmd: &str, args: impl Iterator<Item = OsString>) -> R<bool> {
     let mut a = args;
     let mut flags = BTreeMap::new();
     let mut reviewed = false;
+    let mut desktop_control = false;
     while let Some(k) = a.next() {
         let k = k.into_string().map_err(|_| err("invalid flag"))?;
+        if k == "--desktop-control" {
+            if desktop_control || !matches!(cmd, "mcp" | "api") {
+                return Err(err("desktop-control is only valid once for mcp/api"));
+            }
+            desktop_control = true;
+            continue;
+        }
         if k == "--reviewed-redacted" {
             if reviewed {
                 return Err(err("duplicate flag"));
@@ -735,7 +743,10 @@ pub fn command(cmd: &str, args: impl Iterator<Item = OsString>) -> R<bool> {
         return Ok(true);
     }
     if cmd == "mcp" || cmd == "api" {
-        return crate::rpc::serve(project.as_deref(), cmd == "mcp");
+        if desktop_control && project.is_none() {
+            return Err(err("desktop-control requires an explicit project"));
+        }
+        return crate::rpc::serve_mode(project.as_deref(), cmd == "mcp", desktop_control);
     }
     let r = root(
         project
@@ -843,6 +854,22 @@ pub fn rpc_queue_status(p: &Path, id: &str) -> R<Value> {
         safe(&r, &format!(".northstar/state/jobs.sqlite{suffix}"))?;
     }
     Ok(crate::queue::read_status(&database, id)?)
+}
+
+/// Desktop artifacts stay under the explicitly bound project's normal existing state paths.
+pub fn rpc_desktop_paths(p: &Path) -> R<(PathBuf, PathBuf)> {
+    let r = root(p)?;
+    let reports = safe(&r, ".northstar/reports")?;
+    let logs = safe(&r, ".northstar/logs")?;
+    for directory in [&reports, &logs] {
+        let m = fs::symlink_metadata(directory)?;
+        if !m.is_dir() || unsafe_entry(&m) {
+            return Err(err(
+                "normal initialized desktop report/log directories required",
+            ));
+        }
+    }
+    Ok((reports, safe(&r, ".northstar/logs/desktop-actions.jsonl")?))
 }
 
 #[cfg(test)]

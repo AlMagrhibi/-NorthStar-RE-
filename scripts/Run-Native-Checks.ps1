@@ -25,6 +25,7 @@ try {
   $dependencies|Set-Content -LiteralPath (Join-Path $Reports 'windows-dependencies.txt')
  }
  & (Join-Path $root 'scripts/Test-Orchestrator-Windows.ps1') -Engine (Join-Path (Get-Location).Path $bin) -Reports $Reports
+ & (Join-Path $root 'scripts/Test-Desktop-Windows.ps1') -Engine (Join-Path (Get-Location).Path $bin) -Reports $Reports -HostedProbe
  $lines+='- PASS: Windows orchestrator process smoke'; $lines+='- PASS: --version and doctor'; $lines+='- UNVERIFIED: actual Windows 11 desktop and coding-agent acceptance'
  $lines|Set-Content -LiteralPath (Join-Path $Reports 'build-report.md') -Encoding UTF8
  Copy-Item -LiteralPath (Join-Path $Reports 'build-report.md') -Destination (Join-Path $Reports 'test-report.md')

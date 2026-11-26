@@ -3,6 +3,7 @@ mod batch;
 mod collect;
 #[cfg(windows)]
 mod desktop;
+mod desktop_api;
 mod framework;
 mod index;
 mod lab;

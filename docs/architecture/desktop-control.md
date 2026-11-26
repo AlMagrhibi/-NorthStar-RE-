@@ -46,3 +46,32 @@ On an interactive Windows 11 x64 desktop, run `./scripts/Test-Desktop-Windows.ps
 ## Launcher interaction patch
 
 `nsre desktop maximize HWND PID --apply` requests maximization and verifies window state. `nsre desktop inspect` includes DPI and client geometry. `nsre desktop click HWND PID X Y --apply` accepts client-relative coordinates only; the selected window must already be foreground, the hit point must belong to that window, and cursor position and owner are rechecked immediately before a single ordinary left click. It refuses covered points and does not bypass Windows input isolation. Exit 0 for click means input insertion, not a successful application action; independently observe the expected process or UI state. The short check-to-input race cannot be eliminated; use an idle local desktop and serialize GUI actions. The fixture now creates a START button and observes a title change when normal foreground access succeeds. No actual Windows 11 fixture result yet. UI Automation, window capture and full DPI-awareness remain unimplemented.
+
+## Desktop input, UIA and window frames — executable candidate
+
+New native commands (all require a currently valid HWND/PID):
+
+| Command | Implemented behavior |
+|---|---|
+| `desktop pointer HWND PID X Y --apply` | Move the cursor to an uncovered selected-window client point and verify position |
+| `desktop type HWND PID TEXT --apply` | Unicode SendInput, at most 1024 UTF-16 units, foreground checks between chunks; text omitted from reports |
+| `desktop type-stdin HWND PID --apply` | Same text input read from bounded stdin so text need not appear in process arguments |
+| `desktop key HWND PID Ctrl+A --apply` | Validated modifier chord or named Enter/Tab/Escape/arrows/etc.; release on partial dispatch |
+| `desktop controls HWND PID` | Native UI Automation control view: at most 256 nodes, depth 8, per-provider connection/transaction timeouts; no Value/Text pattern reads; password names omitted |
+| `desktop invoke HWND PID AUTOMATION_ID --apply` | Require a unique enabled nonpassword control in a complete bounded tree, use InvokePattern; application effect requires independent observation |
+| `desktop capture HWND PID NEW.png` | Selected-window PrintWindow fallback in a separately owned child, 5-second deadline; encode PNG and publish without overwrite, with SHA-256 |
+| `desktop watch HWND PID NEW_DIR FRAMES INTERVAL_MS` | Capture successive selected-window PNG frames; 1–120 frames, 200–5000 ms delay between frames; Escape stops; each frame releases the desktop lock |
+
+This implements frame polling, not a WGC/video streaming backend. PrintWindow can render normal covered Win32 windows; minimized windows must be restored first. DirectX/fullscreen/protected content and accurate rendering remain unsupported or unverified when the application does not supply a usable image. A PNG/hash alone does not verify visual content. No black-frame workaround or capture-policy bypass is attempted. A synthetic fixture verifies the expected colour in a covered window independently.
+
+Ordinary commands serialize through a session-local named mutex. Per-monitor-v2 thread DPI context is applied and restored. Foreground keyboard/mouse actions refuse a changed target, held Escape or physical modifier/button input. Short check-to-input races and limitations of HWND/PID identity remain; no permanent process-creation identity is claimed. Desktop changes from unrelated user applications cannot be serialized by this mutex. Text dispatch is chunked without splitting surrogate pairs; cancellation can leave previously inserted text in the application. No automatic retry after an ambiguous action.
+
+The `windows` crate supplies reviewed UIA/COM bindings; `png` encodes the image. Cargo.lock and unchanged upstream notices are included. Scope is standard user desktop operations, not UAC, lock screens, elevated/protected surfaces or unrestricted computer control.
+
+## Explicit native agent bridge
+
+`nsre mcp --project PROJECT --desktop-control` (or `api`) explicitly enables `nsre_desktop_observe` and `nsre_desktop_act`. Without that flag the existing server exposes only its previous read-only tools. Desktop actions use strict typed fields, a selected HWND/PID, and `apply:true` for GUI mutation; they cannot execute arbitrary commands or SQL. The bridge launches only its own executable, passes typed text by stdin, bounds output and enforces a 20-second owned-process deadline. It stores capture files only in the initialized project's `.northstar/reports` and appends intent/outcome records in `.northstar/logs/desktop-actions.jsonl`, omitting raw input text. Results preserve exit status and explicitly distinguish dispatch from application effect. On timeout, a GUI effect may be unknown; inspect before any subsequent action.
+
+No host registration or FreePi settings are changed. A host that supports stdio MCP may use this bridge after checking its actual version/configuration. Native CLI invocation remains available to hosts without MCP. Actual FreePi compatibility and Windows 11 acceptance must be recorded separately.
+
+`Test-Desktop-Windows.ps1` now verifies unique UIA invocation, password exclusions, covered-window image content and SHA-256, and Unicode keyboard effect when normal foreground access succeeds. `-HostedProbe` explicitly reports BLOCKED if no interactive desktop exists; this is not a passed desktop acceptance. Hosted Windows Server results do not establish Windows 11/FreePi acceptance.
