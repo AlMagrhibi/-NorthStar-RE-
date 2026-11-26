@@ -4,6 +4,7 @@ use std::{ffi::OsString, io, thread, time::Duration};
 
 mod capture;
 mod keyboard;
+mod mouse;
 mod uia;
 
 type Hwnd = isize;
@@ -303,6 +304,9 @@ fn mouse_input(flags: u32) -> Input {
 }
 
 fn click(hwnd: Hwnd, pid: u32, x: i32, y: i32) -> io::Result<bool> {
+    mouse_click(hwnd, pid, x, y, "left")
+}
+fn mouse_click(hwnd: Hwnd, pid: u32, x: i32, y: i32, button: &str) -> io::Result<bool> {
     keyboard::guard(hwnd, pid)?;
     let before = snapshot(hwnd, Some(pid))?;
     if before["foreground"] != true || before["minimized"] == true {
@@ -340,24 +344,29 @@ fn click(hwnd: Hwnd, pid: u32, x: i32, y: i32) -> io::Result<bool> {
     {
         return Err(invalid("cursor or target changed; click aborted"));
     }
-    let events = [
-        mouse_input(MOUSEEVENTF_LEFTDOWN),
-        mouse_input(MOUSEEVENTF_LEFTUP),
-    ];
+    let (down, up, repetitions) = match button {
+        "left" => (MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, 1),
+        "right" => (8, 16, 1),
+        "middle" => (32, 64, 1),
+        "double" => (MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, 2),
+        _ => return Err(invalid("unsupported mouse button")),
+    };
+    let events: Vec<_> = (0..repetitions)
+        .flat_map(|_| [mouse_input(down), mouse_input(up)])
+        .collect();
     let size = std::mem::size_of::<Input>() as i32;
-    let sent = unsafe { send_input(2, events.as_ptr(), size) };
-    if sent == 1 {
-        // Best effort release after a partial insertion.
-        let release = mouse_input(MOUSEEVENTF_LEFTUP);
+    let sent = unsafe { send_input(events.len() as u32, events.as_ptr(), size) };
+    if sent % 2 == 1 {
+        let release = mouse_input(up);
         unsafe { send_input(1, &release, size) };
     }
     println!(
         "{}",
-        json!({"schema":1,"dispatched":sent==2,"events_inserted":sent,
+        json!({"schema":1,"dispatched":sent as usize==events.len(),"mouse_action":button,"events_inserted":sent,
             "application_effect_verified":false,"hwnd":hwnd.to_string(),"pid":pid,
             "client_x":x,"client_y":y,"screen_x":point.x,"screen_y":point.y})
     );
-    Ok(sent == 2)
+    Ok(sent as usize == events.len())
 }
 
 fn number<T: std::str::FromStr>(value: &OsString) -> io::Result<T> {
@@ -449,6 +458,34 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     }
     if args.len() == 6 && args[0] == "pointer" && args[5] == "--apply" {
         return keyboard::pointer(hwnd, pid, number(&args[3])?, number(&args[4])?);
+    }
+    if args.len() == 6 && args[5] == "--apply" {
+        let button = match args[0].to_str() {
+            Some("right-click") => Some("right"),
+            Some("middle-click") => Some("middle"),
+            Some("double-click") => Some("double"),
+            _ => None,
+        };
+        if let Some(button) = button {
+            return mouse_click(hwnd, pid, number(&args[3])?, number(&args[4])?, button);
+        }
+    }
+    if args.len() == 7 && args[0] == "scroll" && args[6] == "--apply" {
+        return mouse::scroll(
+            hwnd,
+            pid,
+            number(&args[3])?,
+            number(&args[4])?,
+            number(&args[5])?,
+        );
+    }
+    if args.len() == 8 && args[0] == "drag" && args[7] == "--apply" {
+        return mouse::drag(
+            hwnd,
+            pid,
+            (number(&args[3])?, number(&args[4])?),
+            (number(&args[5])?, number(&args[6])?),
+        );
     }
     if args.len() == 6 && args[0] == "click" && args[5] == "--apply" {
         return click(hwnd, pid, number(&args[3])?, number(&args[4])?);

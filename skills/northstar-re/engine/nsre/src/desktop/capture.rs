@@ -41,6 +41,7 @@ unsafe extern "system" {
     ) -> isize;
     fn SelectObject(dc: isize, object: isize) -> isize;
     fn DeleteObject(object: isize) -> i32;
+    fn GdiFlush() -> i32;
 }
 fn dimensions(w: i64, h: i64) -> io::Result<usize> {
     if !(1..=8192).contains(&w) || !(1..=8192).contains(&h) || w * h > 16_777_216 {
@@ -127,6 +128,9 @@ fn write_frame(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<()> {
     identity(hwnd, Some(pid))?;
     if unsafe { PrintWindow(hwnd, surface.dc, 2) } == 0 {
         return Err(invalid("window renderer did not support capture"));
+    }
+    if unsafe { GdiFlush() } == 0 {
+        return Err(io::Error::last_os_error());
     }
     let after = snapshot(hwnd, Some(pid))?;
     if before["width"] != after["width"]

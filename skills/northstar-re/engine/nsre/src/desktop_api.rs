@@ -13,7 +13,7 @@ fn invalid(s: &str) -> io::Error {
 pub(crate) fn tools() -> Vec<Value> {
     vec![
         json!({"name":"nsre_desktop_observe","description":"Explicit desktop session: list windows, inspect one window, read bounded UIA controls or save a PNG under the bound project reports. No password values are read.","inputSchema":{"type":"object","properties":{"action":{"type":"string","enum":["list","inspect","controls","capture"]},"hwnd":{"type":"string","pattern":"^[0-9]+$"},"pid":{"type":"integer","minimum":1}},"required":["action"],"additionalProperties":false},"annotations":{"readOnlyHint":false}}),
-        json!({"name":"nsre_desktop_act","description":"Explicit selected-window action. Requires apply=true. Input must remain foreground; UIA Invoke uses a unique AutomationId. Insertion/Invoke is not independent proof of application effect.","inputSchema":{"type":"object","properties":{"action":{"type":"string","enum":["restore","maximize","focus","move","resize","click","pointer","key","type","invoke"]},"hwnd":{"type":"string","pattern":"^[0-9]+$"},"pid":{"type":"integer","minimum":1},"apply":{"const":true},"x":{"type":"integer"},"y":{"type":"integer"},"width":{"type":"integer"},"height":{"type":"integer"},"text":{"type":"string","maxLength":1024},"key":{"type":"string","maxLength":64},"automation_id":{"type":"string","maxLength":256}},"required":["action","hwnd","pid","apply"],"additionalProperties":false},"annotations":{"readOnlyHint":false,"destructiveHint":true}}),
+        json!({"name":"nsre_desktop_act","description":"Explicit selected-window action. Requires apply=true. Input must remain foreground; UIA Invoke uses a unique AutomationId. Insertion/Invoke is not independent proof of application effect.","inputSchema":{"type":"object","properties":{"action":{"type":"string","enum":["restore","maximize","focus","move","resize","click","pointer","right-click","middle-click","double-click","drag","scroll","key","type","invoke"]},"hwnd":{"type":"string","pattern":"^[0-9]+$"},"pid":{"type":"integer","minimum":1},"apply":{"const":true},"x":{"type":"integer"},"y":{"type":"integer"},"width":{"type":"integer"},"height":{"type":"integer"},"text":{"type":"string","maxLength":1024},"key":{"type":"string","maxLength":64},"to_x":{"type":"integer"},"to_y":{"type":"integer"},"delta":{"type":"integer"},"automation_id":{"type":"string","maxLength":256}},"required":["action","hwnd","pid","apply"],"additionalProperties":false},"annotations":{"readOnlyHint":false,"destructiveHint":true}}),
     ]
 }
 fn prepare(
@@ -31,7 +31,11 @@ fn prepare(
         (false, "list") => &["action"],
         (false, "inspect" | "controls" | "capture") => &["action", "hwnd", "pid"],
         (true, "restore" | "maximize" | "focus") => &["action", "hwnd", "pid", "apply"],
-        (true, "move" | "click" | "pointer") => &["action", "hwnd", "pid", "apply", "x", "y"],
+        (true, "move" | "click" | "pointer" | "right-click" | "middle-click" | "double-click") => {
+            &["action", "hwnd", "pid", "apply", "x", "y"]
+        }
+        (true, "drag") => &["action", "hwnd", "pid", "apply", "x", "y", "to_x", "to_y"],
+        (true, "scroll") => &["action", "hwnd", "pid", "apply", "x", "y", "delta"],
         (true, "resize") => &["action", "hwnd", "pid", "apply", "width", "height"],
         (true, "key") => &["action", "hwnd", "pid", "apply", "key"],
         (true, "type") => &["action", "hwnd", "pid", "apply", "text"],
@@ -68,7 +72,7 @@ fn prepare(
     let mut stdin = None;
     for field in fields.iter().skip(4) {
         match *field {
-            "x" | "y" | "width" | "height" => {
+            "x" | "y" | "width" | "height" | "to_x" | "to_y" | "delta" => {
                 let n = value[field]
                     .as_i64()
                     .filter(|v| i32::try_from(*v).is_ok())

@@ -18,3 +18,11 @@
 تُحفظ نتائج HostedProbe في desktop-control.json. إذا كان سطح المكتب غير تفاعلي فالنتيجة BLOCKED، وإذا رفض foreground يبقى keyboard/click acceptance غير متحقق؛ لا تعتبر overall CI success إثباتًا لهما. لا توجد جلسة متاحة على Windows 11 للمستخدم أو FreePi، ولا اختبار على play.exe الخاص.
 
 ما زال WGC/DirectX/minimized capture والهوية الدائمة بوقت إنشاء العملية وتكامل FreePi الفعلي بحاجة إلى قبول منفصل. اكتمال وظائف المحركات الأخرى وworker leases/Job Objects ليس ضمن الادعاء بهذا الباتش، وجميع complete=false محفوظة. لا إصدار نهائي أو تثبيت تحديث ناقص.
+
+## قيود موارد فعلية وأوامر الماوس
+
+أضيف governed-batch: عامل native مملوك يبدأ suspended ثم يُربط بـWindows Job Object قبل التنفيذ. تُفرض الذاكرة وCPU وعدد العمليات وkill-on-close، وتُقرأ الإعدادات من Windows للتحقق منها؛ timeout يوقف العامل المملوك ويتحقق من توقفه. القياسات من OS وليست أرقامًا يقدمها الأيجنت. لا تعني هذه الوظيفة وجود queue leases أو sandbox للملفات؛ العقد في [governed-batch](../architecture/governed-batch.md).
+
+أضيف right/middle/double click وscroll وdrag مع إيقاف عند تغيّر الهدف ومحاولة إطلاق الزر عند الخروج. لم يُنسب نجاح اختبار left-click إلى هذه الأفعال الجديدة.
+
+دليل الباتش الأول `9c1e116`: [CI 45878056470](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45878056470)، ملف desktop-control.json من artifact evidence-windows-2022، SHA-256 للأرشيف `226dc872dd30a9f78f3bc1d2de32ab12485e07345ba8d2757b69a2bbeb94e2eb`. النتيجة PASS على Windows Server 2022: أثر keyboard/click/UIA، تصوير محتوى نافذة مغطاة، عزل password، وتحريك/تغيير حجم/استعادة النوافذ. os_is_windows11=false؛ لا قبول FreePi مستنتج. يُعاد CI على الباتش اللاحق ولا يعمم هذا النجاح عليه.

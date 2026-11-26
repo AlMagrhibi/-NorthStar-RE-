@@ -5,6 +5,8 @@ mod collect;
 mod desktop;
 mod desktop_api;
 mod framework;
+#[cfg(windows)]
+mod governor;
 mod index;
 mod lab;
 mod pe;
@@ -239,7 +241,7 @@ fn main() -> ExitCode {
     if let Some(cmd) = args.next().and_then(|x| x.into_string().ok()) {
         if cmd == "--help" || cmd == "help" {
             println!(
-                "nsre 0.3.0: scan index export diff probe analyze batch engines queue desktop collect {}",
+                "nsre 0.3.0: scan index export diff probe analyze batch engines queue desktop collect governed-batch {}",
                 framework::COMMANDS.join(" ")
             );
             return ExitCode::SUCCESS;
@@ -255,6 +257,17 @@ fn main() -> ExitCode {
         #[cfg(windows)]
         if cmd == "desktop" {
             return match desktop::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        #[cfg(windows)]
+        if cmd == "governed-batch" {
+            return match governor::command(args) {
                 Ok(true) => ExitCode::SUCCESS,
                 Ok(false) => ExitCode::from(2),
                 Err(e) => {

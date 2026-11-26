@@ -46,6 +46,17 @@ try {
  $db=Join-Path $root 'jobs.sqlite'
  $input=Join-Path $root 'input.json'
  [IO.File]::WriteAllText($input,'{"schema":1,"tasks":[{"id":"data","input":{"operation":"json-roundtrip","data":{"x":1}}},{"id":"qa","depends_on":["data"],"input":{"operation":"regression-check","baseline":1,"actual":1}}]}',[Text.UTF8Encoding]::new($false))
+ $governedPath=Join-Path $root 'governed-report.json'
+ $governed=Invoke-Engine -Arguments @('governed-batch','--input',$input,'--out',$governedPath,'--jobs','2','--timeout-ms','30000','--memory-mib','512','--cpu-percent','50','--reviewed-redacted')|ConvertFrom-Json
+ if (!$governed.passed -or !$governed.worker_stopped -or !$governed.os_limits_verified -or !$governed.measured_by_engine -or $governed.measurements.peak_job_committed_bytes -le 0) { throw 'Governed native batch resource evidence failed' }
+ $governedFile=Get-Content -LiteralPath $governedPath -Raw|ConvertFrom-Json
+ if ($governedFile.input_sha256 -ne (Get-FileHash -LiteralPath $input -Algorithm SHA256).Hash.ToLowerInvariant() -or !$governedFile.result.passed) { throw 'Governed batch provenance failed' }
+ # One millisecond is deliberately shorter than startup plus the reviewed workload.
+ $timedPath=Join-Path $root 'deadline-report.json'
+ & $Engine governed-batch --input $allInput --out $timedPath --jobs 1 --timeout-ms 1 --memory-mib 512 --cpu-percent 1 --reviewed-redacted|Out-Null
+ if ($LASTEXITCODE -ne 2) { throw 'Governed deadline did not return unsuccessful terminal status' }
+ $timed=Get-Content -LiteralPath $timedPath -Raw|ConvertFrom-Json
+ if (!$timed.timed_out -or !$timed.worker_stopped -or $timed.passed -or !$timed.os_limits_verified) { throw 'Governed timeout falsely completed' }
  Invoke-Engine -Arguments @('queue','init',$db)|Out-Null
  foreach ($id in @('first','second','cancelled')) {
   Invoke-Engine -Arguments @('queue','submit',$db,$id,$input,'50','2','--reviewed-redacted')|Out-Null
@@ -93,7 +104,7 @@ try {
  if ($LASTEXITCODE -ne 2) { throw 'Stale collector did not fail closed' }
  $stale=Invoke-Engine -Arguments @('queue','status',$db,'stale-collect')|ConvertFrom-Json
  if ($stale.state -ne 'failed' -or $stale.result.results[0].passed) { throw 'Stale source accepted' }
- @{schema=1;status='PASS';scope='Windows hosted runner; not Windows 11 desktop or FreePi acceptance';registry_engines=12;all_engine_fixture_passed=$true;local_collection_passed=$true;concurrent_claims=$claimed;caller_input_sha256=$callerHash;cancelled_job_preserved=$true;dependency_fixture_passed=$true;queue_drain_passed=$true;queue_wait_provenance_passed=$true;cross_job_dag_passed=$true;queued_collector_passed=$true;stale_source_rejected=$true;pe_layout_passed=$true;commit=$env:GITHUB_SHA}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $Reports 'orchestrator-windows.json') -Encoding UTF8
+ @{schema=1;status='PASS';scope='Windows hosted runner; not Windows 11 desktop or FreePi acceptance';registry_engines=12;all_engine_fixture_passed=$true;local_collection_passed=$true;concurrent_claims=$claimed;caller_input_sha256=$callerHash;cancelled_job_preserved=$true;dependency_fixture_passed=$true;queue_drain_passed=$true;queue_wait_provenance_passed=$true;cross_job_dag_passed=$true;queued_collector_passed=$true;stale_source_rejected=$true;pe_layout_passed=$true;job_object_budgets_verified=$true;governed_timeout_stopped=$true;commit=$env:GITHUB_SHA}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $Reports 'orchestrator-windows.json') -Encoding UTF8
 } finally {
  foreach ($worker in $workers) {
   if (!$worker.HasExited) { $worker.Kill(); $worker.WaitForExit() }
