@@ -7,7 +7,7 @@ use std::{
     fs::{self, File, OpenOptions},
     io::{self, Read},
     path::Path,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 const APP_ID: i64 = 0x4e53514a;
@@ -301,6 +301,8 @@ fn run_one_with<F>(c: &mut Connection, evaluate: F) -> io::Result<Value>
 where
     F: FnOnce(&Connection, Value, usize) -> io::Result<Value>,
 {
+    let started = Instant::now();
+    let started_utc_ms = utc_millis()?;
     let Some((id, input, expected, workers)) = claim(c)? else {
         return Ok(json!({"state":"idle"}));
     };
@@ -335,6 +337,14 @@ where
         Err(e) => ("failed", json!({"error":e.to_string()})),
     };
     report["queue_provenance"] = json!({"schema":1,"producer":"nsre","producer_version":env!("CARGO_PKG_VERSION"),"input_sha256":expected,"dependencies":dependencies});
+    report["execution"] = json!({
+        "schema":1,"execution_id":id,"state":state,
+        "verification":"UNVERIFIED","producer_version":env!("CARGO_PKG_VERSION"),
+        "started_utc_ms":started_utc_ms,"finished_utc_ms":utc_millis().ok(),
+        "duration_ms":started.elapsed().as_millis() as u64,
+        "duration_clock":"monotonic","resource_usage":{"measured_by_engine":false},
+        "automatic_retry":false
+    });
     let body = serde_json::to_string(&report).map_err(io::Error::other)?;
     let changed = c
         .execute(
@@ -347,6 +357,13 @@ where
         return Err(invalid("job no longer owns running state"));
     }
     Ok(json!({"id":id,"state":state}))
+}
+
+fn utc_millis() -> io::Result<u64> {
+    let duration = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(io::Error::other)?;
+    u64::try_from(duration.as_millis()).map_err(io::Error::other)
 }
 
 // An unwinding evaluator must not leave its claimed job silently running.
@@ -583,6 +600,15 @@ mod tests {
         let mut c = open(&fixture.db()).unwrap();
         let parent = status(&c, "parent").unwrap();
         assert_eq!(parent["state"], "failed");
+        assert_eq!(parent["result"]["execution"]["execution_id"], "parent");
+        assert_eq!(parent["result"]["execution"]["verification"], "UNVERIFIED");
+        assert!(
+            parent["result"]["execution"]["started_utc_ms"]
+                .as_u64()
+                .unwrap()
+                > 0
+        );
+        assert!(parent["result"]["execution"]["duration_ms"].is_u64());
         assert!(parent["result"]["error"]
             .as_str()
             .unwrap()
