@@ -33,7 +33,7 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo build --release --locked
 ```
 
-بعد الباتش: 21 unit + 3 engine_cli + 2 framework_cli + 4 security_regression = 30 اختبارًا فريدًا على Linux. النتائج المحلية لا تثبت عدد Windows، الذي يضم اختبارات خاصة بمنصته. ستُسجل أي تغييرات لاحقة في هذا التقرير قبل رفع الباتش.
+بعد الباتش: 22 unit + 3 engine_cli + 2 framework_cli + 4 security_regression = 31 اختبارًا فريدًا على Linux. النتائج المحلية لا تثبت عدد Windows، الذي يضم اختبارات خاصة بمنصته. ستُسجل أي تغييرات لاحقة في هذا التقرير قبل رفع الباتش.
 
 ## العوائق الحالية وحالة الإصدار
 
@@ -50,3 +50,5 @@ cargo build --release --locked
 أضيف nsre_capabilities وnsre_queue_status إلى stdio MCP، مع بقاء الواجهة قراءة فقط. قراءة الطابور مربوطة بالمسار .northstar/state/jobs.sqlite داخل المشروع المحدد، دون قبول مسار DB من الأيجنت. اختبار CLI فعلي يثبت handshake/discovery واستهلاك نتيجة موثقة ويرفض extra arguments وpath traversal ويثبت عزل مشروع ثانٍ دون إنشاء حالته. لا تعديل إعدادات FreePi أو اعتماداته؛ قبول المضيف نفسه UNVERIFIED. الأوامر والعقد في adapters/README.md.
 
 باتش الجدولة والجمع: commit `96d5424b895681bd6b9491b35c563050b44fcf3c`، [CI 45872473167](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45872473167). سجلات واجهة الأيجنت والإصلاحات التالية تخص أحدث commit، ويجب فحص CI الخاص به منفصلًا.
+
+مراجعة التوافق: يُرفض collector input schema 2 في DB v1 حتى الترحيل الصريح، كي لا يستهلكه عامل قديم لا يدعم عقده. أضيف اختبار تنافس متزامن لثمانية عمال على مفتاح حصري واحد؛ حجز عامل واحد فقط، وبعد interruption موثق يصبح المورد متاحًا للعامل التالي. يعلن registry الآن عقد collector القابل للجدولة دون تغيير complete flags.

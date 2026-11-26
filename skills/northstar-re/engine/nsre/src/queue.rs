@@ -111,8 +111,10 @@ fn submit(c: &Connection, id: &str, input: &str, priority: i64, workers: usize) 
     let version: i64 = tx
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(io::Error::other)?;
-    if version == 1 && (!dependencies.is_empty() || !keys.is_empty()) {
-        return Err(invalid("queue migrate required for scheduling"));
+    if version == 1 && (value["schema"] == 2 || !dependencies.is_empty() || !keys.is_empty()) {
+        return Err(invalid(
+            "queue migrate required for scheduling or collection",
+        ));
     }
     // Dependencies must already exist: append-only submission cannot introduce a cycle.
     for dependency in &dependencies {
@@ -580,6 +582,44 @@ mod tests {
         transition(&a, "writer-a", "running", "interrupted").unwrap();
         assert_eq!(claim(&mut b).unwrap().unwrap().0, "writer-b");
         assert!(claim(&mut a).unwrap().is_none());
+    }
+
+    #[test]
+    fn concurrent_claims_have_one_owner_for_an_exclusive_key() {
+        let f = Fixture::new();
+        init(&f.db()).unwrap();
+        let c = open(&f.db()).unwrap();
+        for i in 0..8 {
+            submit(
+                &c,
+                &format!("job-{i}"),
+                &manifest(&[], &["shared"], true),
+                50,
+                1,
+            )
+            .unwrap();
+        }
+        drop(c);
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(8));
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                let db = f.db();
+                let barrier = barrier.clone();
+                std::thread::spawn(move || {
+                    let mut c = open(&db).unwrap();
+                    barrier.wait();
+                    claim(&mut c).unwrap()
+                })
+            })
+            .collect();
+        let claims: Vec<_> = handles
+            .into_iter()
+            .filter_map(|h| h.join().unwrap())
+            .collect();
+        assert_eq!(claims.len(), 1);
+        let mut c = open(&f.db()).unwrap();
+        transition(&c, &claims[0].0, "running", "interrupted").unwrap();
+        assert!(claim(&mut c).unwrap().is_some());
     }
 
     #[test]

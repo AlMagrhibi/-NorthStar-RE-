@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "candidate capability registry; batch operations are offline only",
+  "scope": "candidate capability registry; batch operations offline; queue supports reviewed local file collection",
   "engines": [
     {
       "id": "native-core",
@@ -13,7 +13,8 @@
       "shared_collect_cli": [
         "collect"
       ],
-      "collect_scope": "selected local file hashes and header hints; no restore"
+      "collect_scope": "selected local file hashes and header hints; no restore",
+      "queue_collect_input_schema": 2
     },
     {
       "id": "binary-intelligence",
@@ -26,7 +27,8 @@
       "shared_collect_cli": [
         "collect"
       ],
-      "collect_scope": "selected local file hashes and header hints; no restore"
+      "collect_scope": "selected local file hashes and header hints; no restore",
+      "queue_collect_input_schema": 2
     },
     {
       "id": "semantic-intelligence",
@@ -120,7 +122,8 @@
       "shared_collect_cli": [
         "collect"
       ],
-      "collect_scope": "selected local file hashes and header hints; no restore"
+      "collect_scope": "selected local file hashes and header hints; no restore",
+      "queue_collect_input_schema": 2
     },
     {
       "id": "recovery",
@@ -133,7 +136,8 @@
       "shared_collect_cli": [
         "collect"
       ],
-      "collect_scope": "selected local file hashes and header hints; no restore"
+      "collect_scope": "selected local file hashes and header hints; no restore",
+      "queue_collect_input_schema": 2
     },
     {
       "id": "quality-assurance",
@@ -147,7 +151,8 @@
       "shared_collect_cli": [
         "collect"
       ],
-      "collect_scope": "selected local file hashes and header hints; no restore"
+      "collect_scope": "selected local file hashes and header hints; no restore",
+      "queue_collect_input_schema": 2
     }
   ]
 }
