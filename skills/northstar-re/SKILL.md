@@ -35,3 +35,6 @@ Read `references/engineering-validation-lab.md` for FW-011 through FW-020. Use t
 
 ## Approved native engineering orchestration (candidate)
 Read `references/engine-orchestrator.md`. Verify the installed engine exposes `nsre engines` and inspect the actual registry; never infer native capabilities from specialist names. Use `nsre batch` only for reviewed redacted supported offline lab operations. If the host supports independent background processes, run independent batches while doing unrelated work; otherwise execute synchronously. Validate final exit status and full output before consuming results. A negative check is not a successful gate. Persistent submit/status/wait/cancel, live collectors and event delivery are planned; never invoke undocumented commands or claim background work survives host exit. Preserve project separation, existing state, original files, and the installed release.
+
+## Windows-only target policy
+Future orchestration development, execution and acceptance target Windows 11 x64. No Linux/WSL fallback or requirement. The candidate explicit offline queue must be used only if the installed engine actually exposes it. Do not claim Windows desktop acceptance from hosted CI. Preserve project state and the installed release until verified upgrade.
