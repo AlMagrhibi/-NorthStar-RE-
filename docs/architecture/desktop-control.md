@@ -38,3 +38,7 @@ HWND is a decimal string; PID is an integer. Re-enumerate immediately before mut
 Current source adds DSC-01 and partial DSC-02/03 candidates; no actual desktop acceptance or complete desktop engine claim. See Microsoft Win32 documentation for EnumWindows, SetWindowPos, ShowWindowAsync and SetForegroundWindow: https://learn.microsoft.com/windows/win32/winmsg/window-features . Keep original target files and project state unchanged.
 
 [Platform architecture](windows-platform.md) · [Orchestrator lifecycle](task-lifecycle.md)
+
+## Interactive fixture procedure
+
+On an interactive Windows 11 x64 desktop, run `./scripts/Test-Desktop-Windows.ps1 -Engine PATH_TO_NSRE_EXE -Reports EXISTING_REPORT_DIR`. It creates two overlapping synthetic windows and one minimized window in a disposable child process, targets only those windows, checks the non-target window stayed unchanged, tests invalid targeting and checks foreground success or denial honestly. Use an idle desktop; do not run during active user work. A hosted CI job is not a substitute. No result has been collected from this new fixture yet.

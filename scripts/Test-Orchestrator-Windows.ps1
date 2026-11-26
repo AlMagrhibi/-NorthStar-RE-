@@ -16,6 +16,9 @@ function Invoke-Engine([string[]]$Arguments) {
 try {
  $registry=Invoke-Engine -Arguments @('engines')|ConvertFrom-Json
  if ($registry.schema -ne 1 -or @($registry.engines).Count -ne 12) { throw 'Engine registry mismatch' }
+ # Check the desktop CLI rejects invalid targets without interacting with runner windows.
+ & $Engine desktop inspect 0 1 2>$null|Out-Null
+ if ($LASTEXITCODE -ne 1) { throw 'Desktop invalid handle accepted' }
  $db=Join-Path $root 'jobs.sqlite'
  $input=Join-Path $root 'input.json'
  [IO.File]::WriteAllText($input,'{"schema":1,"tasks":[{"id":"data","input":{"operation":"json-roundtrip","data":{"x":1}}},{"id":"qa","input":{"operation":"regression-check","baseline":1,"actual":1}}]}',[Text.UTF8Encoding]::new($false))
