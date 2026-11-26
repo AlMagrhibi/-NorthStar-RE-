@@ -291,6 +291,17 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
     writer.finish().map_err(io::Error::other)?;
     progress.mark("sync PNG")?;
     file.sync_all()?;
+    // WGC runs only in the bounded, one-shot `capture-worker` process.  Some
+    // hosted GPU stacks raise an access violation while releasing an otherwise
+    // completed free-threaded frame pool.  Do not run that driver teardown in
+    // the caller: ownership of this worker is already bounded by the parent,
+    // and Windows reclaims these COM/GPU resources when the worker exits.
+    // This is deliberately scoped here; the long-lived control process never
+    // owns these objects.
+    std::mem::forget(frame);
+    std::mem::forget(session);
+    std::mem::forget(_runtime);
+    progress.mark("complete")?;
     Ok(
         json!({"method":"Windows Graphics Capture","width":width,"height":height,"frame_timestamp_100ns":timestamp,"hardware_device":hardware,"content_verified":false,"protected_content_bypassed":false}),
     )
