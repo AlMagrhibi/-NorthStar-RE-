@@ -287,6 +287,20 @@ fn claim(c: &mut Connection) -> io::Result<Option<(String, String, String, i64)>
 }
 
 fn run_one(c: &mut Connection) -> io::Result<Value> {
+    run_one_with(c, |c, v, workers| {
+        if v["schema"] == 2 {
+            validate_source_scope(c, &v)?;
+            crate::collect::evaluate_job(&v, workers)
+        } else {
+            crate::batch::evaluate(&v, workers)
+        }
+    })
+}
+
+fn run_one_with<F>(c: &mut Connection, evaluate: F) -> io::Result<Value>
+where
+    F: FnOnce(&Connection, Value, usize) -> io::Result<Value>,
+{
     let Some((id, input, expected, workers)) = claim(c)? else {
         return Ok(json!({"state":"idle"}));
     };
@@ -311,14 +325,7 @@ fn run_one(c: &mut Connection) -> io::Result<Value> {
         Ok(dependencies) => (
             serde_json::from_str(&input)
                 .map_err(io::Error::other)
-                .and_then(|v: Value| {
-                    if v["schema"] == 2 {
-                        validate_source_scope(c, &v)?;
-                        crate::collect::evaluate_job(&v, workers as usize)
-                    } else {
-                        crate::batch::evaluate(&v, workers as usize)
-                    }
-                }),
+                .and_then(|v: Value| guarded_evaluation(|| evaluate(c, v, workers as usize))),
             dependencies,
         ),
     };
@@ -340,6 +347,19 @@ fn run_one(c: &mut Connection) -> io::Result<Value> {
         return Err(invalid("job no longer owns running state"));
     }
     Ok(json!({"id":id,"state":state}))
+}
+
+// An unwinding evaluator must not leave its claimed job silently running.
+// Abort, power loss and process death still require owner/lease reconciliation.
+fn guarded_evaluation<F>(evaluate: F) -> io::Result<Value>
+where
+    F: FnOnce() -> io::Result<Value>,
+{
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(evaluate)).unwrap_or_else(|_| {
+        Err(io::Error::other(
+            "WORKER_LOST: evaluator unwound; result unverified",
+        ))
+    })
 }
 
 fn drain(c: &mut Connection, limit: usize) -> io::Result<Value> {
@@ -538,6 +558,42 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn evaluator_panic_is_explicit_failure_without_panic_payload() {
+        let error = guarded_evaluation(|| panic!("synthetic private payload")).unwrap_err();
+        assert!(error.to_string().contains("WORKER_LOST"));
+        assert!(!error.to_string().contains("private payload"));
+        assert_eq!(
+            guarded_evaluation(|| Ok(json!({"passed":true}))).unwrap()["passed"],
+            true
+        );
+        assert!(guarded_evaluation(|| Err(invalid("fixture error"))).is_err());
+    }
+
+    #[test]
+    fn panicked_job_persists_failure_and_blocks_dependent_after_reopen() {
+        let fixture = Fixture::new();
+        init(&fixture.db()).unwrap();
+        let mut c = open(&fixture.db()).unwrap();
+        submit(&c, "parent", &manifest(&[], &[], true), 1, 1).unwrap();
+        submit(&c, "child", &manifest(&["parent"], &[], true), 1, 1).unwrap();
+        let result = run_one_with(&mut c, |_, _, _| panic!("fixture evaluator fault")).unwrap();
+        assert_eq!(result["state"], "failed");
+        drop(c);
+        let mut c = open(&fixture.db()).unwrap();
+        let parent = status(&c, "parent").unwrap();
+        assert_eq!(parent["state"], "failed");
+        assert!(parent["result"]["error"]
+            .as_str()
+            .unwrap()
+            .contains("WORKER_LOST"));
+        let child = run_one_with(&mut c, |_, _, _| panic!("dependent must not execute")).unwrap();
+        assert_eq!(child["state"], "failed");
+        assert!(status(&c, "child").unwrap()["result"]["error"]
+            .as_str()
+            .unwrap()
+            .contains("dependency"));
+    }
 
     struct Fixture(std::path::PathBuf);
     impl Fixture {

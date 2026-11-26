@@ -2,6 +2,8 @@
 
 The control-plane and durable-execution sections specify the target. Candidate implementation slices and their limits are recorded below.
 
+V12 fault containment: an unwinding Rust evaluator becomes an explicit `WORKER_LOST` failure persisted through the existing result/hash transaction. The panic payload is excluded from the persisted result; the Rust panic hook can still write stderr diagnostics. Aborts, OS termination and power loss require owner/lease reconciliation, which remains outstanding. No automatic retry is introduced.
+
 ## Control plane
 Submit returns a stable task ID without blocking on execution. Status returns the state and progress with a monotonically increasing event sequence. Wait is optional. Cancel is cooperative first; verified adapter processes require bounded termination and reconciliation. No command may report a cancelled or interrupted task as completed.
 
