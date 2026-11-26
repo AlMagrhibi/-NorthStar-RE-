@@ -12,6 +12,9 @@ use std::{
 
 const APP_ID: i64 = 0x4e53514a;
 const LIMIT: u64 = 1024 * 1024;
+const SCHEMA_VERSION: i64 = 3;
+const DEFAULT_LEASE_MS: u64 = 30_000;
+const MAX_LEASE_MS: u64 = 3_600_000;
 
 fn invalid(message: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, message)
@@ -52,7 +55,7 @@ fn init(path: &Path) -> io::Result<()> {
          PRAGMA synchronous=FULL;
          BEGIN IMMEDIATE;
          PRAGMA application_id=1314083146;
-         PRAGMA user_version=2;
+         PRAGMA user_version=3;
          CREATE TABLE jobs(
             id TEXT PRIMARY KEY,
             input TEXT NOT NULL,
@@ -63,8 +66,25 @@ fn init(path: &Path) -> io::Result<()> {
               ('queued','running','completed','failed','cancelled','interrupted')),
             result TEXT,
             result_sha256 TEXT,
-            skipped_claims INTEGER NOT NULL DEFAULT 0
+            skipped_claims INTEGER NOT NULL DEFAULT 0,
+            lease_owner TEXT,
+            lease_token INTEGER NOT NULL DEFAULT 0,
+            lease_ms INTEGER NOT NULL DEFAULT 0,
+            lease_expires_ms INTEGER,
+            heartbeat_ms INTEGER,
+            attempt INTEGER NOT NULL DEFAULT 0,
+            cancel_requested INTEGER NOT NULL DEFAULT 0,
+            progress TEXT
          );
+         CREATE TABLE lease_events(
+            at_utc_ms INTEGER NOT NULL,
+            job TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            worker TEXT,
+            token INTEGER,
+            detail TEXT
+         );
+         CREATE INDEX lease_events_job ON lease_events(job, at_utc_ms);
          CREATE TABLE dependencies(job TEXT NOT NULL REFERENCES jobs(id), dependency TEXT NOT NULL REFERENCES jobs(id), PRIMARY KEY(job,dependency));
          CREATE TABLE exclusive_keys(job TEXT NOT NULL REFERENCES jobs(id), key TEXT NOT NULL, PRIMARY KEY(job,key));
          COMMIT;",
@@ -91,7 +111,7 @@ fn open_with_flags(path: &Path, flags: OpenFlags) -> io::Result<Connection> {
     let version: i64 = c
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(io::Error::other)?;
-    if app != APP_ID || !matches!(version, 1 | 2) {
+    if app != APP_ID || !matches!(version, 1..=3) {
         return Err(invalid("not a compatible NorthStar queue"));
     }
     c.execute_batch("PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;")
@@ -172,7 +192,7 @@ fn submit_attempt(
             return Err(invalid("retry parent changed before commit"));
         }
     }
-    if version == 2 {
+    if version >= 2 {
         for dependency in dependencies {
             tx.execute(
                 "INSERT INTO dependencies VALUES(?1,?2)",
@@ -237,24 +257,85 @@ fn migrate(c: &mut Connection) -> io::Result<()> {
     let version: i64 = tx
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(io::Error::other)?;
+    let running: i64 = tx
+        .query_row("SELECT count(*) FROM jobs WHERE state='running'", [], |r| {
+            r.get(0)
+        })
+        .map_err(io::Error::other)?;
+    if running != 0 {
+        return Err(invalid("stop and reconcile workers before migration"));
+    }
     if version == 1 {
-        let running: i64 = tx
-            .query_row("SELECT count(*) FROM jobs WHERE state='running'", [], |r| {
-                r.get(0)
-            })
-            .map_err(io::Error::other)?;
-        if running != 0 {
-            return Err(invalid("stop and reconcile workers before migration"));
-        }
         tx.execute_batch("ALTER TABLE jobs ADD COLUMN skipped_claims INTEGER NOT NULL DEFAULT 0;
             CREATE TABLE dependencies(job TEXT NOT NULL REFERENCES jobs(id), dependency TEXT NOT NULL REFERENCES jobs(id), PRIMARY KEY(job,dependency));
-            CREATE TABLE exclusive_keys(job TEXT NOT NULL REFERENCES jobs(id), key TEXT NOT NULL, PRIMARY KEY(job,key));
-            PRAGMA user_version=2;").map_err(io::Error::other)?;
+            CREATE TABLE exclusive_keys(job TEXT NOT NULL REFERENCES jobs(id), key TEXT NOT NULL, PRIMARY KEY(job,key));").map_err(io::Error::other)?;
     }
+    if version < 3 {
+        // Lease columns are additive with defaults, so existing rows keep their meaning.
+        tx.execute_batch(
+            "ALTER TABLE jobs ADD COLUMN lease_owner TEXT;
+            ALTER TABLE jobs ADD COLUMN lease_token INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE jobs ADD COLUMN lease_ms INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE jobs ADD COLUMN lease_expires_ms INTEGER;
+            ALTER TABLE jobs ADD COLUMN heartbeat_ms INTEGER;
+            ALTER TABLE jobs ADD COLUMN attempt INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE jobs ADD COLUMN cancel_requested INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE jobs ADD COLUMN progress TEXT;
+            CREATE TABLE lease_events(
+               at_utc_ms INTEGER NOT NULL,
+               job TEXT NOT NULL,
+               kind TEXT NOT NULL,
+               worker TEXT,
+               token INTEGER,
+               detail TEXT
+            );
+            CREATE INDEX lease_events_job ON lease_events(job, at_utc_ms);",
+        )
+        .map_err(io::Error::other)?;
+    }
+    tx.execute_batch(&format!("PRAGMA user_version={SCHEMA_VERSION};"))
+        .map_err(io::Error::other)?;
     tx.commit().map_err(io::Error::other)
 }
 
-fn claim(c: &mut Connection) -> io::Result<Option<(String, String, String, i64)>> {
+fn has_table(c: &Connection, name: &str) -> io::Result<bool> {
+    c.query_row(
+        "SELECT EXISTS(SELECT 1 FROM sqlite_schema WHERE type='table' AND name=?1)",
+        [name],
+        |r| r.get(0),
+    )
+    .map_err(io::Error::other)
+}
+
+/// Append-only lease trail. Old schemas without the table stay readable and skip logging.
+fn log_event(
+    c: &Connection,
+    job: &str,
+    kind: &str,
+    worker: Option<&str>,
+    token: Option<i64>,
+    detail: Option<&str>,
+) -> io::Result<()> {
+    if !has_table(c, "lease_events")? {
+        return Ok(());
+    }
+    c.execute(
+        "INSERT INTO lease_events(at_utc_ms,job,kind,worker,token,detail) VALUES(?1,?2,?3,?4,?5,?6)",
+        params![utc_millis()? as i64, job, kind, worker, token, detail],
+    )
+    .map_err(io::Error::other)?;
+    Ok(())
+}
+
+struct Claim {
+    id: String,
+    input: String,
+    expected: String,
+    workers: i64,
+    token: i64,
+}
+
+fn claim(c: &mut Connection, worker: &str, lease_ms: u64) -> io::Result<Option<Claim>> {
     let tx = c
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .map_err(io::Error::other)?;
@@ -267,7 +348,7 @@ fn claim(c: &mut Connection) -> io::Result<Option<(String, String, String, i64)>
         AND NOT EXISTS(SELECT 1 FROM exclusive_keys wanted JOIN exclusive_keys held ON wanted.key=held.key
             JOIN jobs owner ON owner.id=held.job
             WHERE wanted.job=jobs.id AND owner.state='running')";
-    let sql = if version == 2 {
+    let sql = if version >= 2 {
         format!("SELECT id,input,input_sha256,workers FROM jobs WHERE {eligible} ORDER BY priority+skipped_claims DESC,rowid LIMIT 1")
     } else {
         "SELECT id,input,input_sha256,workers FROM jobs WHERE state='queued' ORDER BY priority DESC,rowid LIMIT 1".to_owned()
@@ -283,25 +364,172 @@ fn claim(c: &mut Connection) -> io::Result<Option<(String, String, String, i64)>
         })
         .optional()
         .map_err(io::Error::other)?;
-    if let Some((id, _, _, _)) = &job {
-        if version == 2 {
-            // Ready jobs age by successful claims, not wall clock; capped to avoid overflow.
-            tx.execute(
-                &format!(
-                    "UPDATE jobs SET skipped_claims=min(skipped_claims+1,9000000000000000) WHERE {eligible}"
-                ),
-                [],
-            )
-            .map_err(io::Error::other)?;
-        }
+    let Some((id, input, expected, workers)) = job else {
+        tx.commit().map_err(io::Error::other)?;
+        return Ok(None);
+    };
+    if version >= 2 {
+        // Ready jobs age by successful claims, not wall clock; capped to avoid overflow.
         tx.execute(
-            "UPDATE jobs SET state='running' WHERE id=?1 AND state='queued'",
-            [id],
+            &format!(
+                "UPDATE jobs SET skipped_claims=min(skipped_claims+1,9000000000000000) WHERE {eligible}"
+            ),
+            [],
         )
         .map_err(io::Error::other)?;
     }
+    let token = if version >= 3 {
+        let now = utc_millis()? as i64;
+        let changed = tx
+            .execute(
+                "UPDATE jobs SET state='running', lease_owner=?2, lease_token=lease_token+1,
+                   lease_ms=?3, lease_expires_ms=?4, heartbeat_ms=?4, attempt=attempt+1, progress=NULL
+                 WHERE id=?1 AND state='queued'",
+                params![id, worker, lease_ms as i64, now + lease_ms as i64],
+            )
+            .map_err(io::Error::other)?;
+        if changed != 1 {
+            return Err(invalid("job was claimed concurrently"));
+        }
+        tx.query_row("SELECT lease_token FROM jobs WHERE id=?1", [&id], |r| {
+            r.get::<_, i64>(0)
+        })
+        .map_err(io::Error::other)?
+    } else {
+        tx.execute(
+            "UPDATE jobs SET state='running' WHERE id=?1 AND state='queued'",
+            [&id],
+        )
+        .map_err(io::Error::other)?;
+        0
+    };
+    if version >= 3 {
+        log_event(
+            &tx,
+            &id,
+            "claimed",
+            Some(worker),
+            Some(token),
+            Some(&format!("lease_ms={lease_ms}")),
+        )?;
+    }
     tx.commit().map_err(io::Error::other)?;
-    Ok(job)
+    Ok(Some(Claim {
+        id,
+        input,
+        expected,
+        workers,
+        token,
+    }))
+}
+
+fn heartbeat(
+    c: &Connection,
+    id: &str,
+    worker: &str,
+    token: i64,
+    lease_ms: u64,
+) -> io::Result<Value> {
+    if !(1_000..=MAX_LEASE_MS).contains(&lease_ms) {
+        return Err(invalid("lease must be within 1000..=3600000 ms"));
+    }
+    let now = utc_millis()? as i64;
+    let expires = now + lease_ms as i64;
+    let changed = c
+        .execute(
+            "UPDATE jobs SET heartbeat_ms=?4, lease_expires_ms=?5, lease_ms=?6
+             WHERE id=?1 AND state='running' AND lease_owner=?2 AND lease_token=?3
+               AND cancel_requested=0",
+            params![id, worker, token, now, expires, lease_ms as i64],
+        )
+        .map_err(io::Error::other)?;
+    if changed != 1 {
+        return Err(invalid("LEASE_LOST: worker does not own this job lease"));
+    }
+    log_event(c, id, "heartbeat", Some(worker), Some(token), None)?;
+    Ok(json!({
+        "id":id,"state":"running","lease_owner":worker,"lease_token":token,
+        "heartbeat_utc_ms":now,"lease_expires_utc_ms":expires
+    }))
+}
+
+/// Expired leases become `interrupted`, never silently requeued: expiry does not prove the
+/// worker stopped, and replaying an effectful job is unsafe until a human or supervisor
+/// verifies the effect. Requeueing stays an explicit `retry` decision with its own evidence.
+fn reconcile(c: &Connection) -> io::Result<Value> {
+    let now = utc_millis()? as i64;
+    let mut expired = Vec::new();
+    {
+        let mut stmt = c
+            .prepare(
+                "SELECT id,lease_owner,lease_token,lease_expires_ms FROM jobs
+                 WHERE state='running' AND lease_expires_ms IS NOT NULL AND lease_expires_ms < ?1
+                 ORDER BY id",
+            )
+            .map_err(io::Error::other)?;
+        let rows = stmt
+            .query_map([now], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, Option<String>>(1)?,
+                    r.get::<_, i64>(2)?,
+                    r.get::<_, i64>(3)?,
+                ))
+            })
+            .map_err(io::Error::other)?;
+        for row in rows {
+            expired.push(row.map_err(io::Error::other)?);
+        }
+    }
+    let mut reconciled = Vec::new();
+    for (id, owner, token, expires) in expired {
+        let changed = c
+            .execute(
+                "UPDATE jobs SET state='interrupted', lease_expires_ms=NULL, heartbeat_ms=NULL
+                 WHERE id=?1 AND state='running' AND lease_token=?2 AND cancel_requested=0",
+                params![id, token],
+            )
+            .map_err(io::Error::other)?;
+        if changed == 1 {
+            log_event(
+                c,
+                &id,
+                "lease_expired",
+                owner.as_deref(),
+                Some(token),
+                Some("reconciled to interrupted; effect not verified"),
+            )?;
+            reconciled.push(json!({
+                "id":id,"state":"interrupted","previous_owner":owner,
+                "lease_token":token,"lease_expired_utc_ms":expires
+            }));
+        }
+    }
+    let running: i64 = c
+        .query_row("SELECT count(*) FROM jobs WHERE state='running'", [], |r| {
+            r.get(0)
+        })
+        .map_err(io::Error::other)?;
+    Ok(json!({
+        "schema":1,"at_utc_ms":now,"reconciled":reconciled,
+        "still_running":running,"unverified_effect":true
+    }))
+}
+
+/// Running cancellation is a request, not a kill: the owner observes it at its next
+/// checkpoint or commit boundary and releases the lease itself.
+fn cancel_running(c: &Connection, id: &str) -> io::Result<Value> {
+    let changed = c
+        .execute(
+            "UPDATE jobs SET cancel_requested=1 WHERE id=?1 AND state='running'",
+            [id],
+        )
+        .map_err(io::Error::other)?;
+    if changed != 1 {
+        return Err(invalid("cancellation request requires a running job"));
+    }
+    log_event(c, id, "cancel_requested", None, None, None)?;
+    Ok(json!({"id":id,"state":"running","cancel_requested":true}))
 }
 
 fn run_one(c: &mut Connection) -> io::Result<Value> {
@@ -319,11 +547,65 @@ fn run_one_with<F>(c: &mut Connection, evaluate: F) -> io::Result<Value>
 where
     F: FnOnce(&Connection, Value, usize) -> io::Result<Value>,
 {
+    run_one_leased(c, "local", DEFAULT_LEASE_MS, evaluate)
+}
+
+fn run_one_leased<F>(
+    c: &mut Connection,
+    worker: &str,
+    lease_ms: u64,
+    evaluate: F,
+) -> io::Result<Value>
+where
+    F: FnOnce(&Connection, Value, usize) -> io::Result<Value>,
+{
+    if worker.is_empty()
+        || worker.len() > 64
+        || !worker.bytes().all(|b| {
+            b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b':' | b'/' | b'@')
+        })
+    {
+        return Err(invalid("invalid worker identity"));
+    }
+    if !(1_000..=MAX_LEASE_MS).contains(&lease_ms) {
+        return Err(invalid("lease must be within 1000..=3600000 ms"));
+    }
     let started = Instant::now();
     let started_utc_ms = utc_millis()?;
-    let Some((id, input, expected, workers)) = claim(c)? else {
+    let Some(claim) = claim(c, worker, lease_ms)? else {
         return Ok(json!({"state":"idle"}));
     };
+    let id = claim.id;
+    let token = claim.token;
+    let workers = claim.workers;
+    let expected = claim.expected;
+    let input = claim.input;
+    // A cancellation requested after claim but before evaluation is honoured without work.
+    let cancelled_before_start: bool = c
+        .query_row(
+            "SELECT cancel_requested FROM jobs WHERE id=?1 AND lease_token=?2",
+            params![id, token],
+            |r| r.get(0),
+        )
+        .unwrap_or(false);
+    if cancelled_before_start {
+        c.execute(
+            "UPDATE jobs SET state='cancelled',lease_owner=NULL,lease_expires_ms=NULL,
+               heartbeat_ms=NULL,progress=NULL
+             WHERE id=?1 AND state='running' AND lease_token=?2 AND cancel_requested=1",
+            params![id, token],
+        )
+        .map_err(io::Error::other)?;
+        log_event(
+            c,
+            &id,
+            "cancelled",
+            Some(worker),
+            Some(token),
+            Some("before evaluation"),
+        )?;
+        return Ok(json!({"id":id,"state":"cancelled","lease_token":token}));
+    }
     let dependencies_passed = (|| -> io::Result<Vec<Value>> {
         if digest(&input) != expected {
             return Err(invalid("input hash mismatch"));
@@ -358,23 +640,57 @@ where
     report["execution"] = json!({
         "schema":1,"execution_id":id,"state":state,
         "verification":"UNVERIFIED","producer_version":env!("CARGO_PKG_VERSION"),
+        "worker":worker,"lease_token":token,"attempt_lease_ms":lease_ms,
         "started_utc_ms":started_utc_ms,"finished_utc_ms":utc_millis().ok(),
         "duration_ms":started.elapsed().as_millis() as u64,
         "duration_clock":"monotonic","resource_usage":{"measured_by_engine":false},
         "automatic_retry":false
     });
     let body = serde_json::to_string(&report).map_err(io::Error::other)?;
+    // Fencing: only the current lease holder may publish a terminal result.
     let changed = c
         .execute(
-            "UPDATE jobs SET state=?1,result=?2,result_sha256=?3
-             WHERE id=?4 AND state='running'",
-            params![state, body, digest(&body), id],
+            "UPDATE jobs SET state=?1,result=?2,result_sha256=?3,
+               lease_owner=NULL,lease_expires_ms=NULL,heartbeat_ms=NULL,progress=NULL
+             WHERE id=?4 AND state='running' AND lease_token=?5 AND cancel_requested=0",
+            params![state, body, digest(&body), id, token],
         )
         .map_err(io::Error::other)?;
     if changed != 1 {
-        return Err(invalid("job no longer owns running state"));
+        let cancelled: bool = c
+            .query_row(
+                "SELECT cancel_requested FROM jobs WHERE id=?1",
+                [&id],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(io::Error::other)?
+            .unwrap_or(false);
+        if cancelled {
+            c.execute(
+                "UPDATE jobs SET state='cancelled',lease_owner=NULL,lease_expires_ms=NULL,
+                   heartbeat_ms=NULL,progress=NULL
+                 WHERE id=?1 AND state='running' AND lease_token=?2 AND cancel_requested=1",
+                params![id, token],
+            )
+            .map_err(io::Error::other)?;
+            log_event(c, &id, "cancelled", Some(worker), Some(token), None)?;
+            return Err(invalid(
+                "CANCELLED: owner honoured a running cancellation request; result discarded",
+            ));
+        }
+        log_event(
+            c,
+            &id,
+            "result_rejected",
+            Some(worker),
+            Some(token),
+            Some("lease lost before commit"),
+        )?;
+        return Err(invalid("LEASE_LOST: stale worker result rejected"));
     }
-    Ok(json!({"id":id,"state":state}))
+    log_event(c, &id, "finished", Some(worker), Some(token), Some(state))?;
+    Ok(json!({"id":id,"state":state,"lease_token":token}))
 }
 
 fn utc_millis() -> io::Result<u64> {
@@ -415,7 +731,20 @@ fn drain(c: &mut Connection, limit: usize) -> io::Result<Value> {
     Ok(json!({"schema":1,"passed":passed,"idle_observed":idle,"jobs":jobs}))
 }
 
+struct LeaseRow {
+    owner: Option<String>,
+    token: i64,
+    expires: Option<i64>,
+    heartbeat: Option<i64>,
+    attempt: i64,
+    cancel: i64,
+    progress: Option<String>,
+}
+
 fn status(c: &Connection, id: &str) -> io::Result<Value> {
+    let version: i64 = c
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .map_err(io::Error::other)?;
     let (state, input, input_hash, result, hash) = c
         .query_row(
             "SELECT state,input,input_sha256,result,result_sha256 FROM jobs WHERE id=?1",
@@ -463,9 +792,35 @@ fn status(c: &Connection, id: &str) -> io::Result<Value> {
     } else {
         None
     };
+    let lease = if version >= 3 {
+        let row: LeaseRow = c
+            .query_row(
+                "SELECT lease_owner,lease_token,lease_expires_ms,heartbeat_ms,attempt,cancel_requested,progress FROM jobs WHERE id=?1",
+                [id],
+                |r| {
+                    Ok(LeaseRow {
+                        owner: r.get(0)?,
+                        token: r.get(1)?,
+                        expires: r.get(2)?,
+                        heartbeat: r.get(3)?,
+                        attempt: r.get(4)?,
+                        cancel: r.get(5)?,
+                        progress: r.get(6)?,
+                    })
+                },
+            )
+            .map_err(io::Error::other)?;
+        json!({
+            "owner":row.owner,"token":row.token,"expires_utc_ms":row.expires,
+            "heartbeat_utc_ms":row.heartbeat,"attempt":row.attempt,
+            "cancel_requested":row.cancel == 1,"progress":row.progress
+        })
+    } else {
+        json!({"schema":"legacy","owner":null,"token":0,"cancel_requested":false})
+    };
     Ok(json!({
         "id":id,"state":state,"result":report,"retry_of":retry_of,
-        "input_sha256":input_hash,"result_sha256":hash,
+        "input_sha256":input_hash,"result_sha256":hash,"lease":lease,
         "scheduling":serde_json::from_str::<Value>(&input).map_err(io::Error::other)?.get("queue")
     }))
 }
@@ -529,7 +884,7 @@ fn transition(c: &Connection, id: &str, from: &str, to: &str) -> io::Result<()> 
 
 pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     let args: Vec<_> = args.collect();
-    let usage = "queue init DB | migrate DB | submit DB ID INPUT PRIORITY WORKERS --reviewed-redacted | run-one DB | drain DB LIMIT | status DB ID | wait DB ID SECONDS | retry DB OLD_ID NEW_ID --reviewed-redacted | cancel DB ID | interrupt DB ID --worker-stopped";
+    let usage = "queue init DB | migrate DB | submit DB ID INPUT PRIORITY WORKERS --reviewed-redacted | run-one DB [--worker NAME] [--lease-ms N] | drain DB LIMIT | status DB ID | wait DB ID SECONDS | retry DB OLD_ID NEW_ID --reviewed-redacted | cancel DB ID [--running] | heartbeat DB ID WORKER TOKEN LEASE_MS | reconcile DB | interrupt DB ID --worker-stopped";
     if args.len() < 2 {
         return Err(invalid(usage));
     }
@@ -568,10 +923,57 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
             submit(&c, id()?, &body, priority, workers)?;
             println!("{}", json!({"id":id()?,"state":"queued"}));
         }
-        "run-one" if args.len() == 2 => {
-            let report = run_one(&mut c)?;
+        "run-one" if args.len() >= 2 => {
+            let mut worker = "local".to_owned();
+            let mut lease_ms = DEFAULT_LEASE_MS;
+            let mut rest = args[2..].iter();
+            while let Some(flag) = rest.next() {
+                match flag.to_str() {
+                    Some("--worker") => {
+                        worker = rest
+                            .next()
+                            .and_then(|v| v.to_str())
+                            .ok_or_else(|| invalid("worker name required"))?
+                            .to_owned();
+                    }
+                    Some("--lease-ms") => {
+                        lease_ms = rest
+                            .next()
+                            .and_then(|v| v.to_str())
+                            .and_then(|v| v.parse().ok())
+                            .ok_or_else(|| invalid("lease milliseconds required"))?;
+                    }
+                    _ => return Err(invalid(usage)),
+                }
+            }
+            let report = run_one_leased(&mut c, &worker, lease_ms, |c, v, workers| {
+                if v["schema"] == 2 {
+                    validate_source_scope(c, &v)?;
+                    crate::collect::evaluate_job(&v, workers)
+                } else {
+                    crate::batch::evaluate(&v, workers)
+                }
+            })?;
             println!("{report}");
-            return Ok(report["state"] != "failed");
+            return Ok(report["state"] != "failed" && report["state"] != "cancelled");
+        }
+        "heartbeat" if args.len() == 6 => {
+            let worker = args[3]
+                .to_str()
+                .ok_or_else(|| invalid("worker name required"))?;
+            let token = args[4]
+                .to_str()
+                .and_then(|v| v.parse::<i64>().ok())
+                .ok_or_else(|| invalid("lease token required"))?;
+            let lease_ms = args[5]
+                .to_str()
+                .and_then(|v| v.parse::<u64>().ok())
+                .ok_or_else(|| invalid("lease milliseconds required"))?;
+            println!("{}", heartbeat(&c, id()?, worker, token, lease_ms)?);
+        }
+        "reconcile" if args.len() == 2 => println!("{}", reconcile(&c)?),
+        "cancel" if args.len() == 4 && args[3] == "--running" => {
+            println!("{}", cancel_running(&c, id()?)?)
         }
         "drain" if args.len() == 3 => {
             let limit = args[2]
@@ -718,13 +1120,22 @@ mod tests {
         submit(&a, "writer-a", &manifest(&[], &["index"], true), 100, 1).unwrap();
         submit(&a, "writer-b", &manifest(&[], &["index"], true), 100, 1).unwrap();
         submit(&a, "other", &manifest(&[], &["other"], true), 0, 1).unwrap();
-        assert_eq!(claim(&mut a).unwrap().unwrap().0, "writer-a");
+        assert_eq!(
+            claim(&mut a, "worker-a", 1000).unwrap().unwrap().id,
+            "writer-a"
+        );
         let mut b = open(&f.db()).unwrap();
-        assert_eq!(claim(&mut b).unwrap().unwrap().0, "other");
-        assert!(claim(&mut b).unwrap().is_none());
+        assert_eq!(
+            claim(&mut b, "worker-b", 1000).unwrap().unwrap().id,
+            "other"
+        );
+        assert!(claim(&mut b, "worker-b", 1000).unwrap().is_none());
         transition(&a, "writer-a", "running", "interrupted").unwrap();
-        assert_eq!(claim(&mut b).unwrap().unwrap().0, "writer-b");
-        assert!(claim(&mut a).unwrap().is_none());
+        assert_eq!(
+            claim(&mut b, "worker-b", 1000).unwrap().unwrap().id,
+            "writer-b"
+        );
+        assert!(claim(&mut a, "worker-a", 1000).unwrap().is_none());
     }
 
     #[test]
@@ -751,7 +1162,7 @@ mod tests {
                 std::thread::spawn(move || {
                     let mut c = open(&db).unwrap();
                     barrier.wait();
-                    claim(&mut c).unwrap()
+                    claim(&mut c, "racer", 1000).unwrap()
                 })
             })
             .collect();
@@ -761,8 +1172,8 @@ mod tests {
             .collect();
         assert_eq!(claims.len(), 1);
         let mut c = open(&f.db()).unwrap();
-        transition(&c, &claims[0].0, "running", "interrupted").unwrap();
-        assert!(claim(&mut c).unwrap().is_some());
+        transition(&c, &claims[0].id, "running", "interrupted").unwrap();
+        assert!(claim(&mut c, "racer", 1000).unwrap().is_some());
     }
 
     #[test]
@@ -798,7 +1209,7 @@ mod tests {
             r#"{"schema":1,"tasks":[{"id":"a","input":{"operation":"json-roundtrip","data":1}}]}"#;
         submit(&c, "old", input, 50, 1).unwrap();
         assert!(submit(&c, "new", &manifest(&["old"], &[], true), 0, 1).is_err());
-        assert_eq!(claim(&mut c).unwrap().unwrap().0, "old");
+        assert_eq!(claim(&mut c, "worker-a", 1000).unwrap().unwrap().id, "old");
         assert!(migrate(&mut c).is_err());
         transition(&c, "old", "running", "interrupted").unwrap();
         migrate(&mut c).unwrap();
@@ -840,6 +1251,140 @@ mod tests {
         assert!(submit(&c, "relative", &input.to_string(), 50, 1).is_err());
         input["kind"] = json!("shell");
         assert!(submit(&c, "shell", &input.to_string(), 50, 1).is_err());
+    }
+
+    #[test]
+    fn heartbeat_extends_only_the_current_lease_owner() {
+        let f = Fixture::new();
+        init(&f.db()).unwrap();
+        let mut c = open(&f.db()).unwrap();
+        submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
+        let claim = claim(&mut c, "worker-a", 1000).unwrap().unwrap();
+        assert_eq!(claim.token, 1);
+        let before = status(&c, "job").unwrap();
+        assert_eq!(before["state"], "running");
+        assert_eq!(before["lease"]["owner"], "worker-a");
+        assert_eq!(before["lease"]["attempt"], 1);
+        assert!(heartbeat(&c, "job", "worker-b", claim.token, 5000).is_err());
+        assert!(heartbeat(&c, "job", "worker-a", claim.token + 1, 5000).is_err());
+        let extended = heartbeat(&c, "job", "worker-a", claim.token, 5000).unwrap();
+        assert_eq!(extended["lease_token"], 1);
+        assert!(
+            extended["lease_expires_utc_ms"].as_i64().unwrap()
+                > before["lease"]["expires_utc_ms"].as_i64().unwrap()
+        );
+    }
+
+    #[test]
+    fn expired_lease_is_reconciled_to_interrupted_not_requeued() {
+        let f = Fixture::new();
+        init(&f.db()).unwrap();
+        let mut c = open(&f.db()).unwrap();
+        submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
+        let first = claim(&mut c, "worker-a", 1000).unwrap().unwrap();
+        c.execute("UPDATE jobs SET lease_expires_ms=1 WHERE id='job'", [])
+            .unwrap();
+        let report = reconcile(&c).unwrap();
+        assert_eq!(report["reconciled"][0]["id"], "job");
+        assert_eq!(report["reconciled"][0]["previous_owner"], "worker-a");
+        assert_eq!(report["unverified_effect"], true);
+        assert_eq!(status(&c, "job").unwrap()["state"], "interrupted");
+        // Reconciliation never silently replays the job.
+        assert!(claim(&mut c, "worker-b", 1000).unwrap().is_none());
+        // The interrupted job can only continue through an explicit, evidenced retry.
+        retry(&c, "job", "job-retry").unwrap();
+        let next = claim(&mut c, "worker-b", 1000).unwrap().unwrap();
+        assert_eq!(next.id, "job-retry");
+        assert_eq!(next.token, 1, "each job fences its own lease tokens");
+        let events: i64 = c
+            .query_row(
+                "SELECT count(*) FROM lease_events WHERE job='job'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert!(events >= 2, "claim and expiry leave a durable trail");
+        assert_eq!(first.token, 1);
+    }
+
+    #[test]
+    fn stale_worker_result_is_rejected_after_lease_loss() {
+        let f = Fixture::new();
+        init(&f.db()).unwrap();
+        let mut c = open(&f.db()).unwrap();
+        submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
+        // The evaluator loses its lease mid-flight (supervisor reconciliation).
+        let error = run_one_leased(&mut c, "worker-a", 1000, |c, _, _| {
+            c.execute("UPDATE jobs SET lease_expires_ms=1 WHERE id='job'", [])
+                .unwrap();
+            reconcile(c).unwrap();
+            Ok(json!({"passed":true}))
+        })
+        .unwrap_err();
+        assert!(error.to_string().contains("LEASE_LOST"), "{error}");
+        let after = status(&c, "job").unwrap();
+        assert_eq!(after["state"], "interrupted");
+        assert!(
+            after["result_sha256"].is_null(),
+            "no result may be published"
+        );
+    }
+
+    #[test]
+    fn running_cancellation_discards_the_result_and_releases_the_lease() {
+        let f = Fixture::new();
+        init(&f.db()).unwrap();
+        let mut c = open(&f.db()).unwrap();
+        submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
+        let error = run_one_leased(&mut c, "worker-a", 1000, |c, _, _| {
+            cancel_running(c, "job").unwrap();
+            Ok(json!({"passed":true}))
+        })
+        .unwrap_err();
+        assert!(error.to_string().contains("CANCELLED"), "{error}");
+        let after = status(&c, "job").unwrap();
+        assert_eq!(after["state"], "cancelled");
+        assert_eq!(after["lease"]["cancel_requested"], true);
+        assert!(after["lease"]["owner"].is_null());
+        assert!(after["result_sha256"].is_null());
+    }
+
+    #[test]
+    fn schema_two_migration_adds_leases_without_losing_jobs() {
+        let f = Fixture::new();
+        let c = Connection::open(f.db()).unwrap();
+        c.execute_batch(
+            "PRAGMA application_id=1314083146; PRAGMA user_version=2;
+             CREATE TABLE jobs(id TEXT PRIMARY KEY,input TEXT NOT NULL,input_sha256 TEXT NOT NULL,
+               priority INTEGER NOT NULL,workers INTEGER NOT NULL,state TEXT NOT NULL,
+               result TEXT,result_sha256 TEXT,skipped_claims INTEGER NOT NULL DEFAULT 0);
+             CREATE TABLE dependencies(job TEXT NOT NULL REFERENCES jobs(id), dependency TEXT NOT NULL REFERENCES jobs(id), PRIMARY KEY(job,dependency));
+             CREATE TABLE exclusive_keys(job TEXT NOT NULL REFERENCES jobs(id), key TEXT NOT NULL, PRIMARY KEY(job,key));",
+        )
+        .unwrap();
+        drop(c);
+        let mut c = open(&f.db()).unwrap();
+        let input = manifest(&[], &[], true);
+        submit(&c, "legacy", &input, 5, 1).unwrap();
+        migrate(&mut c).unwrap();
+        let version: i64 = c
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(version, 3);
+        let legacy = status(&c, "legacy").unwrap();
+        assert_eq!(legacy["input_sha256"], digest(&input));
+        assert_eq!(legacy["lease"]["token"], 0);
+        let claimed = claim(&mut c, "worker-a", 1000).unwrap().unwrap();
+        assert_eq!(claimed.id, "legacy");
+        assert_eq!(claimed.token, 1);
+        // Migration is idempotent once the worker released the lease, and the trail stays usable.
+        c.execute("UPDATE jobs SET lease_expires_ms=1 WHERE id='legacy'", [])
+            .unwrap();
+        assert_eq!(reconcile(&c).unwrap()["reconciled"][0]["id"], "legacy");
+        drop(c);
+        let mut c = open(&f.db()).unwrap();
+        migrate(&mut c).unwrap();
+        assert_eq!(status(&c, "legacy").unwrap()["state"], "interrupted");
     }
 
     #[test]

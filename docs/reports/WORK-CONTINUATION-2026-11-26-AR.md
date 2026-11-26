@@ -65,3 +65,15 @@ cargo build --release --locked
 | النتيجة | 4/4 لاختبارات queue_cli، ثم 49 اختبارًا ناجحًا عبر الحِزم، Clippy نظيف، Package PASS |
 | CI | [45904671068](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45904671068) — success على `5248409` (Native + Security) |
 | حدود الدليل | Windows Server 2022 runner وليس جهاز Windows 11؛ لا يغلق NSO-02 كاملًا (lease/reconciliation ما زالت مفتوحة) |
+
+## سجل أدلة — Queue Schema V3: الملكية والـlease والـfencing والمصالحة (ADD-003 / ADD-036 / ADD-037 / NSO-02 / NSO-05)
+
+| الحقل | القيمة |
+|---|---|
+| ما تغيّر | `skills/northstar-re/engine/nsre/src/queue.rs`: schema v3 (ترحيل ذري من v1/v2 يرفض وجود عامل نشط)، هوية العامل، lease بمدة قابلة للضبط (1s–1h)، نبض، fencing token لكل مهمة، `lease_events` كأثر دائم، `reconcile` يحوّل الـlease المنتهي إلى `interrupted` ولا يعيد التشغيل تلقائيًا، `cancel --running` كطلب إلغاء، ورفض نشر أي نتيجة من عامل فقد الـlease. الحقول الجديدة داخل `status.lease`. |
+| العقود | `adapters/README.md` (قسم Queue schema v3) و`src/rpc.rs` (`database_schemas` = 1,2,3). |
+| الـcommits | هذه الدفعة (انظر `git log` أدناه) |
+| أوامر الاختبار | `cargo test --locked` · `cargo clippy --locked --all-targets -- -D warnings` · `cargo fmt` · `pwsh scripts/Validate-Package.ps1 -CheckHashes` |
+| البيئة | Windows 11 x64 · Rust 1.91.1 MSVC |
+| النتيجة | 57 اختبارًا ناجحًا (42 وحدة + 15 تكامل/CLI)، منها 8 جديدة: نبض يرفض المالك الغريب، مصالحة الـlease المنتهي إلى `interrupted`، رفض نتيجة عامل متأخر بـ`LEASE_LOST`، إلغاء جارٍ يُهمل النتيجة ويحرّر الـlease، ترحيل v2→v3 دون فقد مهمة، وعقد CLI (`run-one --worker/--lease-ms`، `heartbeat`، `reconcile`، `cancel --running`) |
+| حدود الدليل | لم تُختبر بعد: قتل عامل حقيقي أثناء التنفيذ، هوية إنشاء العملية (PID reuse)، Job Objects، مهلة تنفيذ صلبة، تقرير تقدّم من العامل. هذه بنود الدفعة التالية وليست مُنجزة. |

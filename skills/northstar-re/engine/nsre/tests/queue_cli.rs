@@ -194,3 +194,89 @@ fn collector_refuses_reparse_ancestor_and_rechecks_scope_at_execution() {
     assert_eq!(f.ok(&["status", "replace-root"])["state"], "failed");
     assert_eq!(fs::read(moved.join("a.txt")).unwrap(), b"abc");
 }
+
+// Lease, fencing and reconciliation surface exercised through the CLI, the same entry
+// point a supervised worker or the supervisor process uses.
+#[test]
+fn run_one_reports_worker_identity_and_lease_token() {
+    let f = Fixture::new();
+    good(f.submit("job", batch(), &[], 10));
+    let out = f
+        .run(&["run-one", "--worker", "worker-a", "--lease-ms", "5000"])
+        .stdout;
+    let ran: Value = serde_json::from_slice(&out).unwrap();
+    assert_eq!(ran["state"], "completed");
+    assert_eq!(ran["lease_token"], 1);
+    let report = f.ok(&["status", "job"]);
+    assert_eq!(report["result"]["execution"]["worker"], "worker-a");
+    assert_eq!(report["result"]["execution"]["lease_token"], 1);
+    assert_eq!(report["lease"]["attempt"], 1);
+    assert!(report["lease"]["owner"].is_null());
+}
+
+#[test]
+fn heartbeat_and_reconcile_enforce_lease_ownership() {
+    let f = Fixture::new();
+    good(f.submit("job", batch(), &[], 10));
+    let c = Connection::open(&f.db).unwrap();
+    c.execute(
+        "UPDATE jobs SET state='running',lease_owner='worker-a',lease_token=7,lease_ms=2000,
+           lease_expires_ms=?,heartbeat_ms=? WHERE id='job'",
+        [now_ms() + 60_000, now_ms()],
+    )
+    .unwrap();
+    drop(c);
+    // A foreign worker cannot extend someone else's lease.
+    assert_eq!(
+        f.run(&["heartbeat", "job", "worker-b", "7", "5000"])
+            .status
+            .code(),
+        Some(1)
+    );
+    let extended = f.ok(&["heartbeat", "job", "worker-a", "7", "5000"]);
+    assert_eq!(extended["lease_token"], 7);
+    // Expiry is reconciled to interrupted, never silently re-run.
+    let c = Connection::open(&f.db).unwrap();
+    c.execute("UPDATE jobs SET lease_expires_ms=1 WHERE id='job'", [])
+        .unwrap();
+    drop(c);
+    let report = f.ok(&["reconcile"]);
+    assert_eq!(report["reconciled"][0]["id"], "job");
+    assert_eq!(report["reconciled"][0]["previous_owner"], "worker-a");
+    assert_eq!(report["unverified_effect"], true);
+    assert_eq!(f.ok(&["status", "job"])["state"], "interrupted");
+    // The job continues only through an explicit retry, with provenance kept.
+    good(f.run(&["retry", "job", "job-retry", "--reviewed-redacted"]));
+    assert_eq!(f.ok(&["status", "job-retry"])["retry_of"], "job");
+    assert_eq!(f.ok(&["run-one"])["state"], "completed");
+}
+
+#[test]
+fn running_cancellation_is_requested_through_the_cli() {
+    let f = Fixture::new();
+    good(f.submit("job", batch(), &[], 10));
+    assert_eq!(
+        f.run(&["cancel", "job", "--running"]).status.code(),
+        Some(1)
+    );
+    let c = Connection::open(&f.db).unwrap();
+    c.execute(
+        "UPDATE jobs SET state='running',lease_owner='worker-a',lease_token=2 WHERE id='job'",
+        [],
+    )
+    .unwrap();
+    drop(c);
+    let ack = f.ok(&["cancel", "job", "--running"]);
+    assert_eq!(ack["cancel_requested"], true);
+    let status = f.ok(&["status", "job"]);
+    assert_eq!(status["lease"]["cancel_requested"], true);
+    // A cancelled job is never claimed again by a fresh worker.
+    assert_eq!(f.ok(&["run-one"])["state"], "idle");
+}
+
+fn now_ms() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64
+}

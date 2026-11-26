@@ -21,6 +21,21 @@ For a disposable Windows project, use the installed verified executable explicit
 
 Initialize only a new dedicated queue; do not reinitialize an existing database. `$Project` must already have its normal `.northstar/state` directory. MCP clients must initialize and send `notifications/initialized` before calling tools. An existing FreePi version may not support MCP registration; detect the actual host capabilities before configuring it. No provider credentials, host settings, skills or user installation are modified by this adapter. Submission remains through the reviewed native CLI. The integration test uses real stdio processes and disposable projects, verifies discovery/result consumption, rejects extra database/path arguments and checks isolation; it is not a FreePi host test or evidence that work survives host exit. Host versions and interactive Windows 11 acceptance remain UNVERIFIED.
 
+## Queue schema v3 — worker ownership and leases
+
+Queue databases now carry schema v3. `queue migrate DB` upgrades v1 and v2 in one transaction and refuses while any job is `running`; existing jobs, dependencies and exclusive keys are preserved.
+
+```powershell
+& $Engine queue run-one $Db --worker 'host:nsre:4321' --lease-ms 60000
+& $Engine queue heartbeat $Db 'job-1' 'host:nsre:4321' 1 60000
+& $Engine queue status $Db 'job-1'
+& $Engine queue reconcile $Db
+& $Engine queue cancel $Db 'job-1' --running
+& $Engine queue retry $Db 'job-1' 'job-1-retry' --reviewed-redacted
+```
+
+Each claim increments a per-job fencing token, records the owner and expiry, and appends to `lease_events`. A terminal result is published only by the current owner holding the current token; a worker that lost its lease receives `LEASE_LOST` and its result is discarded. `reconcile` turns expired leases into `interrupted` and never silently replays them: lease expiry does not prove the worker stopped, so continuing an effectful job stays an explicit `retry` with provenance. `cancel --running` records a cancellation request; the owner observes it before evaluation or at its commit boundary, and a cancelled job publishes no result. `status` exposes `lease.owner`, `lease.token`, `lease.attempt`, `lease.expires_utc_ms` and `lease.cancel_requested`. Host supervision, process-tree identity and Job Object enforcement remain separate work packages and are not claimed by this contract.
+
 ## Optional desktop session
 
 The candidate server also accepts `--desktop-control` with an explicit project to add nsre_desktop_observe/nsre_desktop_act. It remains disabled by default. Observation supports list, capabilities, inspect, bounded UIA controls, capture and capture-wgc; GUI actions require a selected HWND/PID and apply=true. Captures/audit stay under existing project report/log directories. Typed text is passed to the owned CLI by stdin. A bounded owned child enforces action timeout and response size. No FreePi registration/configuration is changed. See the master's [native desktop workflow](../skills/northstar-re/references/desktop-native.md) and [desktop contract](../docs/architecture/desktop-control.md). This source capability does not certify host compatibility.
