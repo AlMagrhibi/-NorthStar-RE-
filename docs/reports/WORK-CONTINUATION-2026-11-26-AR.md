@@ -77,3 +77,19 @@ cargo build --release --locked
 | البيئة | Windows 11 x64 · Rust 1.91.1 MSVC |
 | النتيجة | 57 اختبارًا ناجحًا (42 وحدة + 15 تكامل/CLI)، منها 8 جديدة: نبض يرفض المالك الغريب، مصالحة الـlease المنتهي إلى `interrupted`، رفض نتيجة عامل متأخر بـ`LEASE_LOST`، إلغاء جارٍ يُهمل النتيجة ويحرّر الـlease، ترحيل v2→v3 دون فقد مهمة، وعقد CLI (`run-one --worker/--lease-ms`، `heartbeat`، `reconcile`، `cancel --running`) |
 | حدود الدليل | لم تُختبر بعد: قتل عامل حقيقي أثناء التنفيذ، هوية إنشاء العملية (PID reuse)، Job Objects، مهلة تنفيذ صلبة، تقرير تقدّم من العامل. هذه بنود الدفعة التالية وليست مُنجزة. |
+
+## سجل أدلة — تصحيحات مراجعة Queue V3 (QV3-01..06) — schema v4
+
+| الحقل | القيمة |
+|---|---|
+| QV3-01 | `heartbeat` يتحقق ذريًا من المالك والـtoken والحالة والإلغاء **وصلاحية الـlease**؛ عامل انتهت leaseه لا يجددها قبل الـreconcile. اختبار وحدة + CLI. |
+| QV3-02 | نشر النتيجة النهائية مشروط بنفس الشروط داخل جملة واحدة بما فيها `lease_expires_ms > now`؛ عامل انتهت leaseه لا يعتمد نتيجة حتى لو لم يُشغَّل reconcile. اختبار وحدة. |
+| QV3-03 | `reconcile` يعيد التحقق من الانتهاء والحالة والـtoken داخل كل تحديث شرطي، والنبض الذي يصل بين الفحص والتحديث يفوز. اختبار سباق فعلي (خيوط heartbeat × reconcile) يثبت ثابت «running ⇒ deadline موجود؛ interrupted ⇒ لا deadline». |
+| QV3-04 | إلغاء لم يؤكده مات صاحبه يُسجَّل `cancel_unconfirmed` ويصبح `interrupted` (لا `cancelled`)، ولا يُقبل `cancel` نهائي إلا بعد `interrupt --worker-stopped` (`worker_stop_verified`). اختبار وحدة + CLI. |
+| QV3-05 | المفاتيح الحصرية تبقى محجوزة لمهمة `interrupted` (`holds_keys`) حتى إثبات توقف العامل؛ تنافس مهمتين على نفس المورد مُختبر بعد انتهاء الـlease. اختبار وحدة + CLI. |
+| QV3-06 | تحديث الحالة وسطر `lease_events` داخل Transaction واحدة في claim/finish/cancel/reconcile؛ حقن فشل بإعادة تسمية جدول الأدلة يُرجِع الـclaim كاملًا (المهمة تبقى `queued`). `heartbeat_ms` عند claim = لحظة الاستلام لا الموعد النهائي. اختباران. |
+| الـcommits | هذه الدفعة (انظر `git log`) |
+| أوامر الاختبار | `cargo test --locked` · `cargo clippy --locked --all-targets -- -D warnings` · `cargo fmt` · `pwsh scripts/Validate-Package.ps1 -CheckHashes` |
+| البيئة | Windows 11 x64 · Rust 1.91.1 MSVC |
+| النتيجة | 68 اختبارًا ناجحًا (50 وحدة + 18 CLI/تكامل)، منها 11 جديدة للتصحيحات؛ Clippy نظيف؛ Package PASS |
+| حدود الدليل | QV3-07 (هوية إنشاء العملية، نبض مستقل، مهلة صلبة، Job Objects، قتل عامل حقيقي، تعامل مع تغيّر الساعة) لم يُنفَّذ بعد — بنود الدفعة التالية، لا ادعاء قبول NSO-02/NSO-05 |

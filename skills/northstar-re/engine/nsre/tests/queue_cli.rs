@@ -48,7 +48,14 @@ impl Fixture {
     }
     fn submit(&self, id: &str, mut input: Value, deps: &[&str], priority: u32) -> Output {
         let p = self.root.join("input.json");
-        input["queue"] = json!({"schema":1,"depends_on":deps});
+        // Keep any scheduling fields the caller set (exclusive keys) and only pin dependencies.
+        let mut schedule = input
+            .get("queue")
+            .cloned()
+            .unwrap_or_else(|| json!({"schema":1}));
+        schedule["schema"] = json!(1);
+        schedule["depends_on"] = json!(deps);
+        input["queue"] = schedule;
         fs::write(&p, input.to_string()).unwrap();
         self.run(&[
             "submit",
@@ -279,4 +286,75 @@ fn now_ms() -> i64 {
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_millis() as i64
+}
+
+#[test]
+fn expired_lease_cannot_be_renewed_through_the_cli() {
+    let f = Fixture::new();
+    good(f.submit("job", batch(), &[], 10));
+    let c = Connection::open(&f.db).unwrap();
+    c.execute(
+        "UPDATE jobs SET state='running',lease_owner='worker-a',lease_token=3,lease_ms=1000,
+           lease_expires_ms=1,heartbeat_ms=1 WHERE id='job'",
+        [],
+    )
+    .unwrap();
+    drop(c);
+    // Reconciliation has not run yet, but the lease is already void.
+    assert_eq!(
+        f.run(&["heartbeat", "job", "worker-a", "3", "5000"])
+            .status
+            .code(),
+        Some(1)
+    );
+    assert_eq!(f.ok(&["status", "job"])["lease"]["expires_utc_ms"], 1);
+}
+
+#[test]
+fn verified_worker_stop_releases_exclusive_keys_for_the_next_owner() {
+    let f = Fixture::new();
+    let mut effect = batch();
+    effect["queue"] = json!({"schema":1,"depends_on":[],"exclusive_keys":["desktop"]});
+    good(f.submit("effect", effect.clone(), &[], 100));
+    good(f.submit("rival", effect, &[], 0));
+    let c = Connection::open(&f.db).unwrap();
+    c.execute(
+        "UPDATE jobs SET state='running',lease_owner='worker-a',lease_token=1,
+           lease_expires_ms=1,holds_keys=1 WHERE id='effect'",
+        [],
+    )
+    .unwrap();
+    drop(c);
+    let report = f.ok(&["reconcile"]);
+    assert_eq!(report["reconciled"][0]["keys_held"], true);
+    // The old worker may still act, so the exclusive resource stays reserved.
+    assert_eq!(f.ok(&["run-one"])["state"], "idle");
+    let stopped = f.ok(&["interrupt", "effect", "--worker-stopped"]);
+    assert_eq!(stopped["worker_stop_verified"], true);
+    assert_eq!(stopped["keys_released"], true);
+    assert_eq!(f.ok(&["run-one"])["id"], "rival");
+}
+
+#[test]
+fn cancellation_after_a_worker_death_needs_verification() {
+    let f = Fixture::new();
+    good(f.submit("job", batch(), &[], 10));
+    let c = Connection::open(&f.db).unwrap();
+    c.execute(
+        "UPDATE jobs SET state='running',lease_owner='worker-a',lease_token=1,
+           lease_expires_ms=1,cancel_requested=1 WHERE id='job'",
+        [],
+    )
+    .unwrap();
+    drop(c);
+    f.ok(&["reconcile"]);
+    // The owner never confirmed the cancellation, so it is not final.
+    assert_eq!(f.run(&["cancel", "job"]).status.code(), Some(1));
+    assert_eq!(f.ok(&["status", "job"])["state"], "interrupted");
+    f.ok(&["interrupt", "job", "--worker-stopped"]);
+    assert_eq!(f.ok(&["cancel", "job"])["state"], "cancelled");
+    assert_eq!(
+        f.ok(&["status", "job"])["lease"]["worker_stop_verified"],
+        true
+    );
 }
