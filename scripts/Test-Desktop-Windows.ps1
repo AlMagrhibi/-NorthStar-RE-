@@ -36,6 +36,12 @@ $back.Show()
 $min.Show()
 $min.WindowState=[Windows.Forms.FormWindowState]::Minimized
 $front.TopMost=$true
+$button=[Windows.Forms.Button]::new()
+$button.Text='Fixture START'
+$button.Location=[Drawing.Point]::new(100,100)
+$button.Size=[Drawing.Size]::new(120,60)
+$button.Add_Click({$front.Text='NSRE Desktop Fixture Clicked'})
+$front.Controls.Add($button)
 $front.Show()
 [Windows.Forms.Application]::Run($front)
 $back.Dispose()
@@ -77,8 +83,20 @@ $front.Dispose()
  if ($focusExit -notin @(0,2)) { throw 'Unexpected focus error' }
  $focus=$focusRaw|ConvertFrom-Json
  if (($focusExit -eq 0) -ne [bool]$focus.verified) { throw 'Foreground result mismatch' }
+ # Click only if normal foreground policy allowed the fixture to be active.
+ $clickVerified=$false
+ if ($focus.verified) {
+  $clicked=Invoke-Desktop -Arguments @('click',$front.hwnd,$owner,'150','125','--apply')
+  if (!$clicked.dispatched) { throw 'Fixture click not dispatched' }
+  for ($i=0; $i -lt 20; $i++) {
+   $state=Invoke-Desktop -Arguments @('inspect',$front.hwnd,$owner)
+   if ($state.title -eq 'NSRE Desktop Fixture Clicked') { $clickVerified=$true; break }
+   Start-Sleep -Milliseconds 100
+  }
+  if (!$clickVerified) { throw 'Fixture button effect not observed' }
+ }
  $passed=$true
- @{schema=1;status='PASS';scope='interactive Windows fixture only; not FreePi or protected content acceptance';os=[Environment]::OSVersion.VersionString;covered_window_found=$true;move_verified=$true;resize_verified=$true;restore_verified=$true;unselected_window_unchanged=$true;invalid_target_rejected=$true;foreground_verified=[bool]$focus.verified;foreground_exit=$focusExit}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Reports 'desktop-control.json') -Encoding UTF8
+ @{schema=1;status='PASS';scope='interactive Windows fixture only; not FreePi or protected content acceptance';os=[Environment]::OSVersion.VersionString;covered_window_found=$true;move_verified=$true;resize_verified=$true;restore_verified=$true;unselected_window_unchanged=$true;invalid_target_rejected=$true;foreground_verified=[bool]$focus.verified;foreground_exit=$focusExit;click_effect_verified=$clickVerified}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Reports 'desktop-control.json') -Encoding UTF8
 } finally {
  if ($null -ne $fixture) {
   if (!$fixture.HasExited) { $fixture.Kill(); $fixture.WaitForExit() }

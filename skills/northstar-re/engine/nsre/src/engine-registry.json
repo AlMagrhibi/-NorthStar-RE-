@@ -60,7 +60,9 @@
         "restore",
         "focus",
         "move",
-        "resize"
+        "resize",
+        "maximize",
+        "click"
       ],
       "desktop_acceptance": "unverified",
       "gui_mutations_in_queue": false

@@ -6,6 +6,9 @@ type Hwnd = isize;
 const MAX_WINDOWS: usize = 512;
 const GA_ROOT: u32 = 2;
 const SW_RESTORE: i32 = 9;
+const SW_MAXIMIZE: i32 = 3;
+const MOUSEEVENTF_LEFTDOWN: u32 = 0x0002;
+const MOUSEEVENTF_LEFTUP: u32 = 0x0004;
 const SWP_NOSIZE: u32 = 0x0001;
 const SWP_NOMOVE: u32 = 0x0002;
 const SWP_NOZORDER: u32 = 0x0004;
@@ -19,6 +22,30 @@ struct Rect {
     top: i32,
     right: i32,
     bottom: i32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+#[repr(C)]
+struct MouseInput {
+    dx: i32,
+    dy: i32,
+    mouse_data: u32,
+    flags: u32,
+    time: u32,
+    extra_info: usize,
+}
+
+// MOUSEINPUT is the largest INPUT union member on Windows x64.
+#[repr(C)]
+struct Input {
+    kind: u32,
+    mouse: MouseInput,
 }
 
 #[link(name = "user32")]
@@ -45,6 +72,20 @@ unsafe extern "system" {
     fn foreground_window() -> Hwnd;
     #[link_name = "GetWindowRect"]
     fn get_rect(hwnd: Hwnd, rect: *mut Rect) -> i32;
+    #[link_name = "GetClientRect"]
+    fn get_client_rect(hwnd: Hwnd, rect: *mut Rect) -> i32;
+    #[link_name = "ClientToScreen"]
+    fn client_to_screen(hwnd: Hwnd, point: *mut Point) -> i32;
+    #[link_name = "WindowFromPoint"]
+    fn window_from_point(point: Point) -> Hwnd;
+    #[link_name = "SetCursorPos"]
+    fn set_cursor(x: i32, y: i32) -> i32;
+    #[link_name = "GetCursorPos"]
+    fn get_cursor(point: *mut Point) -> i32;
+    #[link_name = "SendInput"]
+    fn send_input(count: u32, input: *const Input, size: i32) -> u32;
+    #[link_name = "GetDpiForWindow"]
+    fn window_dpi(hwnd: Hwnd) -> u32;
     #[link_name = "GetWindowTextW"]
     fn get_text(hwnd: Hwnd, buffer: *mut u16, capacity: i32) -> i32;
     #[link_name = "ShowWindowAsync"]
@@ -89,6 +130,15 @@ fn snapshot(hwnd: Hwnd, expected: Option<u32>) -> io::Result<Value> {
     if unsafe { get_rect(hwnd, &mut rect) } == 0 {
         return Err(io::Error::last_os_error());
     }
+    let mut client = Rect::default();
+    if unsafe { get_client_rect(hwnd, &mut client) } == 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let mut origin = Point::default();
+    if unsafe { client_to_screen(hwnd, &mut origin) } == 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let dpi = unsafe { window_dpi(hwnd) };
     let mut title = [0u16; 256];
     let length = unsafe { get_text(hwnd, title.as_mut_ptr(), title.len() as i32) };
     let title = String::from_utf16_lossy(&title[..length.clamp(0, 255) as usize]);
@@ -103,7 +153,9 @@ fn snapshot(hwnd: Hwnd, expected: Option<u32>) -> io::Result<Value> {
     Ok(json!({
         "hwnd":hwnd.to_string(),"pid":pid,"title":title,
         "minimized":minimized,"maximized":maximized,"foreground":foreground,
-        "x":rect.left,"y":rect.top,
+        "x":rect.left,"y":rect.top,"dpi":dpi,
+        "client_x":origin.x,"client_y":origin.y,
+        "client_width":client.right,"client_height":client.bottom,
         "width":rect.right.saturating_sub(rect.left),
         "height":rect.bottom.saturating_sub(rect.top)
     }))
@@ -154,6 +206,7 @@ fn list() -> io::Result<Value> {
 #[derive(Clone, Copy)]
 enum Action {
     Restore,
+    Maximize,
     Focus,
     Move(i32, i32),
     Resize(i32, i32),
@@ -163,6 +216,7 @@ impl Action {
     fn matches(self, value: &Value) -> bool {
         match self {
             Self::Restore => value["minimized"] == false && value["maximized"] == false,
+            Self::Maximize => value["maximized"] == true && value["minimized"] == false,
             Self::Focus => value["foreground"] == true,
             Self::Move(x, y) => value["x"] == x && value["y"] == y,
             Self::Resize(w, h) => value["width"] == w && value["height"] == h,
@@ -188,6 +242,7 @@ fn apply(hwnd: Hwnd, pid: u32, action: Action) -> io::Result<bool> {
         unsafe {
             match action {
                 Action::Restore => show_async(hwnd, SW_RESTORE) != 0,
+                Action::Maximize => show_async(hwnd, SW_MAXIMIZE) != 0,
                 Action::Focus => set_foreground(hwnd) != 0,
                 Action::Move(x, y) => set_pos(hwnd, 0, x, y, 0, 0, flags | SWP_NOSIZE) != 0,
                 Action::Resize(w, h) => set_pos(hwnd, 0, 0, 0, w, h, flags | SWP_NOMOVE) != 0,
@@ -209,6 +264,77 @@ fn apply(hwnd: Hwnd, pid: u32, action: Action) -> io::Result<bool> {
             "before":before,"after":after})
     );
     Ok(verified)
+}
+
+fn mouse_input(flags: u32) -> Input {
+    Input {
+        kind: 0,
+        mouse: MouseInput {
+            dx: 0,
+            dy: 0,
+            mouse_data: 0,
+            flags,
+            time: 0,
+            extra_info: 0,
+        },
+    }
+}
+
+fn click(hwnd: Hwnd, pid: u32, x: i32, y: i32) -> io::Result<bool> {
+    let before = snapshot(hwnd, Some(pid))?;
+    if before["foreground"] != true || before["minimized"] == true {
+        return Err(invalid("target must already be foreground and restored"));
+    }
+    let mut rect = Rect::default();
+    if unsafe { get_client_rect(hwnd, &mut rect) } == 0
+        || x < 0
+        || y < 0
+        || x >= rect.right
+        || y >= rect.bottom
+    {
+        return Err(invalid("point outside target client area"));
+    }
+    let mut point = Point { x, y };
+    if unsafe { client_to_screen(hwnd, &mut point) } == 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let on_target = || unsafe {
+        foreground_window() == hwnd && get_ancestor(window_from_point(point), GA_ROOT) == hwnd
+    };
+    if !on_target() {
+        return Err(invalid("target point is covered or foreground changed"));
+    }
+    identity(hwnd, Some(pid))?;
+    if unsafe { set_cursor(point.x, point.y) } == 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let mut actual = Point::default();
+    identity(hwnd, Some(pid))?;
+    if unsafe { get_cursor(&mut actual) } == 0
+        || actual.x != point.x
+        || actual.y != point.y
+        || !on_target()
+    {
+        return Err(invalid("cursor or target changed; click aborted"));
+    }
+    let events = [
+        mouse_input(MOUSEEVENTF_LEFTDOWN),
+        mouse_input(MOUSEEVENTF_LEFTUP),
+    ];
+    let size = std::mem::size_of::<Input>() as i32;
+    let sent = unsafe { send_input(2, events.as_ptr(), size) };
+    if sent == 1 {
+        // Best effort release after a partial insertion.
+        let release = mouse_input(MOUSEEVENTF_LEFTUP);
+        unsafe { send_input(1, &release, size) };
+    }
+    println!(
+        "{}",
+        json!({"schema":1,"dispatched":sent==2,"events_inserted":sent,
+            "application_effect_verified":false,"hwnd":hwnd.to_string(),"pid":pid,
+            "client_x":x,"client_y":y,"screen_x":point.x,"screen_y":point.y})
+    );
+    Ok(sent == 2)
 }
 
 fn number<T: std::str::FromStr>(value: &OsString) -> io::Result<T> {
@@ -233,7 +359,7 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     }
     if args.len() < 3 {
         return Err(invalid(
-            "desktop list | inspect HWND PID | restore/focus HWND PID --apply | move/resize HWND PID A B --apply",
+            "desktop list | inspect HWND PID | restore/maximize/focus HWND PID --apply | move/resize/click HWND PID A B --apply",
         ));
     }
     let hwnd: Hwnd = number(&args[1])?;
@@ -245,8 +371,12 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
         println!("{}", snapshot(hwnd, Some(pid))?);
         return Ok(true);
     }
+    if args.len() == 6 && args[0] == "click" && args[5] == "--apply" {
+        return click(hwnd, pid, number(&args[3])?, number(&args[4])?);
+    }
     let action = match args[0].to_str() {
         Some("restore") if args.len() == 4 && args[3] == "--apply" => Action::Restore,
+        Some("maximize") if args.len() == 4 && args[3] == "--apply" => Action::Maximize,
         Some("focus") if args.len() == 4 && args[3] == "--apply" => Action::Focus,
         Some("move") if args.len() == 6 && args[5] == "--apply" => {
             let x = number(&args[3])?;
@@ -274,6 +404,8 @@ mod tests {
         assert!(dimensions(0, 400).is_err());
         assert!(dimensions(500, 18000).is_err());
         assert!(dimensions(800, 600).is_ok());
+        assert_eq!(std::mem::size_of::<Input>(), 40);
+        assert!(click(0, 1, 0, 0).is_err());
         assert!(!Action::Focus.matches(&json!({"foreground":false})));
         assert!(Action::Move(-200, 30).matches(&json!({"x":-200,"y":30})));
         assert!(!Action::Restore.matches(&json!({"minimized":false,"maximized":true})));
