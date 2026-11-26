@@ -63,6 +63,18 @@ try {
  Invoke-Engine -Arguments @('queue','submit',$db,'drain-test',$input,'50','2','--reviewed-redacted')|Out-Null
  $drained=Invoke-Engine -Arguments @('queue','drain',$db,'2')|ConvertFrom-Json
  if (!$drained.passed -or !$drained.idle_observed -or @($drained.jobs).Count -ne 1 -or $drained.jobs[0].id -ne 'drain-test') { throw 'Queue drain failed' }
+ $waited=Invoke-Engine -Arguments @('queue','wait',$db,'first','0')|ConvertFrom-Json
+ if (!$waited.terminal -or $waited.timed_out -or $waited.input_sha256 -ne $callerHash -or $waited.result_sha256 -notmatch '^[0-9a-f]{64}
+ if ($cancel.state -ne 'cancelled') { throw 'Cancelled task executed' }
+ @{schema=1;status='PASS';scope='Windows hosted runner; not Windows 11 desktop or FreePi acceptance';registry_engines=12;all_engine_fixture_passed=$true;local_collection_passed=$true;concurrent_claims=$claimed;caller_input_sha256=$callerHash;cancelled_job_preserved=$true;dependency_fixture_passed=$true;queue_drain_passed=$true;queue_wait_provenance_passed=$true;commit=$env:GITHUB_SHA}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $Reports 'orchestrator-windows.json') -Encoding UTF8
+} finally {
+ foreach ($worker in $workers) {
+  if (!$worker.HasExited) { $worker.Kill(); $worker.WaitForExit() }
+  $worker.Dispose()
+ }
+ Remove-Item -LiteralPath $root -Recurse -Force
+}
+) { throw 'Wait/provenance fixture failed' }
  $cancel=Invoke-Engine -Arguments @('queue','status',$db,'cancelled')|ConvertFrom-Json
  if ($cancel.state -ne 'cancelled') { throw 'Cancelled task executed' }
  @{schema=1;status='PASS';scope='Windows hosted runner; not Windows 11 desktop or FreePi acceptance';registry_engines=12;all_engine_fixture_passed=$true;local_collection_passed=$true;concurrent_claims=$claimed;caller_input_sha256=$callerHash;cancelled_job_preserved=$true;dependency_fixture_passed=$true;queue_drain_passed=$true;commit=$env:GITHUB_SHA}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $Reports 'orchestrator-windows.json') -Encoding UTF8

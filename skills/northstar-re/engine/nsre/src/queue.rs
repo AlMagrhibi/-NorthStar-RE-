@@ -7,7 +7,7 @@ use std::{
     fs::{self, File, OpenOptions},
     io::{self, Read},
     path::Path,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 const APP_ID: i64 = 0x4e53514a;
@@ -171,27 +171,84 @@ fn drain(c: &mut Connection, limit: usize) -> io::Result<Value> {
 }
 
 fn status(c: &Connection, id: &str) -> io::Result<Value> {
-    let (state, result, hash) = c
+    let (state, input, input_hash, result, hash) = c
         .query_row(
-            "SELECT state,result,result_sha256 FROM jobs WHERE id=?1",
+            "SELECT state,input,input_sha256,result,result_sha256 FROM jobs WHERE id=?1",
             [id],
             |r| {
                 Ok((
                     r.get::<_, String>(0)?,
-                    r.get::<_, Option<String>>(1)?,
-                    r.get::<_, Option<String>>(2)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, Option<String>>(3)?,
+                    r.get::<_, Option<String>>(4)?,
                 ))
             },
         )
         .map_err(io::Error::other)?;
-    let report: Option<Value> = match (result, hash) {
-        (Some(body), Some(hash)) if digest(&body) == hash => {
+    if digest(&input) != input_hash {
+        return Err(invalid("input integrity failure"));
+    }
+    let report: Option<Value> = match (result, hash.as_ref()) {
+        (Some(body), Some(hash)) if digest(&body) == *hash => {
             Some(serde_json::from_str(&body).map_err(io::Error::other)?)
         }
         (None, None) if state != "completed" && state != "failed" => None,
         _ => return Err(invalid("result integrity failure")),
     };
-    Ok(json!({"id":id,"state":state,"result":report}))
+    if (state == "completed" && report.as_ref().is_none_or(|v| v["passed"] != true))
+        || (state == "failed" && report.as_ref().is_some_and(|v| v["passed"] == true))
+        || (!matches!(state.as_str(), "completed" | "failed") && report.is_some())
+    {
+        return Err(invalid("inconsistent state and result"));
+    }
+    Ok(json!({
+        "id":id,"state":state,"result":report,
+        "input_sha256":input_hash,"result_sha256":hash
+    }))
+}
+
+fn wait(c: &Connection, id: &str, seconds: u64) -> io::Result<Value> {
+    if seconds > 600 {
+        return Err(invalid("wait timeout must be within 0..=600 seconds"));
+    }
+    let start = Instant::now();
+    let timeout = Duration::from_secs(seconds);
+    loop {
+        let mut report = status(c, id)?;
+        let terminal = matches!(
+            report["state"].as_str(),
+            Some("completed" | "failed" | "cancelled" | "interrupted")
+        );
+        if terminal || start.elapsed() >= timeout {
+            report["terminal"] = json!(terminal);
+            report["timed_out"] = json!(!terminal);
+            return Ok(report);
+        }
+        std::thread::sleep(Duration::from_millis(100).min(timeout.saturating_sub(start.elapsed())));
+    }
+}
+
+fn retry(c: &Connection, old_id: &str, new_id: &str) -> io::Result<()> {
+    let (input, expected, priority, workers, state) = c
+        .query_row(
+            "SELECT input,input_sha256,priority,workers,state FROM jobs WHERE id=?1",
+            [old_id],
+            |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, i64>(2)?,
+                    r.get::<_, i64>(3)?,
+                    r.get::<_, String>(4)?,
+                ))
+            },
+        )
+        .map_err(io::Error::other)?;
+    if state != "interrupted" || digest(&input) != expected || old_id == new_id {
+        return Err(invalid("retry requires intact interrupted job and new id"));
+    }
+    submit(c, new_id, &input, priority, workers as usize)
 }
 
 fn transition(c: &Connection, id: &str, from: &str, to: &str) -> io::Result<()> {
@@ -209,7 +266,7 @@ fn transition(c: &Connection, id: &str, from: &str, to: &str) -> io::Result<()> 
 
 pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     let args: Vec<_> = args.collect();
-    let usage = "queue init DB | submit DB ID INPUT PRIORITY WORKERS --reviewed-redacted | run-one DB | drain DB LIMIT | status DB ID | cancel DB ID | interrupt DB ID --worker-stopped";
+    let usage = "queue init DB | submit DB ID INPUT PRIORITY WORKERS --reviewed-redacted | run-one DB | drain DB LIMIT | status DB ID | wait DB ID SECONDS | retry DB OLD_ID NEW_ID --reviewed-redacted | cancel DB ID | interrupt DB ID --worker-stopped";
     if args.len() < 2 {
         return Err(invalid(usage));
     }
@@ -262,6 +319,20 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
             return Ok(report["passed"] == true);
         }
         "status" if args.len() == 3 => println!("{}", status(&c, id()?)?),
+        "wait" if args.len() == 4 => {
+            let seconds = args[3]
+                .to_str()
+                .and_then(|s| s.parse().ok())
+                .ok_or_else(|| invalid("invalid timeout"))?;
+            let report = wait(&c, id()?, seconds)?;
+            println!("{report}");
+            return Ok(report["state"] == "completed" && report["terminal"] == true);
+        }
+        "retry" if args.len() == 5 && args[4] == "--reviewed-redacted" => {
+            let new_id = args[3].to_str().ok_or_else(|| invalid("new id required"))?;
+            retry(&c, id()?, new_id)?;
+            println!("{}", json!({"id":new_id,"retry_of":id()?,"state":"queued"}));
+        }
         "cancel" if args.len() == 3 => transition(&c, id()?, "queued", "cancelled")?,
         "interrupt" if args.len() == 4 && args[3] == "--worker-stopped" => {
             transition(&c, id()?, "running", "interrupted")?;
@@ -305,6 +376,23 @@ mod tests {
         assert_eq!(report["passed"], true);
         assert!(drain(&mut c, 0).is_err());
         assert_eq!(status(&c, "cancel").unwrap()["state"], "cancelled");
+        let complete = wait(&c, "high", 0).unwrap();
+        assert_eq!(complete["terminal"], true);
+        assert_eq!(complete["input_sha256"], digest(input));
+        assert!(complete["result_sha256"].is_string());
+        submit(&c, "crashed", input, 10, 1).unwrap();
+        assert_eq!(wait(&c, "crashed", 0).unwrap()["timed_out"], true);
+        assert!(retry(&c, "crashed", "retry").is_err());
+        transition(&c, "crashed", "queued", "running").unwrap();
+        transition(&c, "crashed", "running", "interrupted").unwrap();
+        retry(&c, "crashed", "retry").unwrap();
+        assert!(retry(&c, "crashed", "retry").is_err());
+        assert_eq!(run_one(&mut c).unwrap()["id"], "retry");
+        assert_eq!(status(&c, "crashed").unwrap()["state"], "interrupted");
+        assert_eq!(wait(&c, "retry", 0).unwrap()["state"], "completed");
+        c.execute("UPDATE jobs SET input='tampered' WHERE id='retry'", [])
+            .unwrap();
+        assert!(status(&c, "retry").is_err());
         drop(c);
         fs::remove_dir_all(dir).unwrap();
     }
