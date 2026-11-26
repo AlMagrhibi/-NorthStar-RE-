@@ -51,9 +51,9 @@ fn evaluate(input: &Value, jobs: usize) -> io::Result<Value> {
             })
             .collect()
     });
-    let passed = results.iter().all(|result| {
-        result["state"] == "completed" && result["result"]["passed"] == true
-    });
+    let passed = results
+        .iter()
+        .all(|result| result["state"] == "completed" && result["result"]["passed"] == true);
     Ok(json!({
         "schema":1,"complete":true,"passed":passed,"workers":jobs,
         "scope":"offline lab only","results":results
