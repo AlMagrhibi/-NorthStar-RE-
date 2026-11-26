@@ -1,3 +1,5 @@
+> **تطوير V12:** اعتُمد [التوجيه الموحد كاملًا](docs/NORTHSTAR-V12-EXECUTION-DIRECTIVE.md) للمحركات الاثني عشر والتحكم والجلسات وFreePi وSSH. لم يصدر V12 بعد. نجح [CI ويندوز 45895240781](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45895240781) عند `92bd971`؛ قبول Windows 11 وFreePi وSSH الفعلي ما زال مطلوبًا. تعليمات التثبيت أدناه تخص RC2 الحالي.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/branding/banner-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="assets/branding/banner-light.svg">
