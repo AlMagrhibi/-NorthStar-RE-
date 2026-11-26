@@ -107,7 +107,7 @@ a872e1ba6dedf132e5385e3751adff113eaa31667d3bf5325328b540abf6de0e  scripts/Write-
 57876d0adb62d2e2123a6088b5ebfdee411b5014777325bb4480accacd1f16c5  skills/northstar-re/engine/nsre/Cargo.toml
 a5bb6fd60a286c64b8a6a43be13e81845a2b374b146d9be1839d338e0707452a  skills/northstar-re/engine/nsre/README.md
 c5a1364363adad0ca8352dfded39100f5e108633c105a13db01a03ecc05a1c62  skills/northstar-re/engine/nsre/src/batch.rs
-715ef6e12e1b59a3fed7095e0ed5f0f2e7c737e1149da96ad34ef70432eba866  skills/northstar-re/engine/nsre/src/desktop.rs
+195dd50b9eaac8c0ff3a7b9a2e3b5d431dc0f9c09b4ded0fc403bb3b09ead0b5  skills/northstar-re/engine/nsre/src/desktop.rs
 a730fd1323349216c7211644c65a2fa0f27c2f2b12ad646acae853cc30614a87  skills/northstar-re/engine/nsre/src/engine-registry.json
 d3d7ee8f130a73c8c9c7cb0e9ecdf3418d4e0a704783212ef713835bce745e52  skills/northstar-re/engine/nsre/src/framework.rs
 e4b0563aa1d36eca341846c5ac5d0ae3d6e2e862c859c8675b76b62d85bb9efc  skills/northstar-re/engine/nsre/src/index.rs

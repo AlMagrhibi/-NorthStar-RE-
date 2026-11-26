@@ -52,15 +52,8 @@ unsafe extern "system" {
     #[link_name = "SetForegroundWindow"]
     fn set_foreground(hwnd: Hwnd) -> i32;
     #[link_name = "SetWindowPos"]
-    fn set_pos(
-        hwnd: Hwnd,
-        after: Hwnd,
-        x: i32,
-        y: i32,
-        width: i32,
-        height: i32,
-        flags: u32,
-    ) -> i32;
+    fn set_pos(hwnd: Hwnd, after: Hwnd, x: i32, y: i32, width: i32, height: i32, flags: u32)
+        -> i32;
 }
 
 fn invalid(message: &str) -> io::Error {
