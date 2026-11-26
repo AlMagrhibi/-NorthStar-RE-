@@ -64,6 +64,24 @@ $secret.UseSystemPasswordChar=$true
 $secret.Text='SYNTHETIC_PASSWORD_DO_NOT_READ'
 $secret.Location=[Drawing.Point]::new(20,60)
 $front.Controls.Add($secret)
+$mouse=[Windows.Forms.ListBox]::new()
+$mouse.Name='nsre-mouse-surface'
+$mouse.Location=[Drawing.Point]::new(300,20)
+$mouse.Size=[Drawing.Size]::new(160,220)
+foreach ($n in 1..100) { [void]$mouse.Items.Add('Fixture '+$n) }
+$script:dragOrigin=$null
+$mouse.Add_MouseDown({param($sender,$e)
+ if ($e.Button -eq [Windows.Forms.MouseButtons]::Right) { $front.Text='NSRE Right Clicked' }
+ if ($e.Button -eq [Windows.Forms.MouseButtons]::Middle) { $front.Text='NSRE Middle Clicked' }
+ if ($e.Button -eq [Windows.Forms.MouseButtons]::Left) { $script:dragOrigin=$e.Location }
+})
+$mouse.Add_MouseDoubleClick({$front.Text='NSRE Double Clicked'})
+$mouse.Add_MouseWheel({$front.Text='NSRE Wheel Observed'})
+$mouse.Add_MouseUp({param($sender,$e)
+ if ($null -ne $script:dragOrigin -and $e.Button -eq [Windows.Forms.MouseButtons]::Left -and ([Math]::Abs($e.X-$script:dragOrigin.X)+[Math]::Abs($e.Y-$script:dragOrigin.Y)) -gt 40) { $front.Text='NSRE Dragged' }
+ $script:dragOrigin=$null
+})
+$front.Controls.Add($mouse)
 $front.Show()
 [Windows.Forms.Application]::Run($front)
 $back.Dispose()
@@ -169,8 +187,30 @@ $front.Dispose()
   }
   if (!$typed.dispatched -or !$keyboardVerified) { throw 'Unicode keyboard effect not observed' }
  }
+ $rightVerified=$false;$middleVerified=$false;$doubleVerified=$false;$wheelVerified=$false;$dragVerified=$false
+ if ($focus.verified) {
+  $mouseCases=@(
+   @{arguments=@('right-click',$front.hwnd,$owner,'330','90','--apply');title='NSRE Right Clicked';kind='right'},
+   @{arguments=@('middle-click',$front.hwnd,$owner,'330','110','--apply');title='NSRE Middle Clicked';kind='middle'},
+   @{arguments=@('double-click',$front.hwnd,$owner,'330','140','--apply');title='NSRE Double Clicked';kind='double'}
+  )
+  foreach ($case in $mouseCases) {
+   $sent=Invoke-Desktop -Arguments $case.arguments
+   $effect=$false
+   for ($i=0;$i -lt 20;$i++) { $state=Invoke-Desktop -Arguments @('inspect',$front.hwnd,$owner);if($state.title -eq $case.title){$effect=$true;break};Start-Sleep -Milliseconds 50 }
+   if (!$sent.dispatched -or !$effect) { throw ('Mouse effect missing: '+$case.kind) }
+   switch($case.kind){'right'{$rightVerified=$true};'middle'{$middleVerified=$true};'double'{$doubleVerified=$true}}
+  }
+  Invoke-Desktop -Arguments @('click',$front.hwnd,$owner,'330','60','--apply')|Out-Null
+  $wheel=Invoke-Desktop -Arguments @('scroll',$front.hwnd,$owner,'330','160','-120','--apply')
+  for ($i=0;$i -lt 20;$i++) { $state=Invoke-Desktop -Arguments @('inspect',$front.hwnd,$owner);if($state.title -eq 'NSRE Wheel Observed'){$wheelVerified=$true;break};Start-Sleep -Milliseconds 50 }
+  if (!$wheel.dispatched -or !$wheelVerified) { throw 'Wheel application effect missing' }
+  $drag=Invoke-Desktop -Arguments @('drag',$front.hwnd,$owner,'330','100','420','170','--apply')
+  for ($i=0;$i -lt 20;$i++) { $state=Invoke-Desktop -Arguments @('inspect',$front.hwnd,$owner);if($state.title -eq 'NSRE Dragged'){$dragVerified=$true;break};Start-Sleep -Milliseconds 50 }
+  if (!$drag.dispatched -or !$drag.button_release_inserted -or !$dragVerified) { throw 'Drag application effect/release missing' }
+ }
  $passed=$true
- @{schema=1;status='PASS';scope='interactive Windows fixture only; not FreePi or protected content acceptance';os=[Environment]::OSVersion.VersionString;covered_window_found=$true;move_verified=$true;resize_verified=$true;restore_verified=$true;unselected_window_unchanged=$true;invalid_target_rejected=$true;foreground_verified=[bool]$focus.verified;foreground_exit=$focusExit;click_effect_verified=$clickVerified;keyboard_effect_verified=$keyboardVerified;uia_invoke_effect_verified=$invokeEffect;password_values_excluded=$true;covered_capture_content_verified=$true;wgc_supported=[bool]$captureCapabilities.wgc_supported;wgc_capture_content_verified=$wgcVerified;os_is_windows11=([Environment]::OSVersion.Version.Build -ge 22000)}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Reports 'desktop-control.json') -Encoding UTF8
+ @{schema=1;status='PASS';scope='interactive Windows fixture only; not FreePi or protected content acceptance';os=[Environment]::OSVersion.VersionString;covered_window_found=$true;move_verified=$true;resize_verified=$true;restore_verified=$true;unselected_window_unchanged=$true;invalid_target_rejected=$true;foreground_verified=[bool]$focus.verified;foreground_exit=$focusExit;click_effect_verified=$clickVerified;keyboard_effect_verified=$keyboardVerified;right_click_effect_verified=$rightVerified;middle_click_effect_verified=$middleVerified;double_click_effect_verified=$doubleVerified;wheel_effect_verified=$wheelVerified;drag_effect_verified=$dragVerified;uia_invoke_effect_verified=$invokeEffect;password_values_excluded=$true;covered_capture_content_verified=$true;wgc_supported=[bool]$captureCapabilities.wgc_supported;wgc_capture_content_verified=$wgcVerified;os_is_windows11=([Environment]::OSVersion.Version.Build -ge 22000)}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Reports 'desktop-control.json') -Encoding UTF8
 } finally {
  if ($null -ne $fixture) {
   if (!$fixture.HasExited) { $fixture.Kill(); $fixture.WaitForExit() }
