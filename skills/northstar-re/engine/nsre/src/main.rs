@@ -1,6 +1,7 @@
 //! Read-only inventory prototype. Never loads or executes target files.
 mod framework;
 mod index;
+mod lab;
 mod probe;
 mod rpc;
 use rayon::prelude::*;
