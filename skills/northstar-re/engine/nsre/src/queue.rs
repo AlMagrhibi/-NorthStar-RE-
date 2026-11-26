@@ -107,6 +107,17 @@ pub(crate) fn read_status(path: &Path, id: &str) -> io::Result<Value> {
 }
 
 fn submit(c: &Connection, id: &str, input: &str, priority: i64, workers: usize) -> io::Result<()> {
+    submit_attempt(c, id, input, priority, workers, None)
+}
+
+fn submit_attempt(
+    c: &Connection,
+    id: &str,
+    input: &str,
+    priority: i64,
+    workers: usize,
+    retry_of: Option<&str>,
+) -> io::Result<()> {
     if id.is_empty()
         || id.len() > 64
         || !id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
@@ -154,6 +165,13 @@ fn submit(c: &Connection, id: &str, input: &str, priority: i64, workers: usize) 
         params![id, input, digest(input), priority, workers as i64],
     )
     .map_err(io::Error::other)?;
+    if let Some(parent) = retry_of {
+        tx.execute_batch("CREATE TABLE IF NOT EXISTS retry_links(job TEXT PRIMARY KEY REFERENCES jobs(id), parent TEXT NOT NULL REFERENCES jobs(id))").map_err(io::Error::other)?;
+        let inserted = tx.execute("INSERT INTO retry_links SELECT ?1,id FROM jobs WHERE id=?2 AND state='interrupted' AND input=?3 AND input_sha256=?4", params![id,parent,input,digest(input)]).map_err(io::Error::other)?;
+        if inserted != 1 {
+            return Err(invalid("retry parent changed before commit"));
+        }
+    }
     if version == 2 {
         for dependency in dependencies {
             tx.execute(
@@ -429,8 +447,24 @@ fn status(c: &Connection, id: &str) -> io::Result<Value> {
     {
         return Err(invalid("inconsistent state and result"));
     }
+    let has_links: bool = c
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM sqlite_schema WHERE type='table' AND name='retry_links')",
+            [],
+            |r| r.get(0),
+        )
+        .map_err(io::Error::other)?;
+    let retry_of: Option<String> = if has_links {
+        c.query_row("SELECT parent FROM retry_links WHERE job=?1", [id], |r| {
+            r.get(0)
+        })
+        .optional()
+        .map_err(io::Error::other)?
+    } else {
+        None
+    };
     Ok(json!({
-        "id":id,"state":state,"result":report,
+        "id":id,"state":state,"result":report,"retry_of":retry_of,
         "input_sha256":input_hash,"result_sha256":hash,
         "scheduling":serde_json::from_str::<Value>(&input).map_err(io::Error::other)?.get("queue")
     }))
@@ -477,7 +511,7 @@ fn retry(c: &Connection, old_id: &str, new_id: &str) -> io::Result<()> {
     if state != "interrupted" || digest(&input) != expected || old_id == new_id {
         return Err(invalid("retry requires intact interrupted job and new id"));
     }
-    submit(c, new_id, &input, priority, workers as usize)
+    submit_attempt(c, new_id, &input, priority, workers as usize, Some(old_id))
 }
 
 fn transition(c: &Connection, id: &str, from: &str, to: &str) -> io::Result<()> {
@@ -848,6 +882,9 @@ mod tests {
         transition(&c, "crashed", "queued", "running").unwrap();
         transition(&c, "crashed", "running", "interrupted").unwrap();
         retry(&c, "crashed", "retry").unwrap();
+        drop(c);
+        let mut c = open(&db).unwrap();
+        assert_eq!(status(&c, "retry").unwrap()["retry_of"], "crashed");
         assert!(retry(&c, "crashed", "retry").is_err());
         assert_eq!(run_one(&mut c).unwrap()["id"], "retry");
         assert_eq!(status(&c, "crashed").unwrap()["state"], "interrupted");

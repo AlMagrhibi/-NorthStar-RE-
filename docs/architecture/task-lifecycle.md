@@ -2,6 +2,8 @@
 
 The control-plane and durable-execution sections specify the target. Candidate implementation slices and their limits are recorded below.
 
+Reviewed retries persist their parent job ID in the same SQLite transaction as the new job. Status and wait expose the parent as `retry_of`. Older attempts without a recorded link return null. The operator can follow this link after reopening the queue to inspect the interrupted parent and its input digest.
+
 Terminal queue results include an additive `execution` schema 1 envelope: queue-local execution ID, lifecycle state, producer version, UTC Unix milliseconds, monotonic duration and explicit `verification: UNVERIFIED`. Timings begin before transactional claim and include claim/dependency/evaluation work, excluding final persistence. A failed finish-clock read is null; duration never depends on wall-clock subtraction. CPU/RAM/IO are explicitly unmeasured here, and automatic retry is false. This is a partial execution contract, not full NNEC adoption: project/attempt identity, worker leases, heartbeat, typed error taxonomy and all-engine coverage remain required. Existing stored reports remain readable without this additive envelope.
 
 V12 fault containment: an unwinding Rust evaluator becomes an explicit `WORKER_LOST` failure persisted through the existing result/hash transaction. The panic payload is excluded from the persisted result; the Rust panic hook can still write stderr diagnostics. Aborts, OS termination and power loss require owner/lease reconciliation, which remains outstanding. No automatic retry is introduced.
