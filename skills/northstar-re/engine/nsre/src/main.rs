@@ -1,5 +1,7 @@
 //! Read-only inventory prototype. Never loads or executes target files.
 mod batch;
+#[cfg(windows)]
+mod desktop;
 mod framework;
 mod index;
 mod lab;
@@ -234,7 +236,7 @@ fn main() -> ExitCode {
     if let Some(cmd) = args.next().and_then(|x| x.into_string().ok()) {
         if cmd == "--help" || cmd == "help" {
             println!(
-                "nsre 0.3.0: scan index export diff probe analyze batch engines queue {}",
+                "nsre 0.3.0: scan index export diff probe analyze batch engines queue desktop {}",
                 framework::COMMANDS.join(" ")
             );
             return ExitCode::SUCCESS;
@@ -246,6 +248,17 @@ fn main() -> ExitCode {
             }
             print!("{}", include_str!("engine-registry.json"));
             return ExitCode::SUCCESS;
+        }
+        #[cfg(windows)]
+        if cmd == "desktop" {
+            return match desktop::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
         }
         if cmd == "queue" {
             return match queue::command(args) {

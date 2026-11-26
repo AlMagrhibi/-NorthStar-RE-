@@ -47,11 +47,23 @@
     {
       "id": "runtime-diagnostics",
       "name": "Runtime Diagnostics",
-      "foundation": "offline-lab",
+      "foundation": "offline-lab-and-native-desktop-candidate",
       "batch_operations": [
-        "isolation-plan"
+        "isolation-plan",
+        "process-report",
+        "ui-report"
       ],
-      "complete": false
+      "complete": false,
+      "desktop_cli": [
+        "list",
+        "inspect",
+        "restore",
+        "focus",
+        "move",
+        "resize"
+      ],
+      "desktop_acceptance": "unverified",
+      "gui_mutations_in_queue": false
     },
     {
       "id": "compatibility",
@@ -66,14 +78,19 @@
       "id": "security",
       "name": "Security",
       "foundation": "existing-gates",
-      "batch_operations": [],
+      "batch_operations": [
+        "security-regression-report"
+      ],
       "complete": false
     },
     {
       "id": "performance",
       "name": "Performance",
       "foundation": "existing-benchmark",
-      "batch_operations": [],
+      "batch_operations": [
+        "load-report",
+        "resource-report"
+      ],
       "complete": false
     },
     {

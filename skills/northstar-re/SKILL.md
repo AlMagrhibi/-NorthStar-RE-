@@ -38,3 +38,6 @@ Read `references/engine-orchestrator.md`. Verify the installed engine exposes `n
 
 ## Windows-only target policy
 Future orchestration development, execution and acceptance target Windows 11 x64. No Linux/WSL fallback or requirement. The candidate explicit offline queue must be used only if the installed engine actually exposes it. Do not claim Windows desktop acceptance from hosted CI. Preserve project state and the installed release until verified upgrade.
+
+## Native desktop control candidate
+On the Windows desktop, use the installed engine's actual supported desktop command before relying on screenshots for window discovery. Enumerate windows, identify the operator-selected application by HWND and PID, inspect, then explicitly apply the required restore/focus/move/resize and verify the observed state. Treat foreground denial or unverified geometry as incomplete; do not bypass Windows integrity or secure desktops. Do not mutate unrelated windows, capture credentials, or automate GUI mutations through the offline queue. UI Automation, specialized capture, typed input and live agent acceptance remain planned. Read the current architecture documentation for capability limits.

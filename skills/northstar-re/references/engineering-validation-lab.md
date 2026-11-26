@@ -39,3 +39,17 @@ Evidence records: each requires id, sha256 (64 hexadecimal characters), confiden
 ## Release gates
 
 All ten are partial foundations, not complete engines. Run locked Rust check/test/clippy/fmt, package validation and Windows installer lifecycle in CI. Validate live host behavior separately. Never promote the candidate solely because source exists or a metadata check passes. Preserve RC2 and avoid putting target-specific artifacts in this public repository.
+
+## FW-021–FW-025 operational report foundations
+
+All operations consume independently collected JSON reports; no live load generation, process enumeration, firewall modification, UI automation or resource sampling is performed by this module.
+
+| ID | Operation | Scope and remaining work |
+|---|---|---|
+| FW-021 Load & Stress Testing Engine | load-report | Summarize nonnegative integer latency samples, peak and p95 against a supplied limit. Synthetic local load generator, concurrency and throughput tests pending. |
+| FW-022 Process Tree Isolation Verification | process-report | Check reported positive unique PIDs, observation flags and external connection counts. Process-tree completeness and actual isolation enforcement pending. |
+| FW-023 Windows UI Diagnostics | ui-report | Summarize reported window responsiveness; actual OS diagnostics and accessibility tests on owned fixtures pending. |
+| FW-024 Security Regression Framework | security-regression-report | Reuse gate summary for independent security test results; artifact verification and test execution pending. |
+| FW-025 Runtime Resource Profiler | resource-report | Summarize integer samples of one resource and supplied unit against limit. OS sampling and CPU/RAM attribution pending. |
+
+For load-report and resource-report supply latency_samples or resource_samples, limit, and unit; use consistent units. The p95 is the nearest-rank percentile. For process-report supply processes with pid, observed and external_connections; missing evidence is not a pass. For ui-report supply windows with id and responsive. No passed report alone proves operational acceptance.

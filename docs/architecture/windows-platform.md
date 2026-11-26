@@ -26,3 +26,7 @@ Do not run arbitrary commands from job manifests. Start with typed read-only col
 The current candidate does not implement a Windows service, named pipe server, Windows Job Objects, live collectors, full DAG, automatic recovery or the full twelve engines. A passing process smoke is not a full orchestrator or desktop acceptance. Never convert planned features into release claims without evidence.
 
 [Architecture](overview.md) · [Task lifecycle and acceptance](task-lifecycle.md)
+
+## Desktop control capability
+
+[ADR-NSO-002: Windows Desktop Control](desktop-control.md). Native Win32 candidate for explicit window discovery, inspection, restore, focus, position and geometry; UI Automation, DirectX/window capture, typed input, audit and interactive desktop acceptance remain separate gates.

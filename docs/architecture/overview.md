@@ -46,3 +46,7 @@ Stages use owned paths and per-user installation. Process-kill recovery remains 
 ## Platform decision
 
 [Windows-only architecture and acceptance](windows-platform.md). Windows-native process supervision, resource governance, local IPC and diagnostics are target components; their implementation and verification remain separate gates.
+
+## Shared Windows desktop capability
+
+[Windows Desktop Control](desktop-control.md) extends Runtime Diagnostics; all twelve engines can consume verified observations. GUI mutations remain explicit foreground actions, not arbitrary background jobs.
