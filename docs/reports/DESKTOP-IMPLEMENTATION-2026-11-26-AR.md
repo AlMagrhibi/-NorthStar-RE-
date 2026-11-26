@@ -26,3 +26,9 @@
 أضيف right/middle/double click وscroll وdrag مع إيقاف عند تغيّر الهدف ومحاولة إطلاق الزر عند الخروج. لم يُنسب نجاح اختبار left-click إلى هذه الأفعال الجديدة.
 
 دليل الباتش الأول `9c1e116`: [CI 45878056470](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45878056470)، ملف desktop-control.json من artifact evidence-windows-2022، SHA-256 للأرشيف `226dc872dd30a9f78f3bc1d2de32ab12485e07345ba8d2757b69a2bbeb94e2eb`. النتيجة PASS على Windows Server 2022: أثر keyboard/click/UIA، تصوير محتوى نافذة مغطاة، عزل password، وتحريك/تغيير حجم/استعادة النوافذ. os_is_windows11=false؛ لا قبول FreePi مستنتج. يُعاد CI على الباتش اللاحق ولا يعمم هذا النجاح عليه.
+
+## مسار Windows Graphics Capture
+
+أضيف capture-wgc/watch-wgc مع كشف دعم الجلسة. التنفيذ يستخدم GraphicsCaptureItem لنافذة HWND محددة وD3D11 frame pool، وينقل frame إلى staging texture ثم PNG، ويحفظ timestamp. لا يُستبدل مسار PrintWindow الناجح، ولا تعني قابلية بناء WGC أنه يعمل على كل DirectX أو على جلسة Windows Server. يفحص fixture الدعم ويسجل نتيجة WGC منفصلة؛ لا تُنسب نتيجة backend إلى الآخر. لا تزال اختبارات جهاز Windows 11 وFreePi غير متاحة هنا.
+
+أُحدّث دليل الماستر المصدر ليستخدم اكتشاف القدرات الفعلي، UIA قبل النقر الإحداثي، صور النافذة، إدخال stdin، والتحقق المستقل من أثر الفعل. هذا تعديل مصدر للمراجعة والاختبار، وليس تثبيتًا على حساب المستخدم أو تسجيلًا في FreePi.

@@ -121,6 +121,19 @@ $front.Dispose()
   $pixel=$image.GetPixel([int]($backNow.client_x-$backNow.x+20),[int]($backNow.client_y-$backNow.y+200))
   if ($pixel.R -ne 192 -or $pixel.G -ne 64 -or $pixel.B -ne 32) { throw 'Covered-window image content mismatch' }
  } finally { $image.Dispose() }
+ $captureCapabilities=Invoke-Desktop -Arguments @('capabilities')
+ $wgcVerified=$false
+ if ($captureCapabilities.wgc_supported) {
+  $wgcPath=Join-Path $root 'wgc-covered.png'
+  $wgc=Invoke-Desktop -Arguments @('capture-wgc',$back.hwnd,$owner,$wgcPath)
+  if ($wgc.method -ne 'Windows Graphics Capture' -or $wgc.sha256 -ne (Get-FileHash -LiteralPath $wgcPath -Algorithm SHA256).Hash.ToLowerInvariant()) { throw 'WGC backend/provenance mismatch' }
+  $wgcImage=[Drawing.Bitmap]::new($wgcPath)
+  try {
+   $sample=$wgcImage.GetPixel(30,230)
+   if ($sample.R -ne 192 -or $sample.G -ne 64 -or $sample.B -ne 32) { throw 'WGC covered-window content mismatch' }
+   $wgcVerified=$true
+  } finally { $wgcImage.Dispose() }
+ }
  # Wrong owner and missing explicit apply must fail without mutation.
  & $Engine desktop move $back.hwnd 0 0 0 --apply 2>$null|Out-Null
  if ($LASTEXITCODE -ne 1) { throw 'Invalid PID accepted' }
@@ -157,7 +170,7 @@ $front.Dispose()
   if (!$typed.dispatched -or !$keyboardVerified) { throw 'Unicode keyboard effect not observed' }
  }
  $passed=$true
- @{schema=1;status='PASS';scope='interactive Windows fixture only; not FreePi or protected content acceptance';os=[Environment]::OSVersion.VersionString;covered_window_found=$true;move_verified=$true;resize_verified=$true;restore_verified=$true;unselected_window_unchanged=$true;invalid_target_rejected=$true;foreground_verified=[bool]$focus.verified;foreground_exit=$focusExit;click_effect_verified=$clickVerified;keyboard_effect_verified=$keyboardVerified;uia_invoke_effect_verified=$invokeEffect;password_values_excluded=$true;covered_capture_content_verified=$true;os_is_windows11=([Environment]::OSVersion.Version.Build -ge 22000)}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Reports 'desktop-control.json') -Encoding UTF8
+ @{schema=1;status='PASS';scope='interactive Windows fixture only; not FreePi or protected content acceptance';os=[Environment]::OSVersion.VersionString;covered_window_found=$true;move_verified=$true;resize_verified=$true;restore_verified=$true;unselected_window_unchanged=$true;invalid_target_rejected=$true;foreground_verified=[bool]$focus.verified;foreground_exit=$focusExit;click_effect_verified=$clickVerified;keyboard_effect_verified=$keyboardVerified;uia_invoke_effect_verified=$invokeEffect;password_values_excluded=$true;covered_capture_content_verified=$true;wgc_supported=[bool]$captureCapabilities.wgc_supported;wgc_capture_content_verified=$wgcVerified;os_is_windows11=([Environment]::OSVersion.Version.Build -ge 22000)}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $Reports 'desktop-control.json') -Encoding UTF8
 } finally {
  if ($null -ne $fixture) {
   if (!$fixture.HasExited) { $fixture.Kill(); $fixture.WaitForExit() }

@@ -93,11 +93,14 @@
         "middle-click",
         "double-click",
         "scroll",
-        "drag"
+        "drag",
+        "capabilities",
+        "capture-wgc",
+        "watch-wgc"
       ],
       "desktop_acceptance": "unverified",
       "gui_mutations_in_queue": false,
-      "desktop_implementation": "Win32 input/window management, bounded UIA control tree and InvokePattern, isolated PrintWindow PNG fallback; Windows 11/FreePi acceptance pending",
+      "desktop_implementation": "Win32 input/window management, bounded UIA control tree and InvokePattern, isolated PrintWindow and WGC PNG frames; Windows 11/FreePi acceptance pending",
       "desktop_agent_bridge": "mcp/api --desktop-control; explicit selected-window tools; no GUI queue actions",
       "governed_batch_cli": "governed-batch"
     },

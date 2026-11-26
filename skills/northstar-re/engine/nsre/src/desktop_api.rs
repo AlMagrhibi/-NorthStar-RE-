@@ -12,7 +12,7 @@ fn invalid(s: &str) -> io::Error {
 }
 pub(crate) fn tools() -> Vec<Value> {
     vec![
-        json!({"name":"nsre_desktop_observe","description":"Explicit desktop session: list windows, inspect one window, read bounded UIA controls or save a PNG under the bound project reports. No password values are read.","inputSchema":{"type":"object","properties":{"action":{"type":"string","enum":["list","inspect","controls","capture"]},"hwnd":{"type":"string","pattern":"^[0-9]+$"},"pid":{"type":"integer","minimum":1}},"required":["action"],"additionalProperties":false},"annotations":{"readOnlyHint":false}}),
+        json!({"name":"nsre_desktop_observe","description":"Explicit desktop session: list windows, inspect one window, read bounded UIA controls or save a PNG under the bound project reports. No password values are read.","inputSchema":{"type":"object","properties":{"action":{"type":"string","enum":["list","capabilities","inspect","controls","capture","capture-wgc"]},"hwnd":{"type":"string","pattern":"^[0-9]+$"},"pid":{"type":"integer","minimum":1}},"required":["action"],"additionalProperties":false},"annotations":{"readOnlyHint":false}}),
         json!({"name":"nsre_desktop_act","description":"Explicit selected-window action. Requires apply=true. Input must remain foreground; UIA Invoke uses a unique AutomationId. Insertion/Invoke is not independent proof of application effect.","inputSchema":{"type":"object","properties":{"action":{"type":"string","enum":["restore","maximize","focus","move","resize","click","pointer","right-click","middle-click","double-click","drag","scroll","key","type","invoke"]},"hwnd":{"type":"string","pattern":"^[0-9]+$"},"pid":{"type":"integer","minimum":1},"apply":{"const":true},"x":{"type":"integer"},"y":{"type":"integer"},"width":{"type":"integer"},"height":{"type":"integer"},"text":{"type":"string","maxLength":1024},"key":{"type":"string","maxLength":64},"to_x":{"type":"integer"},"to_y":{"type":"integer"},"delta":{"type":"integer"},"automation_id":{"type":"string","maxLength":256}},"required":["action","hwnd","pid","apply"],"additionalProperties":false},"annotations":{"readOnlyHint":false,"destructiveHint":true}}),
     ]
 }
@@ -28,8 +28,8 @@ fn prepare(
         .as_str()
         .ok_or_else(|| invalid("desktop action required"))?;
     let fields: &[&str] = match (mutating, action) {
-        (false, "list") => &["action"],
-        (false, "inspect" | "controls" | "capture") => &["action", "hwnd", "pid"],
+        (false, "list" | "capabilities") => &["action"],
+        (false, "inspect" | "controls" | "capture" | "capture-wgc") => &["action", "hwnd", "pid"],
         (true, "restore" | "maximize" | "focus") => &["action", "hwnd", "pid", "apply"],
         (true, "move" | "click" | "pointer" | "right-click" | "middle-click" | "double-click") => {
             &["action", "hwnd", "pid", "apply", "x", "y"]
@@ -56,7 +56,7 @@ fn prepare(
             action
         }),
     ];
-    if action != "list" {
+    if !matches!(action, "list" | "capabilities") {
         let hwnd = value["hwnd"]
             .as_str()
             .filter(|s| !s.is_empty() && s.len() <= 20 && s.bytes().all(|b| b.is_ascii_digit()))
@@ -101,7 +101,7 @@ fn prepare(
             _ => {}
         }
     }
-    if action == "capture" {
+    if matches!(action, "capture" | "capture-wgc") {
         args.push(capture_path.as_os_str().to_owned());
     }
     if mutating {

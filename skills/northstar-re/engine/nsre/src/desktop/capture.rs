@@ -43,7 +43,7 @@ unsafe extern "system" {
     fn DeleteObject(object: isize) -> i32;
     fn GdiFlush() -> i32;
 }
-fn dimensions(w: i64, h: i64) -> io::Result<usize> {
+pub(super) fn dimensions(w: i64, h: i64) -> io::Result<usize> {
     if !(1..=8192).contains(&w) || !(1..=8192).contains(&h) || w * h > 16_777_216 {
         return Err(invalid(
             "capture exceeds 16 megapixels or geometry is invalid",
@@ -160,7 +160,20 @@ pub(super) fn worker(args: &[OsString]) -> io::Result<bool> {
     {
         return Err(invalid("internal capture worker"));
     }
-    write_frame(number(&args[1])?, number(&args[2])?, Path::new(&args[3]))?;
+    let path = Path::new(&args[3]);
+    if std::env::var_os("NSRE_CAPTURE_BACKEND").as_deref() == Some(std::ffi::OsStr::new("wgc")) {
+        let metadata = super::wgc::capture(number(&args[1])?, number(&args[2])?, path)?;
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path.with_extension("json"))?;
+        use std::io::Write;
+        serde_json::to_writer(&mut file, &metadata).map_err(io::Error::other)?;
+        file.flush()?;
+        file.sync_all()?;
+    } else {
+        write_frame(number(&args[1])?, number(&args[2])?, path)?;
+    }
     Ok(true)
 }
 struct Temp(std::path::PathBuf);
@@ -170,6 +183,9 @@ impl Drop for Temp {
     }
 }
 pub(super) fn command(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<bool> {
+    command_backend(hwnd, pid, path, false)
+}
+pub(super) fn command_backend(hwnd: Hwnd, pid: u32, path: &Path, wgc: bool) -> io::Result<bool> {
     let before = snapshot(hwnd, Some(pid))?;
     let parent = crate::collect::normal_dir(
         path.parent()
@@ -201,6 +217,10 @@ pub(super) fn command(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<bool> {
         .arg(pid.to_string())
         .arg(&frame)
         .env("NSRE_CAPTURE_CHILD", "1")
+        .env(
+            "NSRE_CAPTURE_BACKEND",
+            if wgc { "wgc" } else { "printwindow" },
+        )
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -233,19 +253,26 @@ pub(super) fn command(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<bool> {
     }
     let after = snapshot(hwnd, Some(pid))?;
     let (bytes, sha256) = crate::hash_file(&frame)?;
+    let backend: Value = if wgc {
+        serde_json::from_slice(&fs::read(frame.with_extension("json"))?)
+            .map_err(io::Error::other)?
+    } else {
+        json!({"method":"PrintWindow fallback"})
+    };
     fs::hard_link(&frame, &output)?;
     println!(
         "{}",
-        json!({"schema":1,"method":"PrintWindow fallback","format":"png","hwnd":hwnd.to_string(),"pid":pid,"output":output.to_string_lossy(),"bytes":bytes,"sha256":sha256,"before":before,"after":after,"content_verified":false,"live_stream":false,"minimized_supported":false,"directx_supported":"unverified","protected_content_bypassed":false})
+        json!({"schema":1,"method":backend["method"],"backend":backend,"format":"png","hwnd":hwnd.to_string(),"pid":pid,"output":output.to_string_lossy(),"bytes":bytes,"sha256":sha256,"before":before,"after":after,"content_verified":false,"live_stream":false,"minimized_supported":false,"directx_supported":"unverified","protected_content_bypassed":false})
     );
     Ok(true)
 }
-pub(super) fn watch(
+pub(super) fn watch_backend(
     hwnd: Hwnd,
     pid: u32,
     path: &Path,
     frames: usize,
     interval: u64,
+    wgc: bool,
 ) -> io::Result<bool> {
     if !(1..=120).contains(&frames) || !(200..=5000).contains(&interval) {
         return Err(invalid(
@@ -273,7 +300,12 @@ pub(super) fn watch(
         }
         {
             let _lock = keyboard::DesktopLock::acquire()?;
-            command(hwnd, pid, &directory.join(format!("frame-{index:04}.png")))?;
+            command_backend(
+                hwnd,
+                pid,
+                &directory.join(format!("frame-{index:04}.png")),
+                wgc,
+            )?;
         }
         if index + 1 < frames {
             for _ in 0..interval.div_ceil(50) {

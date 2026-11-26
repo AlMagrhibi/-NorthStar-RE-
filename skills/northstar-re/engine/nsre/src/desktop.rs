@@ -6,6 +6,7 @@ mod capture;
 mod keyboard;
 mod mouse;
 mod uia;
+mod wgc;
 
 type Hwnd = isize;
 const MAX_WINDOWS: usize = 512;
@@ -389,16 +390,21 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     if args.first().is_some_and(|s| s == "capture-worker") {
         return capture::worker(&args);
     }
-    if args.len() == 6 && args[0] == "watch" {
-        return capture::watch(
+    if args.len() == 6 && (args[0] == "watch" || args[0] == "watch-wgc") {
+        return capture::watch_backend(
             number(&args[1])?,
             number(&args[2])?,
             std::path::Path::new(&args[3]),
             number(&args[4])?,
             number(&args[5])?,
+            args[0] == "watch-wgc",
         );
     }
     let _serialization = keyboard::DesktopLock::acquire()?;
+    if args.len() == 1 && args[0] == "capabilities" {
+        println!("{}", wgc::capabilities());
+        return Ok(true);
+    }
     if args.len() == 1 && args[0] == "list" {
         println!("{}", list()?);
         return Ok(true);
@@ -416,6 +422,9 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     if args.len() == 3 && args[0] == "inspect" {
         println!("{}", snapshot(hwnd, Some(pid))?);
         return Ok(true);
+    }
+    if args.len() == 4 && args[0] == "capture-wgc" {
+        return capture::command_backend(hwnd, pid, std::path::Path::new(&args[3]), true);
     }
     if args.len() == 4 && args[0] == "capture" {
         return capture::command(hwnd, pid, std::path::Path::new(&args[3]));
