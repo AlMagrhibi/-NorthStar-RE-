@@ -6,7 +6,7 @@
 
 - المستودع Public وصلاحيات push/admin متاحة. الفرع engineering/engine-orchestrator-foundation.
 - HEAD عند الاستلام: `8d9a1a4529a0f533bd81d173c21475e8cefc27ff`، ويتضمن إصلاح PowerShell الموثق في التسليم. لم نكرر الإصلاح.
-- CI لهذا الأساس: [45871621232](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45871621232). نجح parser/integrity وRust build/tests/Clippy وSecurity أثناء الفحص؛ نتيجة دورة الحزم النهائية تُراجع منفصلة.
+- CI لهذا الأساس: [45871621232](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45871621232). نجح parser/integrity وRust build/tests/Clippy وSecurity أثناء الفحص؛ واكتملت Native/Security/Verified Windows distributions بنجاح؛ Publish skipped كما هو متوقع للـPR.
 - البيئة المحلية Linux x86_64 وRust 1.91.1، وليست Windows 11. الاختبارات المحلية دليل تطوير فقط؛ لا تغير منصة المنتج المستهدفة.
 
 ## الباتش الفعلي
@@ -33,7 +33,7 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo build --release --locked
 ```
 
-بعد الباتش: 21 unit + 2 engine_cli + 2 framework_cli + 4 security_regression = 29 اختبارًا فريدًا على Linux. النتائج المحلية لا تثبت عدد Windows، الذي يضم اختبارات خاصة بمنصته. ستُسجل أي تغييرات لاحقة في هذا التقرير قبل رفع الباتش.
+بعد الباتش: 21 unit + 3 engine_cli + 2 framework_cli + 4 security_regression = 30 اختبارًا فريدًا على Linux. النتائج المحلية لا تثبت عدد Windows، الذي يضم اختبارات خاصة بمنصته. ستُسجل أي تغييرات لاحقة في هذا التقرير قبل رفع الباتش.
 
 ## العوائق الحالية وحالة الإصدار
 
@@ -44,3 +44,9 @@ cargo build --release --locked
 - DSC-01–06 وNSO-03/08: لا يوجد وصول متاح من هذه الجلسة إلى جهاز Windows 11 للمستخدم أو FreePi العامل عليه. أدوات التحكم المتاحة تخص بيئة Linux في الجلسة، ولا تثبت اتصالًا بجهاز المستخدم. لا تشغيل G04/G05 ولا تعديل عميل أصلي.
 - قدرات Binary/Semantic/Algorithm/Data/Compatibility/Recovery ما زالت تحتاج إغلاق متطلباتها الخاصة الواردة في وثيقة التسليم؛ نجاح dispatch للـ12 لا يغلقها.
 - قبول Windows 11 وFreePi والترقية/rollback للحزمة النهائية يبقى مطلوبًا بعد التنفيذ، ولا يُستبدل بنجاح Windows Server CI.
+
+## واجهة الأيجنت الأصلية
+
+أضيف nsre_capabilities وnsre_queue_status إلى stdio MCP، مع بقاء الواجهة قراءة فقط. قراءة الطابور مربوطة بالمسار .northstar/state/jobs.sqlite داخل المشروع المحدد، دون قبول مسار DB من الأيجنت. اختبار CLI فعلي يثبت handshake/discovery واستهلاك نتيجة موثقة ويرفض extra arguments وpath traversal ويثبت عزل مشروع ثانٍ دون إنشاء حالته. لا تعديل إعدادات FreePi أو اعتماداته؛ قبول المضيف نفسه UNVERIFIED. الأوامر والعقد في adapters/README.md.
+
+باتش الجدولة والجمع: commit `96d5424b895681bd6b9491b35c563050b44fcf3c`، [CI 45872473167](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45872473167). سجلات واجهة الأيجنت والإصلاحات التالية تخص أحدث commit، ويجب فحص CI الخاص به منفصلًا.

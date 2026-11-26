@@ -836,6 +836,15 @@ pub fn rpc_status(p: &Path) -> R<Value> {
     status(&root(p)?)
 }
 
+pub fn rpc_queue_status(p: &Path, id: &str) -> R<Value> {
+    let r = root(p)?;
+    let database = safe(&r, ".northstar/state/jobs.sqlite")?;
+    for suffix in ["-wal", "-shm", "-journal"] {
+        safe(&r, &format!(".northstar/state/jobs.sqlite{suffix}"))?;
+    }
+    Ok(crate::queue::read_status(&database, id)?)
+}
+
 #[cfg(test)]
 mod discovery_tests {
     use super::*;

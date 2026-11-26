@@ -57,12 +57,15 @@ fn init(path: &Path) -> io::Result<()> {
 }
 
 fn open(path: &Path) -> io::Result<Connection> {
+    open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_WRITE)
+}
+
+fn open_with_flags(path: &Path, flags: OpenFlags) -> io::Result<Connection> {
     let m = fs::symlink_metadata(path)?;
     if !m.is_file() || crate::unsafe_entry(&m) {
         return Err(invalid("expected regular queue database"));
     }
-    let c = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_WRITE)
-        .map_err(io::Error::other)?;
+    let c = Connection::open_with_flags(path, flags).map_err(io::Error::other)?;
     c.busy_timeout(Duration::from_secs(5))
         .map_err(io::Error::other)?;
     let app: i64 = c
@@ -77,6 +80,13 @@ fn open(path: &Path) -> io::Result<Connection> {
     c.execute_batch("PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;")
         .map_err(io::Error::other)?;
     Ok(c)
+}
+
+pub(crate) fn read_status(path: &Path, id: &str) -> io::Result<Value> {
+    let c = open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+    c.execute_batch("PRAGMA query_only=ON;")
+        .map_err(io::Error::other)?;
+    status(&c, id)
 }
 
 fn submit(c: &Connection, id: &str, input: &str, priority: i64, workers: usize) -> io::Result<()> {
