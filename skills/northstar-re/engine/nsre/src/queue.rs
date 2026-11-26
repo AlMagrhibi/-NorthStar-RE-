@@ -35,7 +35,7 @@ fn init(path: &Path) -> io::Result<()> {
          PRAGMA synchronous=FULL;
          BEGIN IMMEDIATE;
          PRAGMA application_id=1314083146;
-         PRAGMA user_version=1;
+         PRAGMA user_version=2;
          CREATE TABLE jobs(
             id TEXT PRIMARY KEY,
             input TEXT NOT NULL,
@@ -45,8 +45,11 @@ fn init(path: &Path) -> io::Result<()> {
             state TEXT NOT NULL CHECK(state IN
               ('queued','running','completed','failed','cancelled','interrupted')),
             result TEXT,
-            result_sha256 TEXT
+            result_sha256 TEXT,
+            skipped_claims INTEGER NOT NULL DEFAULT 0
          );
+         CREATE TABLE dependencies(job TEXT NOT NULL REFERENCES jobs(id), dependency TEXT NOT NULL REFERENCES jobs(id), PRIMARY KEY(job,dependency));
+         CREATE TABLE exclusive_keys(job TEXT NOT NULL REFERENCES jobs(id), key TEXT NOT NULL, PRIMARY KEY(job,key));
          COMMIT;",
     )
     .map_err(io::Error::other)?;
@@ -68,10 +71,10 @@ fn open(path: &Path) -> io::Result<Connection> {
     let version: i64 = c
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(io::Error::other)?;
-    if app != APP_ID || version != 1 {
+    if app != APP_ID || !matches!(version, 1 | 2) {
         return Err(invalid("not a compatible NorthStar queue"));
     }
-    c.execute_batch("PRAGMA synchronous=FULL;")
+    c.execute_batch("PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;")
         .map_err(io::Error::other)?;
     Ok(c)
 }
@@ -87,51 +90,200 @@ fn submit(c: &Connection, id: &str, input: &str, priority: i64, workers: usize) 
         return Err(invalid("invalid job id, priority, workers or input size"));
     }
     let value: Value = serde_json::from_str(input).map_err(io::Error::other)?;
-    crate::batch::validate(&value, workers)?;
-    c.execute(
+    if value["schema"] == 2 {
+        crate::collect::validate_job(&value, workers)?;
+    } else {
+        crate::batch::validate(&value, workers)?;
+    }
+    let (dependencies, keys) = scheduling(&value)?;
+    let tx = rusqlite::Transaction::new_unchecked(c, TransactionBehavior::Immediate)
+        .map_err(io::Error::other)?;
+    let version: i64 = tx
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .map_err(io::Error::other)?;
+    if version == 1 && (!dependencies.is_empty() || !keys.is_empty()) {
+        return Err(invalid("queue migrate required for scheduling"));
+    }
+    // Dependencies must already exist: append-only submission cannot introduce a cycle.
+    for dependency in &dependencies {
+        if dependency == id
+            || !tx
+                .query_row(
+                    "SELECT EXISTS(SELECT 1 FROM jobs WHERE id=?1)",
+                    [dependency],
+                    |r| r.get::<_, bool>(0),
+                )
+                .map_err(io::Error::other)?
+        {
+            return Err(invalid("self or unknown queue dependency"));
+        }
+    }
+    tx.execute(
         "INSERT INTO jobs(id,input,input_sha256,priority,workers,state)
          VALUES(?1,?2,?3,?4,?5,'queued')",
         params![id, input, digest(input), priority, workers as i64],
     )
     .map_err(io::Error::other)?;
+    if version == 2 {
+        for dependency in dependencies {
+            tx.execute(
+                "INSERT INTO dependencies VALUES(?1,?2)",
+                params![id, dependency],
+            )
+            .map_err(io::Error::other)?;
+        }
+        for key in keys {
+            tx.execute("INSERT INTO exclusive_keys VALUES(?1,?2)", params![id, key])
+                .map_err(io::Error::other)?;
+        }
+    }
+    tx.commit().map_err(io::Error::other)?;
     Ok(())
 }
 
-fn run_one(c: &mut Connection) -> io::Result<Value> {
+fn scheduling(value: &Value) -> io::Result<(Vec<String>, Vec<String>)> {
+    let Some(schedule) = value.get("queue") else {
+        return Ok((vec![], vec![]));
+    };
+    let object = schedule
+        .as_object()
+        .ok_or_else(|| invalid("queue must be an object"))?;
+    if schedule["schema"] != 1
+        || object
+            .keys()
+            .any(|key| !matches!(key.as_str(), "schema" | "depends_on" | "exclusive_keys"))
+    {
+        return Err(invalid("unsupported queue scheduling contract"));
+    }
+    let list = |name: &str, limit: usize| -> io::Result<Vec<String>> {
+        let Some(value) = schedule.get(name) else {
+            return Ok(vec![]);
+        };
+        let values = value
+            .as_array()
+            .filter(|a| a.len() <= limit)
+            .ok_or_else(|| invalid("invalid scheduling list"))?;
+        let mut result = std::collections::BTreeSet::new();
+        for value in values {
+            let text = value
+                .as_str()
+                .filter(|s| {
+                    !s.is_empty()
+                        && s.len() <= 64
+                        && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
+                })
+                .ok_or_else(|| invalid("invalid scheduling identifier"))?;
+            if !result.insert(text.to_owned()) {
+                return Err(invalid("duplicate scheduling identifier"));
+            }
+        }
+        Ok(result.into_iter().collect())
+    };
+    Ok((list("depends_on", 64)?, list("exclusive_keys", 16)?))
+}
+
+fn migrate(c: &mut Connection) -> io::Result<()> {
     let tx = c
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .map_err(io::Error::other)?;
+    let version: i64 = tx
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .map_err(io::Error::other)?;
+    if version == 1 {
+        let running: i64 = tx
+            .query_row("SELECT count(*) FROM jobs WHERE state='running'", [], |r| {
+                r.get(0)
+            })
+            .map_err(io::Error::other)?;
+        if running != 0 {
+            return Err(invalid("stop and reconcile workers before migration"));
+        }
+        tx.execute_batch("ALTER TABLE jobs ADD COLUMN skipped_claims INTEGER NOT NULL DEFAULT 0;
+            CREATE TABLE dependencies(job TEXT NOT NULL REFERENCES jobs(id), dependency TEXT NOT NULL REFERENCES jobs(id), PRIMARY KEY(job,dependency));
+            CREATE TABLE exclusive_keys(job TEXT NOT NULL REFERENCES jobs(id), key TEXT NOT NULL, PRIMARY KEY(job,key));
+            PRAGMA user_version=2;").map_err(io::Error::other)?;
+    }
+    tx.commit().map_err(io::Error::other)
+}
+
+fn claim(c: &mut Connection) -> io::Result<Option<(String, String, String, i64)>> {
+    let tx = c
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .map_err(io::Error::other)?;
+    let version: i64 = tx
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .map_err(io::Error::other)?;
+    let eligible = "state='queued'
+        AND NOT EXISTS(SELECT 1 FROM dependencies d JOIN jobs parent ON parent.id=d.dependency
+            WHERE d.job=jobs.id AND parent.state IN ('queued','running'))
+        AND NOT EXISTS(SELECT 1 FROM exclusive_keys wanted JOIN exclusive_keys held ON wanted.key=held.key
+            JOIN jobs owner ON owner.id=held.job
+            WHERE wanted.job=jobs.id AND owner.state='running')";
+    let sql = if version == 2 {
+        format!("SELECT id,input,input_sha256,workers FROM jobs WHERE {eligible} ORDER BY priority+skipped_claims DESC,rowid LIMIT 1")
+    } else {
+        "SELECT id,input,input_sha256,workers FROM jobs WHERE state='queued' ORDER BY priority DESC,rowid LIMIT 1".to_owned()
+    };
     let job = tx
-        .query_row(
-            "SELECT id,input,input_sha256,workers FROM jobs
-             WHERE state='queued' ORDER BY priority DESC,rowid LIMIT 1",
-            [],
-            |r| {
-                Ok((
-                    r.get::<_, String>(0)?,
-                    r.get::<_, String>(1)?,
-                    r.get::<_, String>(2)?,
-                    r.get::<_, i64>(3)?,
-                ))
-            },
-        )
+        .query_row(&sql, [], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+                r.get::<_, i64>(3)?,
+            ))
+        })
         .optional()
         .map_err(io::Error::other)?;
-    let Some((id, input, expected, workers)) = job else {
+    if let Some((id, _, _, _)) = &job {
+        if version == 2 {
+            // Ready jobs age by successful claims, not wall clock; capped to avoid overflow.
+            tx.execute(
+                &format!(
+                    "UPDATE jobs SET skipped_claims=min(skipped_claims+1,9000000000000000) WHERE {eligible}"
+                ),
+                [],
+            )
+            .map_err(io::Error::other)?;
+        }
+        tx.execute(
+            "UPDATE jobs SET state='running' WHERE id=?1 AND state='queued'",
+            [id],
+        )
+        .map_err(io::Error::other)?;
+    }
+    tx.commit().map_err(io::Error::other)?;
+    Ok(job)
+}
+
+fn run_one(c: &mut Connection) -> io::Result<Value> {
+    let Some((id, input, expected, workers)) = claim(c)? else {
         return Ok(json!({"state":"idle"}));
     };
-    tx.execute(
-        "UPDATE jobs SET state='running' WHERE id=?1 AND state='queued'",
-        [&id],
-    )
-    .map_err(io::Error::other)?;
-    tx.commit().map_err(io::Error::other)?;
-    let result = if digest(&input) != expected {
+    let dependencies_passed = (|| -> io::Result<()> {
+        let value: Value = serde_json::from_str(&input).map_err(io::Error::other)?;
+        let (dependencies, _) = scheduling(&value)?;
+        for dependency in dependencies {
+            if status(c, &dependency)?["state"] != "completed" {
+                return Err(invalid("queue dependency did not pass"));
+            }
+        }
+        Ok(())
+    })();
+    let result = if let Err(error) = dependencies_passed {
+        Err(error)
+    } else if digest(&input) != expected {
         Err(invalid("input hash mismatch"))
     } else {
         serde_json::from_str(&input)
             .map_err(io::Error::other)
-            .and_then(|v| crate::batch::evaluate(&v, workers as usize))
+            .and_then(|v: Value| {
+                if v["schema"] == 2 {
+                    crate::collect::evaluate_job(&v, workers as usize)
+                } else {
+                    crate::batch::evaluate(&v, workers as usize)
+                }
+            })
     };
     let (state, report) = match result {
         Ok(report) if report["passed"] == true => ("completed", report),
@@ -204,7 +356,8 @@ fn status(c: &Connection, id: &str) -> io::Result<Value> {
     }
     Ok(json!({
         "id":id,"state":state,"result":report,
-        "input_sha256":input_hash,"result_sha256":hash
+        "input_sha256":input_hash,"result_sha256":hash,
+        "scheduling":serde_json::from_str::<Value>(&input).map_err(io::Error::other)?.get("queue")
     }))
 }
 
@@ -266,7 +419,7 @@ fn transition(c: &Connection, id: &str, from: &str, to: &str) -> io::Result<()> 
 
 pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     let args: Vec<_> = args.collect();
-    let usage = "queue init DB | submit DB ID INPUT PRIORITY WORKERS --reviewed-redacted | run-one DB | drain DB LIMIT | status DB ID | wait DB ID SECONDS | retry DB OLD_ID NEW_ID --reviewed-redacted | cancel DB ID | interrupt DB ID --worker-stopped";
+    let usage = "queue init DB | migrate DB | submit DB ID INPUT PRIORITY WORKERS --reviewed-redacted | run-one DB | drain DB LIMIT | status DB ID | wait DB ID SECONDS | retry DB OLD_ID NEW_ID --reviewed-redacted | cancel DB ID | interrupt DB ID --worker-stopped";
     if args.len() < 2 {
         return Err(invalid(usage));
     }
@@ -283,6 +436,7 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
             .ok_or_else(|| invalid("job id required"))
     };
     match verb {
+        "migrate" if args.len() == 2 => migrate(&mut c)?,
         "submit" if args.len() == 7 && args[6] == "--reviewed-redacted" => {
             let input = Path::new(&args[3]);
             let m = fs::symlink_metadata(input)?;
@@ -345,6 +499,155 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    struct Fixture(std::path::PathBuf);
+    impl Fixture {
+        fn new() -> Self {
+            let dir = std::env::temp_dir().join(format!(
+                "nsre-scheduling-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            fs::create_dir(&dir).unwrap();
+            Self(dir)
+        }
+        fn db(&self) -> std::path::PathBuf {
+            self.0.join("queue.sqlite")
+        }
+    }
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+    fn manifest(deps: &[&str], keys: &[&str], passed: bool) -> String {
+        json!({"schema":1,"queue":{"schema":1,"depends_on":deps,"exclusive_keys":keys},"tasks":[{"id":"check","input":{"operation":"regression-check","baseline":true,"actual":passed}}]}).to_string()
+    }
+
+    #[test]
+    fn cross_job_dependencies_fail_closed_and_survive_restart() {
+        let f = Fixture::new();
+        init(&f.db()).unwrap();
+        let c = open(&f.db()).unwrap();
+        assert!(submit(&c, "orphan", &manifest(&["absent"], &[], true), 0, 1).is_err());
+        assert!(submit(&c, "self", &manifest(&["self"], &[], true), 0, 1).is_err());
+        assert!(submit(&c, "dupe", &manifest(&["x", "x"], &[], true), 0, 1).is_err());
+        submit(&c, "parent", &manifest(&[], &[], true), 0, 1).unwrap();
+        submit(&c, "child", &manifest(&["parent"], &[], true), 100, 1).unwrap();
+        drop(c);
+        let mut c = open(&f.db()).unwrap();
+        assert_eq!(run_one(&mut c).unwrap()["id"], "parent");
+        assert_eq!(run_one(&mut c).unwrap()["id"], "child");
+        submit(&c, "cancel", &manifest(&[], &[], true), 0, 1).unwrap();
+        submit(&c, "blocked", &manifest(&["cancel"], &[], true), 100, 1).unwrap();
+        submit(&c, "transitive", &manifest(&["blocked"], &[], true), 100, 1).unwrap();
+        transition(&c, "cancel", "queued", "cancelled").unwrap();
+        assert_eq!(run_one(&mut c).unwrap()["state"], "failed");
+        assert_eq!(run_one(&mut c).unwrap()["state"], "failed");
+        assert!(status(&c, "blocked").unwrap()["result"]["results"].is_null());
+        // A successful state with corrupt provenance cannot authorize a dependent.
+        submit(&c, "corrupt-child", &manifest(&["parent"], &[], true), 0, 1).unwrap();
+        c.execute("UPDATE jobs SET result_sha256='bad' WHERE id='parent'", [])
+            .unwrap();
+        assert_eq!(run_one(&mut c).unwrap()["state"], "failed");
+    }
+
+    #[test]
+    fn exclusive_keys_are_claimed_atomically_and_released_on_interruption() {
+        let f = Fixture::new();
+        init(&f.db()).unwrap();
+        let mut a = open(&f.db()).unwrap();
+        submit(&a, "writer-a", &manifest(&[], &["index"], true), 100, 1).unwrap();
+        submit(&a, "writer-b", &manifest(&[], &["index"], true), 100, 1).unwrap();
+        submit(&a, "other", &manifest(&[], &["other"], true), 0, 1).unwrap();
+        assert_eq!(claim(&mut a).unwrap().unwrap().0, "writer-a");
+        let mut b = open(&f.db()).unwrap();
+        assert_eq!(claim(&mut b).unwrap().unwrap().0, "other");
+        assert!(claim(&mut b).unwrap().is_none());
+        transition(&a, "writer-a", "running", "interrupted").unwrap();
+        assert_eq!(claim(&mut b).unwrap().unwrap().0, "writer-b");
+        assert!(claim(&mut a).unwrap().is_none());
+    }
+
+    #[test]
+    fn ready_job_ages_past_continuous_high_priority_arrivals() {
+        let f = Fixture::new();
+        init(&f.db()).unwrap();
+        let mut c = open(&f.db()).unwrap();
+        let input = manifest(&[], &[], true);
+        submit(&c, "low", &input, 0, 1).unwrap();
+        let mut low_claimed = false;
+        for i in 0..=101 {
+            submit(&c, &format!("high-{i}"), &input, 100, 1).unwrap();
+            if run_one(&mut c).unwrap()["id"] == "low" {
+                low_claimed = true;
+                break;
+            }
+        }
+        assert!(
+            low_claimed,
+            "new high-priority arrivals must not starve an eligible job"
+        );
+    }
+
+    #[test]
+    fn schema_one_migration_preserves_jobs_and_refuses_running_workers() {
+        let f = Fixture::new();
+        let c = Connection::open(f.db()).unwrap();
+        c.execute_batch("PRAGMA application_id=1314083146; PRAGMA user_version=1;
+            CREATE TABLE jobs(id TEXT PRIMARY KEY,input TEXT NOT NULL,input_sha256 TEXT NOT NULL,priority INTEGER NOT NULL,workers INTEGER NOT NULL,state TEXT NOT NULL,result TEXT,result_sha256 TEXT);").unwrap();
+        drop(c);
+        let mut c = open(&f.db()).unwrap();
+        let input =
+            r#"{"schema":1,"tasks":[{"id":"a","input":{"operation":"json-roundtrip","data":1}}]}"#;
+        submit(&c, "old", input, 50, 1).unwrap();
+        assert!(submit(&c, "new", &manifest(&["old"], &[], true), 0, 1).is_err());
+        assert_eq!(claim(&mut c).unwrap().unwrap().0, "old");
+        assert!(migrate(&mut c).is_err());
+        transition(&c, "old", "running", "interrupted").unwrap();
+        migrate(&mut c).unwrap();
+        migrate(&mut c).unwrap();
+        assert_eq!(status(&c, "old").unwrap()["input_sha256"], digest(input));
+        retry(&c, "old", "retry").unwrap();
+        submit(&c, "new", &manifest(&["retry"], &[], true), 100, 1).unwrap();
+        assert_eq!(run_one(&mut c).unwrap()["id"], "retry");
+        assert_eq!(run_one(&mut c).unwrap()["id"], "new");
+    }
+
+    #[test]
+    fn scheduled_collection_rehashes_changed_sources_without_cache() {
+        let f = Fixture::new();
+        init(&f.db()).unwrap();
+        let source = f.0.join("source");
+        fs::create_dir(&source).unwrap();
+        fs::write(source.join("a.txt"), b"abc").unwrap();
+        let expected = digest("abc");
+        let mut input = json!({"schema":2,"kind":"collect","root":source,"manifest":{"schema":1,"files":[{"path":"a.txt","expected_sha256":expected}]}});
+        let mut c = open(&f.db()).unwrap();
+        submit(&c, "collect", &input.to_string(), 50, 1).unwrap();
+        assert_eq!(run_one(&mut c).unwrap()["state"], "completed");
+        let result = status(&c, "collect").unwrap();
+        assert_eq!(result["result"]["results"][0]["sha256"], expected);
+        assert_eq!(result["result"]["results"][0]["hash_recomputed"], true);
+        fs::write(source.join("a.txt"), b"changed").unwrap();
+        input["queue"] = json!({"schema":1,"depends_on":["collect"]});
+        submit(&c, "stale", &input.to_string(), 50, 1).unwrap();
+        assert_eq!(run_one(&mut c).unwrap()["state"], "failed");
+        assert_eq!(
+            status(&c, "stale").unwrap()["result"]["results"][0]["sha256"],
+            digest("changed")
+        );
+        input["manifest"]["files"][0]["path"] = json!("../queue.sqlite");
+        submit(&c, "escape", &input.to_string(), 50, 1).unwrap();
+        assert_eq!(run_one(&mut c).unwrap()["state"], "failed");
+        input["root"] = json!("relative");
+        assert!(submit(&c, "relative", &input.to_string(), 50, 1).is_err());
+        input["kind"] = json!("shell");
+        assert!(submit(&c, "shell", &input.to_string(), 50, 1).is_err());
+    }
 
     #[test]
     fn durable_priority_cancel_and_results() {

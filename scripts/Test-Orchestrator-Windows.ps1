@@ -67,7 +67,25 @@ try {
  if (!$waited.terminal -or $waited.timed_out -or $waited.input_sha256 -ne $callerHash -or $waited.result_sha256 -notmatch '^[0-9a-f]{64}$') { throw 'Wait/provenance fixture failed' }
  $cancel=Invoke-Engine -Arguments @('queue','status',$db,'cancelled')|ConvertFrom-Json
  if ($cancel.state -ne 'cancelled') { throw 'Cancelled task executed' }
- @{schema=1;status='PASS';scope='Windows hosted runner; not Windows 11 desktop or FreePi acceptance';registry_engines=12;all_engine_fixture_passed=$true;local_collection_passed=$true;concurrent_claims=$claimed;caller_input_sha256=$callerHash;cancelled_job_preserved=$true;dependency_fixture_passed=$true;queue_drain_passed=$true;queue_wait_provenance_passed=$true;commit=$env:GITHUB_SHA}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $Reports 'orchestrator-windows.json') -Encoding UTF8
+ # Cross-job ordering and independently hashed local collection through the queue.
+ $scheduled=Join-Path $root 'scheduled.json'
+ $collector=Join-Path $root 'collector-job.json'
+ @{schema=1;queue=@{schema=1;depends_on=@('dag-parent');exclusive_keys=@('fixture-index')};tasks=@(@{id='check';input=@{operation='json-roundtrip';data=1}})}|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $scheduled -Encoding utf8NoBOM
+ @{schema=2;kind='collect';root=$source;manifest=@{schema=1;files=@(@{path='a.txt';expected_sha256='ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'})};queue=@{schema=1;depends_on=@('dag-child')}}|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $collector -Encoding utf8NoBOM
+ Invoke-Engine -Arguments @('queue','submit',$db,'dag-parent',$input,'0','1','--reviewed-redacted')|Out-Null
+ Invoke-Engine -Arguments @('queue','submit',$db,'dag-child',$scheduled,'100','1','--reviewed-redacted')|Out-Null
+ Invoke-Engine -Arguments @('queue','submit',$db,'collect-job',$collector,'100','1','--reviewed-redacted')|Out-Null
+ $ordered=Invoke-Engine -Arguments @('queue','drain',$db,'4')|ConvertFrom-Json
+ if (!$ordered.passed -or @($ordered.jobs).Count -ne 3 -or ($ordered.jobs.id -join ',') -ne 'dag-parent,dag-child,collect-job') { throw 'Cross-job dependency ordering failed' }
+ $observed=Invoke-Engine -Arguments @('queue','status',$db,'collect-job')|ConvertFrom-Json
+ if (!$observed.result.results[0].hash_recomputed -or $observed.result.results[0].sha256 -ne 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad') { throw 'Queued collector evidence failed' }
+ [IO.File]::WriteAllText((Join-Path $source 'a.txt'),'changed',[Text.UTF8Encoding]::new($false))
+ Invoke-Engine -Arguments @('queue','submit',$db,'stale-collect',$collector,'100','1','--reviewed-redacted')|Out-Null
+ & $Engine queue run-one $db|Out-Null
+ if ($LASTEXITCODE -ne 2) { throw 'Stale collector did not fail closed' }
+ $stale=Invoke-Engine -Arguments @('queue','status',$db,'stale-collect')|ConvertFrom-Json
+ if ($stale.state -ne 'failed' -or $stale.result.results[0].passed) { throw 'Stale source accepted' }
+ @{schema=1;status='PASS';scope='Windows hosted runner; not Windows 11 desktop or FreePi acceptance';registry_engines=12;all_engine_fixture_passed=$true;local_collection_passed=$true;concurrent_claims=$claimed;caller_input_sha256=$callerHash;cancelled_job_preserved=$true;dependency_fixture_passed=$true;queue_drain_passed=$true;queue_wait_provenance_passed=$true;cross_job_dag_passed=$true;queued_collector_passed=$true;stale_source_rejected=$true;commit=$env:GITHUB_SHA}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $Reports 'orchestrator-windows.json') -Encoding UTF8
 } finally {
  foreach ($worker in $workers) {
   if (!$worker.HasExited) { $worker.Kill(); $worker.WaitForExit() }

@@ -148,6 +148,52 @@ fn evaluate(root: &Path, input: &Value, jobs: usize) -> io::Result<Value> {
     }))
 }
 
+/// Versioned queue adapter: no commands, network, GUI actions or output path.
+pub(crate) fn validate_job(input: &Value, jobs: usize) -> io::Result<()> {
+    let object = input
+        .as_object()
+        .ok_or_else(|| invalid("collector job object required"))?;
+    if input["schema"] != 2
+        || input["kind"] != "collect"
+        || !(1..=8).contains(&jobs)
+        || object.keys().any(|key| {
+            !matches!(
+                key.as_str(),
+                "schema" | "kind" | "root" | "manifest" | "queue"
+            )
+        })
+    {
+        return Err(invalid("unsupported collector job contract"));
+    }
+    let root = input["root"]
+        .as_str()
+        .filter(|s| !s.is_empty() && s.len() <= 4096)
+        .ok_or_else(|| invalid("collector root required"))?;
+    if !Path::new(root).is_absolute() {
+        return Err(invalid("absolute collector root required"));
+    }
+    if input["manifest"]["schema"] != 1
+        || input["manifest"]["files"]
+            .as_array()
+            .is_none_or(|files| files.is_empty() || files.len() > MAX_TASKS)
+    {
+        return Err(invalid(
+            "collector manifest requires 1..=64 files and schema 1",
+        ));
+    }
+    Ok(())
+}
+
+pub(crate) fn evaluate_job(input: &Value, jobs: usize) -> io::Result<Value> {
+    validate_job(input, jobs)?;
+    let root = normal_dir(Path::new(input["root"].as_str().unwrap()))?;
+    let mut report = evaluate(&root, &input["manifest"], jobs)?;
+    report["kind"] = json!("collect");
+    report["producer"] = json!({"name":"nsre","version":env!("CARGO_PKG_VERSION")});
+    report["source_root"] = json!(root.to_string_lossy());
+    Ok(report)
+}
+
 pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     let args: Vec<_> = args.collect();
     if args.len() != 9
