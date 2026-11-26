@@ -44,3 +44,7 @@ No new published release or desktop acceptance is implied.
 ## FW-011–FW-020 — engineering validation lab
 
 [Implementation and acceptance ledger](skills/northstar-re/references/engineering-validation-lab.md). All ten work items have initial offline Rust helpers on the development branch; full engines and runtime acceptance remain pending. No new release is implied.
+
+## Approved engine architecture and orchestration
+
+See [engine registry and execution contract](skills/northstar-re/references/engine-orchestrator.md). Twelve engine directions approved; bounded parallel offline lab runner candidate; persistent scheduler and live collectors remain planned. No release or desktop acceptance implied.
