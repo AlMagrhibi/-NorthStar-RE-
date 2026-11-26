@@ -40,3 +40,7 @@ See [engineering foundations](skills/northstar-re/references/next-engineering-fo
 | FW-005 MCP/API host interoperability | PLANNED verification; existing read-only candidate unchanged |
 
 No new published release or desktop acceptance is implied.
+
+## FW-011–FW-020 — engineering validation lab
+
+[Implementation and acceptance ledger](skills/northstar-re/references/engineering-validation-lab.md). All ten work items have initial offline Rust helpers on the development branch; full engines and runtime acceptance remain pending. No new release is implied.
