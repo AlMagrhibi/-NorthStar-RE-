@@ -16,7 +16,7 @@ fn invalid(message: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, message)
 }
 
-fn evaluate(input: &Value, jobs: usize) -> io::Result<Value> {
+pub(crate) fn validate(input: &Value, jobs: usize) -> io::Result<()> {
     if !(1..=8).contains(&jobs) || input["schema"].as_u64() != Some(1) {
         return Err(invalid("invalid worker count or schema"));
     }
@@ -34,6 +34,12 @@ fn evaluate(input: &Value, jobs: usize) -> io::Result<Value> {
             return Err(invalid("duplicate id or invalid task input"));
         }
     }
+    Ok(())
+}
+
+pub(crate) fn evaluate(input: &Value, jobs: usize) -> io::Result<Value> {
+    validate(input, jobs)?;
+    let tasks = input["tasks"].as_array().ok_or_else(|| invalid("expected tasks"))?;
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(jobs)
         .build()
