@@ -2,7 +2,7 @@
 use rayon::prelude::*;
 use serde_json::{json, Value};
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     ffi::OsString,
     fs::{self, File, OpenOptions},
     io::{self, Read, Write},
@@ -16,7 +16,7 @@ fn invalid(message: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, message)
 }
 
-pub(crate) fn validate(input: &Value, jobs: usize) -> io::Result<()> {
+fn dependency_layers(input: &Value, jobs: usize) -> io::Result<Vec<Vec<usize>>> {
     if !(1..=8).contains(&jobs) || input["schema"].as_u64() != Some(1) {
         return Err(invalid("invalid worker count or schema"));
     }
@@ -24,47 +24,118 @@ pub(crate) fn validate(input: &Value, jobs: usize) -> io::Result<()> {
         .as_array()
         .filter(|tasks| !tasks.is_empty() && tasks.len() <= MAX_TASKS)
         .ok_or_else(|| invalid("expected 1..=64 tasks"))?;
-    let mut ids = BTreeSet::new();
-    for task in tasks {
+    let mut ids = BTreeMap::new();
+    for (index, task) in tasks.iter().enumerate() {
         let id = task["id"]
             .as_str()
             .filter(|id| !id.is_empty() && id.len() <= 64)
             .ok_or_else(|| invalid("invalid task id"))?;
-        if !ids.insert(id) || !task["input"].is_object() {
+        if ids.insert(id, index).is_some() || !task["input"].is_object() {
             return Err(invalid("duplicate id or invalid task input"));
         }
     }
-    Ok(())
+    let dependencies = dependencies(tasks, &ids)?;
+    let mut pending: BTreeSet<usize> = (0..tasks.len()).collect();
+    let mut layers = Vec::new();
+    while !pending.is_empty() {
+        let ready: Vec<usize> = pending
+            .iter()
+            .copied()
+            .filter(|i| dependencies[*i].iter().all(|d| !pending.contains(d)))
+            .collect();
+        if ready.is_empty() {
+            return Err(invalid("dependency cycle"));
+        }
+        for index in &ready {
+            pending.remove(index);
+        }
+        layers.push(ready);
+    }
+    Ok(layers)
+}
+
+fn dependencies(tasks: &[Value], ids: &BTreeMap<&str, usize>) -> io::Result<Vec<BTreeSet<usize>>> {
+    tasks
+        .iter()
+        .enumerate()
+        .map(|(index, task)| {
+            let mut deps = BTreeSet::new();
+            if let Some(value) = task.get("depends_on") {
+                let entries = value
+                    .as_array()
+                    .ok_or_else(|| invalid("depends_on must be an array"))?;
+                for entry in entries {
+                    let dep = entry
+                        .as_str()
+                        .and_then(|id| ids.get(id))
+                        .copied()
+                        .ok_or_else(|| invalid("unknown dependency"))?;
+                    if dep == index || !deps.insert(dep) {
+                        return Err(invalid("self or duplicate dependency"));
+                    }
+                }
+            }
+            Ok(deps)
+        })
+        .collect()
+}
+
+pub(crate) fn validate(input: &Value, jobs: usize) -> io::Result<()> {
+    dependency_layers(input, jobs).map(|_| ())
 }
 
 pub(crate) fn evaluate(input: &Value, jobs: usize) -> io::Result<Value> {
-    validate(input, jobs)?;
+    let layers = dependency_layers(input, jobs)?;
     let tasks = input["tasks"]
         .as_array()
         .ok_or_else(|| invalid("expected tasks"))?;
+    let ids: BTreeMap<&str, usize> = tasks
+        .iter()
+        .enumerate()
+        .filter_map(|(index, task)| task["id"].as_str().map(|id| (id, index)))
+        .collect();
+    let dependencies = dependencies(tasks, &ids)?;
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(jobs)
         .build()
         .map_err(io::Error::other)?;
-    let results: Vec<Value> = pool.install(|| {
-        tasks
-            .par_iter()
-            .map(|task| match crate::lab::evaluate(&task["input"]) {
-                Ok(result) => json!({
-                    "id":task["id"],"state":"completed","result":result
-                }),
-                Err(error) => json!({
-                    "id":task["id"],"state":"failed","error":error.to_string()
-                }),
-            })
-            .collect()
-    });
+    let mut results = vec![Value::Null; tasks.len()];
+    for layer in &layers {
+        let completed: Vec<(usize, Value)> = pool.install(|| {
+            layer
+                .par_iter()
+                .map(|&index| {
+                    let task = &tasks[index];
+                    let blocked = dependencies[index].iter().any(|&d| {
+                        results[d]["state"] != "completed"
+                            || results[d]["result"]["passed"] != true
+                    });
+                    let report = if blocked {
+                        json!({"id":task["id"],"state":"blocked","reason":"dependency did not pass"})
+                    } else {
+                        match crate::lab::evaluate(&task["input"]) {
+                            Ok(result) => json!({
+                                "id":task["id"],"state":"completed","result":result
+                            }),
+                            Err(error) => json!({
+                                "id":task["id"],"state":"failed","error":error.to_string()
+                            }),
+                        }
+                    };
+                    (index, report)
+                })
+                .collect()
+        });
+        for (index, report) in completed {
+            results[index] = report;
+        }
+    }
     let passed = results
         .iter()
         .all(|result| result["state"] == "completed" && result["result"]["passed"] == true);
     Ok(json!({
         "schema":1,"complete":true,"passed":passed,"workers":jobs,
-        "scope":"offline lab only","results":results
+        "scope":"offline lab only","dependency_layers":layers.len(),"results":results
     }))
 }
 
@@ -127,6 +198,28 @@ mod tests {
         assert_eq!(report["results"][1]["result"]["passed"], false);
         assert_eq!(report["results"][2]["state"], "failed");
         assert_eq!(report["results"], evaluate(&input, 1).unwrap()["results"]);
+    }
+
+    #[test]
+    fn dependency_order_and_negative_propagation() {
+        let input = json!({"schema":1,"tasks":[
+            {"id":"dependent","depends_on":["bad"],"input":{"operation":"json-roundtrip","data":1}},
+            {"id":"bad","input":{"operation":"regression-check","baseline":1,"actual":2}},
+            {"id":"independent","input":{"operation":"json-roundtrip","data":2}},
+            {"id":"transitive","depends_on":["dependent"],"input":{"operation":"json-roundtrip","data":3}}
+        ]});
+        let report = evaluate(&input, 2).unwrap();
+        assert_eq!(report["dependency_layers"], 3);
+        assert_eq!(report["results"][0]["state"], "blocked");
+        assert_eq!(report["results"][2]["result"]["passed"], true);
+        assert_eq!(report["results"][3]["state"], "blocked");
+        assert_eq!(report["passed"], false);
+        let mut cycle = input.clone();
+        cycle["tasks"][1]["depends_on"] = json!(["transitive"]);
+        assert!(validate(&cycle, 2).is_err());
+        let mut missing = input;
+        missing["tasks"][0]["depends_on"] = json!(["missing"]);
+        assert!(validate(&missing, 2).is_err());
     }
 
     #[test]

@@ -21,7 +21,7 @@ try {
  if ($LASTEXITCODE -ne 1) { throw 'Desktop invalid handle accepted' }
  $db=Join-Path $root 'jobs.sqlite'
  $input=Join-Path $root 'input.json'
- [IO.File]::WriteAllText($input,'{"schema":1,"tasks":[{"id":"data","input":{"operation":"json-roundtrip","data":{"x":1}}},{"id":"qa","input":{"operation":"regression-check","baseline":1,"actual":1}}]}',[Text.UTF8Encoding]::new($false))
+ [IO.File]::WriteAllText($input,'{"schema":1,"tasks":[{"id":"data","input":{"operation":"json-roundtrip","data":{"x":1}}},{"id":"qa","depends_on":["data"],"input":{"operation":"regression-check","baseline":1,"actual":1}}]}',[Text.UTF8Encoding]::new($false))
  Invoke-Engine -Arguments @('queue','init',$db)|Out-Null
  foreach ($id in @('first','second','cancelled')) {
   Invoke-Engine -Arguments @('queue','submit',$db,$id,$input,'50','2','--reviewed-redacted')|Out-Null
@@ -44,9 +44,12 @@ try {
   $status=Invoke-Engine -Arguments @('queue','status',$db,$id)|ConvertFrom-Json
   if ($status.state -ne 'completed' -or !$status.result.passed -or @($status.result.results).Count -ne 2) { throw "Invalid result: $id" }
  }
+ Invoke-Engine -Arguments @('queue','submit',$db,'drain-test',$input,'50','2','--reviewed-redacted')|Out-Null
+ $drained=Invoke-Engine -Arguments @('queue','drain',$db,'2')|ConvertFrom-Json
+ if (!$drained.passed -or !$drained.idle_observed -or @($drained.jobs).Count -ne 1 -or $drained.jobs[0].id -ne 'drain-test') { throw 'Queue drain failed' }
  $cancel=Invoke-Engine -Arguments @('queue','status',$db,'cancelled')|ConvertFrom-Json
  if ($cancel.state -ne 'cancelled') { throw 'Cancelled task executed' }
- @{schema=1;status='PASS';scope='Windows hosted runner; not Windows 11 desktop or FreePi acceptance';registry_engines=12;concurrent_claims=$claimed;caller_input_sha256=$callerHash;cancelled_job_preserved=$true;commit=$env:GITHUB_SHA}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $Reports 'orchestrator-windows.json') -Encoding UTF8
+ @{schema=1;status='PASS';scope='Windows hosted runner; not Windows 11 desktop or FreePi acceptance';registry_engines=12;concurrent_claims=$claimed;caller_input_sha256=$callerHash;cancelled_job_preserved=$true;dependency_fixture_passed=$true;queue_drain_passed=$true;commit=$env:GITHUB_SHA}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $Reports 'orchestrator-windows.json') -Encoding UTF8
 } finally {
  foreach ($worker in $workers) {
   if (!$worker.HasExited) { $worker.Kill(); $worker.WaitForExit() }

@@ -152,6 +152,24 @@ fn run_one(c: &mut Connection) -> io::Result<Value> {
     Ok(json!({"id":id,"state":state}))
 }
 
+fn drain(c: &mut Connection, limit: usize) -> io::Result<Value> {
+    if !(1..=64).contains(&limit) {
+        return Err(invalid("drain limit must be within 1..=64"));
+    }
+    let mut jobs = Vec::new();
+    let mut idle = false;
+    for _ in 0..limit {
+        let job = run_one(c)?;
+        if job["state"] == "idle" {
+            idle = true;
+            break;
+        }
+        jobs.push(job);
+    }
+    let passed = jobs.iter().all(|job| job["state"] == "completed");
+    Ok(json!({"schema":1,"passed":passed,"idle_observed":idle,"jobs":jobs}))
+}
+
 fn status(c: &Connection, id: &str) -> io::Result<Value> {
     let (state, result, hash) = c
         .query_row(
@@ -191,7 +209,7 @@ fn transition(c: &Connection, id: &str, from: &str, to: &str) -> io::Result<()> 
 
 pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     let args: Vec<_> = args.collect();
-    let usage = "queue init DB | submit DB ID INPUT PRIORITY WORKERS --reviewed-redacted | run-one DB | status DB ID | cancel DB ID | interrupt DB ID --worker-stopped";
+    let usage = "queue init DB | submit DB ID INPUT PRIORITY WORKERS --reviewed-redacted | run-one DB | drain DB LIMIT | status DB ID | cancel DB ID | interrupt DB ID --worker-stopped";
     if args.len() < 2 {
         return Err(invalid(usage));
     }
@@ -234,6 +252,15 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
             println!("{report}");
             return Ok(report["state"] != "failed");
         }
+        "drain" if args.len() == 3 => {
+            let limit = args[2]
+                .to_str()
+                .and_then(|value| value.parse().ok())
+                .ok_or_else(|| invalid("invalid drain limit"))?;
+            let report = drain(&mut c, limit)?;
+            println!("{report}");
+            return Ok(report["passed"] == true);
+        }
         "status" if args.len() == 3 => println!("{}", status(&c, id()?)?),
         "cancel" if args.len() == 3 => transition(&c, id()?, "queued", "cancelled")?,
         "interrupt" if args.len() == 4 && args[3] == "--worker-stopped" => {
@@ -272,8 +299,11 @@ mod tests {
         let mut c = open(&db).unwrap();
         assert_eq!(run_one(&mut c).unwrap()["id"], "high");
         assert_eq!(status(&c, "high").unwrap()["state"], "completed");
-        assert_eq!(run_one(&mut c).unwrap()["id"], "low");
-        assert_eq!(run_one(&mut c).unwrap()["state"], "idle");
+        let report = drain(&mut c, 2).unwrap();
+        assert_eq!(report["jobs"][0]["id"], "low");
+        assert_eq!(report["idle_observed"], true);
+        assert_eq!(report["passed"], true);
+        assert!(drain(&mut c, 0).is_err());
         assert_eq!(status(&c, "cancel").unwrap()["state"], "cancelled");
         drop(c);
         fs::remove_dir_all(dir).unwrap();
