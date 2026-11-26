@@ -10,7 +10,7 @@ use std::{
     time::Instant,
 };
 use windows::{
-    core::{factory, Interface, IInspectable},
+    core::{factory, IInspectable, Interface},
     Foundation::TypedEventHandler,
     Graphics::{
         Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem, GraphicsCaptureSession},
@@ -168,12 +168,12 @@ pub(super) fn capture(hwnd: Hwnd, pid: u32, path: &Path) -> io::Result<Value> {
     let arrived = Arc::new(AtomicBool::new(false));
     let arrived_signal = Arc::clone(&arrived);
     let arrived_token = pool
-        .FrameArrived(&TypedEventHandler::<Direct3D11CaptureFramePool, IInspectable>::new(
-            move |_, _| {
+        .FrameArrived(
+            &TypedEventHandler::<Direct3D11CaptureFramePool, IInspectable>::new(move |_, _| {
                 arrived_signal.store(true, Ordering::Release);
                 Ok(())
-            },
-        ))
+            }),
+        )
         .map_err(stage("subscribe FrameArrived"))?;
     let session = pool
         .CreateCaptureSession(&item)
