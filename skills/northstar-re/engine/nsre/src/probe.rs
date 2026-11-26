@@ -16,7 +16,7 @@ fn u32_at(b: &[u8], o: usize) -> Option<u32> {
         b.get(o..o.checked_add(4)?)?.try_into().ok()?,
     ))
 }
-fn entropy(b: &[u8]) -> f64 {
+pub(crate) fn entropy(b: &[u8]) -> f64 {
     if b.is_empty() {
         return 0.0;
     }
@@ -32,7 +32,7 @@ fn entropy(b: &[u8]) -> f64 {
         })
         .sum()
 }
-fn signature(b: &[u8]) -> &'static str {
+pub(crate) fn signature(b: &[u8]) -> &'static str {
     if b.starts_with(b"MZ") {
         "dos-or-pe"
     } else if b.starts_with(b"7z\xBC\xAF\x27\x1C") {

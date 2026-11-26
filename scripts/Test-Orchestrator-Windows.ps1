@@ -19,6 +19,15 @@ try {
  # Check the desktop CLI rejects invalid targets without interacting with runner windows.
  & $Engine desktop inspect 0 1 2>$null|Out-Null
  if ($LASTEXITCODE -ne 1) { throw 'Desktop invalid handle accepted' }
+ $source=Join-Path $root 'source'
+ New-Item -ItemType Directory -Path $source|Out-Null
+ [IO.File]::WriteAllText((Join-Path $source 'a.txt'),'abc',[Text.UTF8Encoding]::new($false))
+ $manifest=Join-Path $root 'collect-input.json'
+ $output=Join-Path $root 'collect-output.json'
+ [IO.File]::WriteAllText($manifest,'{"schema":1,"files":[{"path":"a.txt","expected_sha256":"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"}]}',[Text.UTF8Encoding]::new($false))
+ Invoke-Engine -Arguments @('collect','--root',$source,'--input',$manifest,'--out',$output,'--jobs','2','--reviewed-redacted')|Out-Null
+ $collected=Get-Content -LiteralPath $output -Raw|ConvertFrom-Json
+ if (!$collected.passed -or !$collected.results[0].hash_recomputed -or $collected.results[0].bytes -ne 3) { throw 'Local evidence collection failed' }
  $db=Join-Path $root 'jobs.sqlite'
  $input=Join-Path $root 'input.json'
  [IO.File]::WriteAllText($input,'{"schema":1,"tasks":[{"id":"data","input":{"operation":"json-roundtrip","data":{"x":1}}},{"id":"qa","depends_on":["data"],"input":{"operation":"regression-check","baseline":1,"actual":1}}]}',[Text.UTF8Encoding]::new($false))
@@ -49,7 +58,7 @@ try {
  if (!$drained.passed -or !$drained.idle_observed -or @($drained.jobs).Count -ne 1 -or $drained.jobs[0].id -ne 'drain-test') { throw 'Queue drain failed' }
  $cancel=Invoke-Engine -Arguments @('queue','status',$db,'cancelled')|ConvertFrom-Json
  if ($cancel.state -ne 'cancelled') { throw 'Cancelled task executed' }
- @{schema=1;status='PASS';scope='Windows hosted runner; not Windows 11 desktop or FreePi acceptance';registry_engines=12;concurrent_claims=$claimed;caller_input_sha256=$callerHash;cancelled_job_preserved=$true;dependency_fixture_passed=$true;queue_drain_passed=$true;commit=$env:GITHUB_SHA}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $Reports 'orchestrator-windows.json') -Encoding UTF8
+ @{schema=1;status='PASS';scope='Windows hosted runner; not Windows 11 desktop or FreePi acceptance';registry_engines=12;local_collection_passed=$true;concurrent_claims=$claimed;caller_input_sha256=$callerHash;cancelled_job_preserved=$true;dependency_fixture_passed=$true;queue_drain_passed=$true;commit=$env:GITHUB_SHA}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $Reports 'orchestrator-windows.json') -Encoding UTF8
 } finally {
  foreach ($worker in $workers) {
   if (!$worker.HasExited) { $worker.Kill(); $worker.WaitForExit() }

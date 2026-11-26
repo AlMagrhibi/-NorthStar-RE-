@@ -9,7 +9,11 @@
       "batch_operations": [
         "content-digest"
       ],
-      "complete": false
+      "complete": false,
+      "shared_collect_cli": [
+        "collect"
+      ],
+      "collect_scope": "selected local file hashes and header hints; no restore"
     },
     {
       "id": "binary-intelligence",
@@ -18,7 +22,11 @@
       "batch_operations": [
         "binary-header"
       ],
-      "complete": false
+      "complete": false,
+      "shared_collect_cli": [
+        "collect"
+      ],
+      "collect_scope": "selected local file hashes and header hints; no restore"
     },
     {
       "id": "semantic-intelligence",
@@ -108,7 +116,11 @@
       "batch_operations": [
         "evidence-check"
       ],
-      "complete": false
+      "complete": false,
+      "shared_collect_cli": [
+        "collect"
+      ],
+      "collect_scope": "selected local file hashes and header hints; no restore"
     },
     {
       "id": "recovery",
@@ -117,7 +129,11 @@
       "batch_operations": [
         "checkpoint-compare"
       ],
-      "complete": false
+      "complete": false,
+      "shared_collect_cli": [
+        "collect"
+      ],
+      "collect_scope": "selected local file hashes and header hints; no restore"
     },
     {
       "id": "quality-assurance",
@@ -127,7 +143,11 @@
         "gate-summary",
         "regression-check"
       ],
-      "complete": false
+      "complete": false,
+      "shared_collect_cli": [
+        "collect"
+      ],
+      "collect_scope": "selected local file hashes and header hints; no restore"
     }
   ]
 }

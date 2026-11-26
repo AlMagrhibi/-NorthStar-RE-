@@ -237,7 +237,7 @@ fn content_digest(v: &Value) -> io::Result<Value> {
 
 fn binary_header(v: &Value) -> io::Result<Value> {
     let hex = text(v, "hex")?;
-    if hex.len() > 131072 || hex.len() % 2 != 0 || !hex.bytes().all(|b| b.is_ascii_hexdigit()) {
+    if hex.len() > 131072 || !hex.len().is_multiple_of(2) || !hex.bytes().all(|b| b.is_ascii_hexdigit()) {
         return Err(invalid("expected bounded even-length hexadecimal input"));
     }
     let bytes = (0..hex.len())
@@ -246,9 +246,9 @@ fn binary_header(v: &Value) -> io::Result<Value> {
         .collect::<io::Result<Vec<_>>>()?;
     let kind = if bytes.starts_with(b"MZ") {
         "dos-mz"
-    } else if bytes.starts_with(b"PK\\x03\\x04") {
+    } else if bytes.starts_with(b"PK\x03\x04") {
         "zip-local-header"
-    } else if bytes.starts_with(b"\\x7fELF") {
+    } else if bytes.starts_with(b"\x7fELF") {
         "elf-magic"
     } else {
         "unknown"
@@ -261,7 +261,7 @@ fn binary_header(v: &Value) -> io::Result<Value> {
             pe_signature = offset
                 .checked_add(4)
                 .and_then(|end| bytes.get(offset..end))
-                == Some(b"PE\\0\\0");
+                == Some(b"PE\0\0");
         }
     }
     Ok(json!({
@@ -402,7 +402,7 @@ mod tests {
         let mut pe = vec![0u8; 68];
         pe[..2].copy_from_slice(b"MZ");
         pe[60] = 64;
-        pe[64..68].copy_from_slice(b"PE\\0\\0");
+        pe[64..68].copy_from_slice(b"PE\0\0");
         let hex = pe.iter().map(|b| format!("{b:02x}")).collect::<String>();
         let binary = evaluate(&json!({"operation":"binary-header","hex":hex})).unwrap();
         assert_eq!(binary["pe_signature_observed"], true);

@@ -1,5 +1,6 @@
 //! Read-only inventory prototype. Never loads or executes target files.
 mod batch;
+mod collect;
 #[cfg(windows)]
 mod desktop;
 mod framework;
@@ -236,7 +237,7 @@ fn main() -> ExitCode {
     if let Some(cmd) = args.next().and_then(|x| x.into_string().ok()) {
         if cmd == "--help" || cmd == "help" {
             println!(
-                "nsre 0.3.0: scan index export diff probe analyze batch engines queue desktop {}",
+                "nsre 0.3.0: scan index export diff probe analyze batch engines queue desktop collect {}",
                 framework::COMMANDS.join(" ")
             );
             return ExitCode::SUCCESS;
@@ -252,6 +253,16 @@ fn main() -> ExitCode {
         #[cfg(windows)]
         if cmd == "desktop" {
             return match desktop::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        if cmd == "collect" {
+            return match collect::command(args) {
                 Ok(true) => ExitCode::SUCCESS,
                 Ok(false) => ExitCode::from(2),
                 Err(e) => {
