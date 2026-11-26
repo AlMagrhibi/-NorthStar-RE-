@@ -40,6 +40,8 @@ Discover the actual environment. Preserve originals. Route from evidence. Keep c
 
 ## Architecture overview
 
+**Future platform scope: Windows 11 x64 only.** All automated acceptance jobs for the new architecture run on hosted Windows; actual desktop acceptance is separate. [Platform decision](docs/architecture/windows-platform.md).
+
 ```mermaid
 flowchart TD
  A["Coding agent"] --> B["northstar-re master"]
@@ -55,7 +57,7 @@ flowchart TD
 
 ## Native Rust engine
 
-A modular binary built with Rayon, walkdir, SHA-256, serde_json and SQLite. Bounded batches feed one index writer. Outputs carry completion states; errors and skipped links prevent evidence-grade completeness. There is no bundled decryptor, worker scheduler, compiled plugin SDK or distributed service. [Source and build guide](docs/en/development.md).
+A modular binary built with Rayon, walkdir, SHA-256, serde_json and SQLite. Bounded batches feed one index writer. Outputs carry completion states; errors and skipped links prevent evidence-grade completeness. There is no bundled decryptor, complete worker scheduler, compiled plugin SDK or distributed service. The development branch introduces a candidate offline queue; it is not part of RC2. [Source and build guide](docs/en/development.md).
 
 ## Master skill
 
