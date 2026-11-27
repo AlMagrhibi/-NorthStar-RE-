@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "generated_utc": "2026-11-27T00:59:48Z",
-  "commit_sha": "",
+  "generated_utc": "2026-11-27T01:08:46Z",
+  "commit_sha": "5a4d4083c0bb38316c31c9ddd8b8fadfd18462e3",
   "executable_sha256": "053b003e241424096c9a80d8b896ecb8ccc15cfc14d76c03e770936b4663caa0",
   "environment_reference": {
     "hostname": "NSKM",
@@ -24,7 +24,7 @@
   "groups": {
     "1_native_windows_11_tests": {
       "ran_on": "local Windows 11 (this machine, native, not WSL/VM)",
-      "commit_sha": "",
+      "commit_sha": "5a4d4083c0bb38316c31c9ddd8b8fadfd18462e3",
       "executable_sha256": "4ff7f29bad063a0a61c100c3e6287455a15890a5aafb605b1d39c37176763044",
       "os_build": "10.0.26300",
       "session_id": 0,
@@ -48,16 +48,19 @@
     "2_github_hosted_ci_tests": {
       "ran_on": "GitHub windows-2022 runner (NOT this machine)",
       "latest_run": {
-        "run_id": 45915383637,
-        "commit_sha": "ff8fc5d25c78a70640ee62a6d2d2e7a575a5a434",
-        "conclusion": "success",
-        "url": "https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45915383637",
-        "note": "This batch's CI run will be appended after push; the value above is the previous verified run for the parent commit."
+        "run_id": 45920038668,
+        "commit_sha": "5a4d4083c0bb38316c31c9ddd8b8fadfd18462e3",
+        "native": "success",
+        "security": "success",
+        "verified_windows_distributions": "failure (expected, by design)",
+        "refusal_evidence": "Packaging step refused v11.0.0-rc.2: 'v11.0.0-rc.2 is the historical installation baseline and must never be rebuilt or republished'",
+        "url": "https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45920038668",
+        "interpretation": "Track D protection verified live: no release is built or published while release-request.json still names the historical baseline. Publishing V12 requires the owner to authorize a new tag in release-request.json."
       }
     },
     "3_interactive_desktop_tests": {
       "ran_on": "local Windows 11, Session 0 (service/SSH context)",
-      "commit_sha": "",
+      "commit_sha": "5a4d4083c0bb38316c31c9ddd8b8fadfd18462e3",
       "executable_sha256": "053b003e241424096c9a80d8b896ecb8ccc15cfc14d76c03e770936b4663caa0",
       "session_id": 0,
       "result": {
@@ -75,7 +78,7 @@
     },
     "4_freepi_ssh_end_to_end": {
       "ran_on": "FreePi CLI 0.6.28 inside Git Bash on this machine, SSH/service context",
-      "commit_sha": "",
+      "commit_sha": "5a4d4083c0bb38316c31c9ddd8b8fadfd18462e3",
       "result": {
         "github_mcp_binding": "verified earlier (see GITHUB-MCP-ACCEPTANCE-AR.md); 57 tools, reads+writes+cleanup verified",
         "northstar_session_context_from_freepi": {

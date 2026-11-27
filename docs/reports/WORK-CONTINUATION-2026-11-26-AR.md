@@ -120,3 +120,11 @@ cargo build --release --locked
 | الأدلة الرباعية | `docs/reports/TEST-EVIDENCE-MATRIX.json` + `-AR.md`: أربع مجموعات منفصلة (Native W11 / GitHub CI / Interactive Desktop / FreePi-SSH E2E) مرتبطة بـcommit وexe SHA-256 وOS build وsession id والمدة. |
 | اختبارات | 75 ناجحًا (54 وحدة + 21 تكامل) — منها اختباران جديدان لـsession (تصنيف السياق + جرد الجلسات بلا hardcode) |
 | حدود الدليل | أفعال desktop المؤثرة من session 1 والـIPC الموثق والعامل التفاعلي المصرح به: الحزمة التالية · SUP-001..008: قيد التنفيذ في نفس الدفعة |
+
+## سجل أدلة — Batch 04 (جزء 2): حماية الوسم تعمل فعليًا (Track D)
+
+| الحقل | القيمة |
+|---|---|
+| CI 45920038668 على `5a4d408` | Native = success · Security = success · **Verified Windows distributions = failure بالتصميم**: خطوة التغليف رفضت `v11.0.0-rc.2` برسالة "v11.0.0-rc.2 is the historical installation baseline and must never be rebuilt or republished" |
+| التفسير | حماية Track D مثبتة حية: لا حزمة ولا نشر ما دام `release-request.json` يشير للأساس التاريخي. نشر V12 يتطلب اعتماد المالك وسمًا جديدًا في `release-request.json` (قرار مالك، لا قرار أيجنت) |
+| الأثر على الفحوص | Publish skipped تلقائيًا؛ لا أصول منشورة؛ RC2 المنشورة سابقًا محفوظة كنقطة rollback |
