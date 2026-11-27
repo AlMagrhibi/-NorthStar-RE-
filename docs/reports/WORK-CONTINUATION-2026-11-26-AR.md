@@ -109,3 +109,14 @@ cargo build --release --locked
 | اختبارات عملية | قتل عامل حقيقي عند المهلة (عملية فعلية) → interrupted + worker_stop_verified من الخروج · رفض إيقاف عامل حي (exit 2) · نبض مستقل يبقي مهمة 2500ms على lease 1500ms حية حتى الاكتمال |
 | أوامر الاختبار | `cargo test --locked` (73 اختبارًا) · `cargo clippy --locked --all-targets -- -D warnings` · `Validate-Package.ps1 -CheckHashes` |
 | حدود الدليل | انهيار المشرف نفسه أثناء تشغيل العامل واختبار إعادة تشغيله لم يُنفذ بعد؛ Job Object limits (ذاكرة/CPU) تُدار عبر governor ولم تُربط بدورة الطابور؛ WISM/SSH/Adaptive Input هي الدفعة التالية |
+
+## سجل أدلة — Batch 04 (جزء 1): Track D + Track B أساس WISM + مصفوفة الأدلة الرباعية
+
+| الحقل | القيمة |
+|---|---|
+| Track D | `ci.yml`: خطوة التغليف والنشر ترفض `release-request.json` الذي لا يطابق `framework.json` (v$version) وترفض صراحةً إعادة نشر `v11.0.0-rc.2` (الأساس التاريخي). النشر بوسم قديم أصبح مستحيلًا في الـworkflow نفسه. |
+| Track B (WISM) | `src/session.rs`: اكتشاف الجلسات عبر WTSEnumerateSessionsW، الجلسة الحالية عبر ProcessIdToSessionId، الجلسة النشطة عبر WTSGetActiveConsoleSessionId، حالة القفل عبر WTSINFOEXW.SessionFlags، وكشف سياق SSH (متغيرات البيئة + سلسلة الأب إلى sshd.exe). أوامر: `winsessions list|context`. حارس توجيه في `desktop.rs` و`desktop_api.rs` يرفض التنفيذ المباشر من Session 0/SSH ويوجه للجلسة التفاعلية. |
+| اختبار حقيقي | من جلسة FreePi/SSH (Session 0): `winsessions context` → session-zero + 3 SSH markers + console=1(unlocked, NSKM) · `desktop list` → SESSION_ROUTING_REFUSED. يغلق جزء WISM-01/02/11/15 وDSC routing refusal. |
+| الأدلة الرباعية | `docs/reports/TEST-EVIDENCE-MATRIX.json` + `-AR.md`: أربع مجموعات منفصلة (Native W11 / GitHub CI / Interactive Desktop / FreePi-SSH E2E) مرتبطة بـcommit وexe SHA-256 وOS build وsession id والمدة. |
+| اختبارات | 75 ناجحًا (54 وحدة + 21 تكامل) — منها اختباران جديدان لـsession (تصنيف السياق + جرد الجلسات بلا hardcode) |
+| حدود الدليل | أفعال desktop المؤثرة من session 1 والـIPC الموثق والعامل التفاعلي المصرح به: الحزمة التالية · SUP-001..008: قيد التنفيذ في نفس الدفعة |

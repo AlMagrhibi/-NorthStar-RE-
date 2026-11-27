@@ -386,6 +386,22 @@ fn dimensions(w: i32, h: i32) -> io::Result<Action> {
 
 pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     let args: Vec<_> = args.collect();
+    // Session-aware routing (WISM-01/02/11) for every desktop verb, including the
+    // capture worker spawned for an authorized interactive session.
+    let capture_worker = args.first().is_some_and(|s| s == "capture-worker");
+    if !capture_worker {
+        if let Ok(context) = crate::session::context() {
+            if context["direct_desktop_execution_permitted"] != true {
+                return Err(invalid(&format!(
+                    "SESSION_ROUTING_REFUSED: this process runs in {} (session {}, lock state {}); the interactive desktop is session {}. Run the authorized interactive worker inside that session; do not bypass Windows session boundaries",
+                    context["classification"],
+                    context["session_id"],
+                    context["own_session_lock_state"],
+                    context["active_console_session"]
+                )));
+            }
+        }
+    }
     let _dpi = keyboard::DpiContext::new()?;
     if args.first().is_some_and(|s| s == "capture-worker") {
         return capture::worker(&args);

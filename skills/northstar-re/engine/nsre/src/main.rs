@@ -13,6 +13,7 @@ mod pe;
 mod probe;
 mod queue;
 mod rpc;
+mod session;
 mod supervisor;
 use rayon::prelude::*;
 use serde_json::{json, Value};
@@ -242,7 +243,7 @@ fn main() -> ExitCode {
     if let Some(cmd) = args.next().and_then(|x| x.into_string().ok()) {
         if cmd == "--help" || cmd == "help" {
             println!(
-                "nsre 0.3.0: scan index export diff probe analyze batch engines queue desktop collect governed-batch {}",
+                "nsre 0.3.0: scan index export diff probe analyze batch engines queue desktop collect governed-batch session supervisor {}",
                 framework::COMMANDS.join(" ")
             );
             return ExitCode::SUCCESS;
@@ -279,6 +280,16 @@ fn main() -> ExitCode {
         }
         if cmd == "collect" {
             return match collect::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        if cmd == "winsessions" {
+            return match session::command(args) {
                 Ok(true) => ExitCode::SUCCESS,
                 Ok(false) => ExitCode::from(2),
                 Err(e) => {

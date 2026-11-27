@@ -102,8 +102,13 @@ jobs:
       - name: Assemble and independently verify both archives
         shell: pwsh
         run: |
-          $tag=(Get-Content .github/release-request.json -Raw | ConvertFrom-Json).tag
-          ./install/Package-Release.ps1 -Tag $tag -Output "${{ runner.temp }}/release-assets" -Reports "${{ runner.temp }}/release-reports"
+          $request=Get-Content .github/release-request.json -Raw | ConvertFrom-Json
+          if (!$request.authorized) { throw 'No authorized release request' }
+          $meta=Get-Content framework.json -Raw | ConvertFrom-Json
+          $expected="v$($meta.version)"
+          if ($request.tag -ne $expected) { throw "Release request tag '$($request.tag)' does not match the tree generation '$expected'; refusing to publish a stale tag" }
+          if ($request.tag -eq 'v11.0.0-rc.2') { throw 'v11.0.0-rc.2 is the historical installation baseline and must never be rebuilt or republished' }
+          ./install/Package-Release.ps1 -Tag $request.tag -Output "${{ runner.temp }}/release-assets" -Reports "${{ runner.temp }}/release-reports"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: verified-release-assets
@@ -134,6 +139,9 @@ jobs:
           if (!$request.authorized -or $request.tag -notmatch '^v11\.[0-9]+\.[0-9]+-rc\.[0-9]+$') { throw 'No authorized candidate tag' }
           $tag=if ($env:GITHUB_REF -like 'refs/tags/*') {$env:GITHUB_REF -replace '^refs/tags/',''} else {$request.tag}
           if ($tag -ne $request.tag) { throw 'Tag not approved by release request' }
+          $meta=Get-Content framework.json -Raw | ConvertFrom-Json
+          if ($tag -ne "v$($meta.version)") { throw "Requested tag '$tag' does not match the tree generation 'v$($meta.version)'" }
+          if ($tag -eq 'v11.0.0-rc.2') { throw 'v11.0.0-rc.2 is the historical baseline; never republish it' }
           gh release view $tag --json tagName 2>$null
           if ($LASTEXITCODE -eq 0) { Write-Host 'Existing release retained; no overwrite'; exit 0 }
           $manifest=Get-Content release-assets/release-manifest.json -Raw | ConvertFrom-Json

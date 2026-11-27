@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "generated_utc": "2026-11-27T00:53:16Z",
+  "commit_sha": "",
+  "executable_sha256": "053b003e241424096c9a80d8b896ecb8ccc15cfc14d76c03e770936b4663caa0",
+  "environment_reference": {
+    "hostname": "NSKM",
+    "os": "Microsoft Windows 11 Pro",
+    "os_display_version": "26H2",
+    "os_build": "10.0.26300",
+    "edition_id": "Professional",
+    "device": "Dell Latitude 5320",
+    "cpu": "Intel i5-1145G7 @ 2.60GHz (4 cores / 8 logical)",
+    "ram_gb": 15.7,
+    "rust_host_target": "x86_64-pc-windows-msvc",
+    "rustc": "1.91.1",
+    "shell": "Git Bash (MSYS2/MINGW64) on native Windows; PowerShell 7 for management",
+    "native_windows_not_wsl": true,
+    "session_id": 0,
+    "session_classification": "session-zero (SSH/service context)",
+    "freepi_pid": 13472,
+    "cwd": "C:/Users/kalma"
+  },
+  "groups": {
+    "1_native_windows_11_tests": {
+      "ran_on": "local Windows 11 (this machine, native, not WSL/VM)",
+      "commit_sha": "",
+      "executable_sha256": "053b003e241424096c9a80d8b896ecb8ccc15cfc14d76c03e770936b4663caa0",
+      "os_build": "10.0.26300",
+      "session_id": 0,
+      "result": {
+        "unit_tests": "54 passed; 0 failed",
+        "queue_cli": "3 passed; 0 failed",
+        "engine_cli": "2 passed; 0 failed",
+        "queue_cli_process": "13 passed; 0 failed",
+        "framework_cli": "3 passed; 0 failed",
+        "total": 75,
+        "duration_seconds_approx": 6.2
+      },
+      "evidence_commands": [
+        "cargo test --locked",
+        "cargo clippy --locked --all-targets -- -D warnings",
+        "nsre winsessions context",
+        "nsre desktop list (expected refusal)"
+      ]
+    },
+    "2_github_hosted_ci_tests": {
+      "ran_on": "GitHub windows-2022 runner (NOT this machine)",
+      "latest_run": {
+        "run_id": 45915383637,
+        "commit_sha": "ff8fc5d25c78a70640ee62a6d2d2e7a575a5a434",
+        "conclusion": "success",
+        "url": "https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45915383637",
+        "note": "This batch's CI run will be appended after push; the value above is the previous verified run for the parent commit."
+      }
+    },
+    "3_interactive_desktop_tests": {
+      "ran_on": "local Windows 11, Session 0 (service/SSH context)",
+      "commit_sha": "",
+      "executable_sha256": "053b003e241424096c9a80d8b896ecb8ccc15cfc14d76c03e770936b4663caa0",
+      "session_id": 0,
+      "result": {
+        "session_routing_refusal": {
+          "command": "nsre desktop list",
+          "expected": "SESSION_ROUTING_REFUSED with routing guidance",
+          "actual": "SESSION_ROUTING_REFUSED: session-zero, interactive desktop is session 1",
+          "verdict": "PASS (refusal path verified; effectful desktop actions remain UNVERIFIED from Session 0 by design)"
+        },
+        "wism_01_session_zero_detection": "PASS (classification=session-zero, evidence: ProcessIdToSessionId=0)",
+        "wism_02_interactive_discovery": "PASS (active console session 1, user NSKM, unlocked — discovered from OS, not hardcoded)",
+        "wism_11_lock_state": "PASS for own session read (unlocked on console session 1 via WTSINFOEXW)"
+      },
+      "limit": "No interactive desktop actions were executed because this process runs in Session 0; those require the authorized interactive worker in session 1 (next work package)"
+    },
+    "4_freepi_ssh_end_to_end": {
+      "ran_on": "FreePi CLI 0.6.28 inside Git Bash on this machine, SSH/service context",
+      "commit_sha": "",
+      "result": {
+        "github_mcp_binding": "verified earlier (see GITHUB-MCP-ACCEPTANCE-AR.md); 57 tools, reads+writes+cleanup verified",
+        "northstar_session_context_from_freepi": {
+          "command": "nsre winsessions context",
+          "actual": {
+            "active_console_session": 1,
+            "classification": "session-zero",
+            "direct_desktop_execution_permitted": false,
+            "interactive_desktop_available": false,
+            "own_session_lock_state": "unknown",
+            "parent_is_sshd": false,
+            "schema": 1,
+            "session_id": 0,
+            "session_name": "",
+            "ssh_environment_markers": 3
+          },
+          "verdict": "PASS — FreePi/SSH context is correctly detected as session-zero; desktop routing refuses"
+        },
+        "northstar_desktop_end_to_end": "UNVERIFIED — requires authorized interactive worker in session 1 (Track B next package)"
+      }
+    }
+  },
+  "separation_note": "Local Windows 11 results and GitHub Actions results are never merged; CI runs on windows-2022 runner images, not on this reference machine."
+}
