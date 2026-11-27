@@ -109,7 +109,7 @@ jobs:
           if ($request.tag -eq 'v11.0.0-rc.2') { throw 'v11.0.0-rc.2 is the historical installation baseline and must never be rebuilt or republished' }
           # Development packages are built and verified as artifacts; they are never published.
           if ($request.channel -eq 'development') {
-            Write-Host "Development package for $expected: built as artifact only, publication not authorized"
+            Write-Host "Development package for ${expected}: built as artifact only, publication not authorized"
           } elseif (!$request.authorized) {
             throw 'No authorized release request'
           }
