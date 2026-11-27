@@ -1,58 +1,24 @@
-# Roadmap and implementation ledger
+# Engineering roadmap and implementation ledger
 
-Status is evidence-based. All instruction modules require agent/tool execution; source code alone is not Windows acceptance. Current local reports are linked below. A new row is never complete merely because it appears here.
+**Development identity 0.012** — evidence snapshot 2026-11-27 at [`d917cb5`](https://github.com/AlMagrhibi/-NorthStar-RE-/commit/d917cb562e9248e9f5a924eda42e311899149acd). The technical migration from `12.0.0-dev.1` is pending. All engine registry completion flags are false. This ledger does not certify final acceptance.
 
-| Component | Status | Source | Tests / evidence | Limitations and acceptance criteria |
-|---|---|---|---|---|
-| Inventory, hashing, index/export/diff | IMPLEMENTED; Linux tested | main.rs, index.rs | 11-test native suite; [report](docs/reports/TESTS-AR.md) | Windows CI/desktop acceptance separate; cache advisory |
-| Bounded PE/signature probe | IMPLEMENTED, limited | probe.rs | Header fixtures | Full PE/CLR parser planned; require bounded malformed-file corpus |
-| Persistent engineering memory | IMPLEMENTED, local append records | framework.rs | Session/isolation/DB refusal tests | 100-record reads; no vector retrieval or legacy import |
-| Evidence and quality gates | IMPLEMENTED | framework.rs | Hash/gate/checkpoint regressions | Semantic review remains human/agent responsibility |
-| Crash recovery | PARTIAL | SQLite WAL + staged manager | Transaction/lifecycle fixtures | No exact resume or power-loss transaction; require kill/restart fault campaign |
-| Multi-project isolation | IMPLEMENTED, organizational | --project and DB identity | Isolation/path tests | Not an OS tenant sandbox; hostile race defenses incomplete |
-| Local API | EXPERIMENTAL | rpc.rs | JSON-RPC fixtures | Read-only stdio; no network authentication/listener |
-| MCP server | EXPERIMENTAL | rpc.rs | Legacy initialize fixture | 2025-11-25 candidate; require real host interoperability |
-| Plugin architecture | PLANNED | none | none | Define versioned ABI and isolated permission model |
-| Adapter SDK | PLANNED | integration docs only | no live agents | Ship SDK contracts plus host/version fixtures |
-| Distributed workers | PLANNED | none | none | Explicit isolation, cancellation and reproducible result protocol |
-| Job scheduler | PLANNED execution; plan ledger exists | framework.rs jobs | DAG tests | Validate DAG is not scheduling; require resource-aware dispatch tests |
-| Resource governor | PARTIAL | bounded batches, 1..64 jobs | CLI bounds | No global CPU/RAM scheduler; require enforceable per-job budgets |
-| Advanced binary analysis | PLANNED native; specialist-guided now | specialists + probe | Header hints only | Full parsers and safe format fixtures before promotion |
-| Performance optimization | MEASUREMENT IN PROGRESS | benchmark lab | [measurements](docs/reports/PERFORMANCE-AR.md) | No extrapolation or Windows claims from Linux |
-| Knowledge base expansion | RESEARCH PRESERVED | references and 108-entry catalog | Catalog validation | Upstream links/licensing need ongoing review |
-| Automated research integration | INSTRUCTION ONLY | research specialist | No autonomous fetch service | Require provenance, opt-in updates and safe content handling |
-| Installer/update/rollback | IMPLEMENTED candidate | install/Manage.ps1 | Windows lifecycle CI required | Per-user; explicit updates; kill recovery and desktop agent tests separate |
+| Track | Current evidence | Next acceptance obligation |
+|---|---|---|
+| A — Orchestration and supervisor | Queue V5, leases, DAG, real process fixture tests | SUP-001–008, owned process-tree stop, resource budgets, fault injection, durable evidence |
+| B — WISM and connection mobility | Session and context discovery, fail-closed desktop guards | Authorized user worker, authenticated IPC, session identity, dynamic monitoring, reconnect and local parity |
+| C — Adaptive input and vision | Existing native desktop/UIA/capture candidates | Layout mapping, verified effects, modal/readiness, DPI and cache; actual interactive fixture |
+| D — Packaging | Development artifacts, protected publication; CI green at snapshot | Product SemVer migration, compatibility/rollback, acceptance before authorization |
+| E — Evidence | Four-group matrix | Raw sanitized evidence, exact source/build hashes, independent verdicts |
+| Engines | Twelve IDs, candidate offline operations | Each engine's full contract, fixtures, cross-engine integration |
+| FreePi/SSH | Context detection reported; GitHub MCP separate | NorthStar CLI/MCP submission, real interactive effect, disconnect/reconnect |
+| Unified release | Not authorized | All ADD-001–042, NSO/DSC/WISM/T01–42, actual Windows 11 and upgrade/rollback |
 
-## خارطة التطوير بالعربية
+## Execution order
 
-المنفذ فعليًا هو الجرد والتجزئة والفهرسة والحوكمة والذاكرة المحلية، ضمن الحدود الموثقة. الإضافات الموزعة وSDK والجدولة التنفيذية ومحلل PE/CLR الكامل أهداف تطوير وليست إمكانيات مكتملة. توجد حالات جزئية وتجريبية موضحة في الجدول، مع المصدر والاختبارات والحدود ومعيار القبول. راجع تقارير الأدلة قبل اعتماد أي حالة.
+Independent tracks proceed in parallel where dependencies allow. Shared typed contracts and policy define integration boundaries. Test locally and on hosted CI; interactive and FreePi acceptance remain distinct. See the [unified directive](docs/NORTHSTAR-V12-EXECUTION-DIRECTIVE.md), [evidence matrix](docs/reports/TEST-EVIDENCE-MATRIX.json), [architecture](docs/architecture/overview.md), [version policy](docs/VERSIONING.md).
 
-## Approved next-stage work (development branch)
+## Historical ledger
 
-See [engineering foundations](skills/northstar-re/references/next-engineering-foundations.md) for requirements and acceptance gates.
+Earlier FW-001–025 and V-series plans remain preserved in the [previous immutable roadmap](https://github.com/AlMagrhibi/-NorthStar-RE-/blob/d917cb562e9248e9f5a924eda42e311899149acd/ROADMAP.md) and original reports. Their original evidence scope is unchanged; the unified directive is the active requirements baseline.
 
-| Work item | Status |
-|---|---|
-| FW-001 Tool discovery | Candidate source + synthetic unit test; CI/Windows acceptance pending |
-| FW-002 True incremental index | PLANNED; strict full hashing unchanged |
-| FW-003 Generic semantic adapter | DESIGN; reviewed generalized source and synthetic acceptance pending |
-| FW-004 Resource measurements and recovery | PLANNED extension to existing lab |
-| FW-005 MCP/API host interoperability | PLANNED verification; existing read-only candidate unchanged |
-
-No new published release or desktop acceptance is implied.
-
-## FW-011–FW-020 — engineering validation lab
-
-[Implementation and acceptance ledger](skills/northstar-re/references/engineering-validation-lab.md). All ten work items have initial offline Rust helpers on the development branch; full engines and runtime acceptance remain pending. No new release is implied.
-
-## Approved engine architecture and orchestration
-
-See [engine registry and execution contract](skills/northstar-re/references/engine-orchestrator.md). Twelve engine directions approved; bounded parallel offline lab runner candidate; persistent scheduler and live collectors remain planned. No release or desktop acceptance implied.
-
-## FW-021–FW-025 — operational engineering
-
-[Operational report checks](skills/northstar-re/references/engineering-validation-lab.md) are initial offline Rust foundations. Live load, process isolation, UI diagnostics, security execution and resource collection require separate implementation and acceptance.
-
-## Windows Desktop Control — ADR-NSO-002
-
-[Desktop architecture and acceptance](docs/architecture/desktop-control.md): Win32 window control source candidate; full UI Automation/capture/input and Windows 11 acceptance pending. Preserve twelve engine architecture and integrate as a Runtime Diagnostics capability.
+**العربية:** لا تعتمد حالة مكتمل بناءً على وجود السورس أو نجاح fixture واحدة. لا يُسقط أي متطلب معتمد عند إعادة التوثيق، ولا تُستخدم نتائج CI بدل القبول الفعلي.

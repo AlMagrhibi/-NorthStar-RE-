@@ -1,52 +1,52 @@
-# NorthStar RE — target engineering intelligence architecture
+# NorthStar RE Framework — architecture
 
-Status: owner-approved architecture; implementation in slices. The installed RC2 remains unchanged. Current branch adds a candidate offline batch runner, discoverable engine registry and explicit durable queue, not a persistent background service. Windows 11 x64 is the sole target for future engineering and acceptance; Windows hosted CI is not desktop acceptance.
+**0.012 development identity** · current and target architecture · evidence snapshot 2026-11-27, [d917cb5](https://github.com/AlMagrhibi/-NorthStar-RE-/commit/d917cb562e9248e9f5a924eda42e311899149acd).
 
-```mermaid
-flowchart TD
- A["AI Agent: reasoning and decisions"] --> M["Single northstar-re master"]
- M --> S["52 internal specialist guides"]
- M --> O["Orchestrator control plane (target)"]
- O --> Q["Durable queue / DAG / priorities (target)"]
- Q --> G["Resource governor and bounded workers (target)"]
- G --> E["12 native engines and verified adapters (target)"]
- E --> K["Project-local artifacts and knowledge"]
- K --> V["Evidence validation / QA"]
- V --> A
- O --> B["Candidate offline nsre batch"]
- B --> L["Existing lab operations"]
- L --> K
-```
-
-## Architectural rules
-- Rust first; reuse the authoritative Cargo workspace, existing Rayon and SQLite. No extra discoverable skills or model sessions per engine.
-- Separate agent control plane from execution plane. Read-only collection defaults; project-specific outputs remain local.
-- Independent read jobs can overlap with agent work; dependent work waits for verified artifacts. Exclusive writes are serialized.
-- Persistent queues, event delivery, cancellation, process supervision and quotas are target capabilities, not supplied by the batch command.
-- An agent must inspect capabilities and host support before delegation, and must never report a planned capability as working.
-- Retain original deployment, one master, 52 guides and 108 catalog entries; no Python fallback.
-
-[Engine contract](../../skills/northstar-re/references/engine-orchestrator.md) · [Task lifecycle and acceptance](task-lifecycle.md) · [Module contracts](../en/architecture.md) · [العربية](../ar/architecture.md)
-
-## Existing installation lifecycle
+## System boundaries
 
 ```mermaid
 flowchart TD
- A["Verified package"] --> B["Integrity and compatibility"]
- B --> C["Staged central engine"]
- C --> D["Doctor and backup"]
- D --> E["Register one master"]
- E --> F{"Registration succeeded?"}
- F -->|Yes| G["Reload and invoke"]
- F -->|No| H["Restore prior registration"]
+ L[Local / SSH / RDP] --> A[Authorized coding agent]
+ A --> M[Single master northstar-re]
+ M --> C[Typed CLI / stdio API / MCP]
+ C --> P[Policy / NNEC]
+ P --> O[Persistent queue / DAG / leases]
+ O --> S[Owned supervisor / resource governor]
+ S --> N[12 native engine domains / scoped adapters]
+ P --> W[Session and capability resolver]
+ W --> I[Authenticated local IPC - target]
+ I --> D[Authorized interactive worker - target]
+ D --> U[Win32 / UIA / input / capture]
+ N --> E[Project-local evidence and knowledge]
+ U --> E
+ E --> Q[Independent QA]
+ Q --> C
 ```
 
-Stages use owned paths and per-user installation. Process-kill recovery remains an explicit acceptance concern.
+| Plane | Responsibility |
+|---|---|
+| Control | Discovery, typed requests, project policy and lifecycle |
+| Native execution | Owned workers, deadlines, budgets, structured results |
+| Interactive | Authorized session selection and serialized GUI operations |
+| Data | Project SQLite, artifacts, redaction, independent provenance |
+| Assurance | Verification, negative tests, local and hosted acceptance |
 
-## Platform decision
+The twelve engine IDs are native-core, binary-intelligence, semantic-intelligence, algorithm-intelligence, data-engineering, runtime-diagnostics, compatibility, security, performance, knowledge, recovery and quality-assurance. WISM and adaptive input extend Runtime Diagnostics; no thirteenth engine. All engine completion flags remain false at the snapshot.
 
-[Windows-only architecture and acceptance](windows-platform.md). Windows-native process supervision, resource governance, local IPC and diagnostics are target components; their implementation and verification remain separate gates.
+## Dynamic context and session mobility
 
-## Shared Windows desktop capability
+Local, SSH and RDP use the same typed interface. The resolver discovers caller and target sessions from Windows. Authorization must bind user/logon identity, session generation, worker process identity and project scope, not only a hash of session/classification/lock facts. Session IDs, user names, addresses and monitor geometry are never hardcoded. Lock, unknown state, logoff or unauthorized target fail closed. A live authorized interactive worker is required for cross-session GUI tasks; no new remote listener or arbitrary shell bridge. Connection loss must not imply replay; independent owned noninteractive tasks may continue under policy. Reconnection reconciles durable state. GUI actions with uncertain effects require verification before any retry.
 
-[Windows Desktop Control](desktop-control.md) extends Runtime Diagnostics; all twelve engines can consume verified observations. GUI mutations remain explicit foreground actions, not arbitrary background jobs.
+Current context discovery and fail-closed guards exist; watch loop, authenticated IPC, identity-bound worker and actual FreePi/SSH parity are target obligations, not proven current behavior.
+
+## Native execution and assurance
+
+Queue/leases/DAG and initial supervisor code exist. Verify process creation identity, OS-observed exit, atomic evidence, resource enforcement, bounded I/O and no stale publication. Execution success is distinct from verified effect. Evidence captures commit, executable hash, environment, session, timing, exit, scope and limitations. Local Windows 11, hosted CI, interactive desktop and FreePi/SSH are four independent evidence groups.
+
+## Deployment
+
+The authoritative workspace is `skills/northstar-re/engine/nsre`. Preserve the single master, 52 internal guides and 108 catalog entries. Native Rust x64/MSVC; no Python runtime fallback. Development packages are isolated artifacts, not publication authorization. Preserve the historical RC2 install and rollback point until unified acceptance.
+
+[Full requirements and architecture](../NORTHSTAR-V12-EXECUTION-DIRECTIVE.md) · [Task lifecycle](task-lifecycle.md) · [Desktop control](desktop-control.md) · [Windows platform](windows-platform.md) · [Engine registry and contract](../../skills/northstar-re/references/engine-orchestrator.md) · [Version policy](../VERSIONING.md)
+
+The previous overview is available in the [immutable historical snapshot](https://github.com/AlMagrhibi/-NorthStar-RE-/blob/d917cb562e9248e9f5a924eda42e311899149acd/docs/architecture/overview.md).

@@ -1,5 +1,9 @@
 # Documentation portal / مركز التوثيق
 
+**NorthStar 0.012 — development identity.** [Version policy](VERSIONING.md) explains the pending technical version migration; older guides and reports may retain historical V-series labels. Do not interpret those labels as production acceptance.
+
+[English home](../README.md) · [الرئيسية العربية](../README.ar.md) · [Current engineering ledger](../ROADMAP.md) · [Unified requirements](NORTHSTAR-V12-EXECUTION-DIRECTIVE.md) · [Evidence matrix](reports/TEST-EVIDENCE-MATRIX.json) · [Architecture](architecture/overview.md)
+
 [English home](../README.md) · [الرئيسية العربية](../README.ar.md) · [Agent installation](../INSTALL-FOR-AGENTS.md)
 
 | Topic | English | العربية |
