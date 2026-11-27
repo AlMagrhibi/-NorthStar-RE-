@@ -213,6 +213,54 @@ pub fn inventory() -> io::Result<Value> {
     }
 }
 
+/// The authorization decision for direct desktop execution in this process context.
+/// Fail-closed: any missing, unreadable or unrecognized piece of evidence refuses the
+/// operation instead of allowing it (WIS-R01/R02).
+pub fn desktop_authorization() -> Value {
+    let context = match context() {
+        Ok(value) => value,
+        Err(error) => {
+            return json!({
+                "schema":1,"permitted":false,"reason":"CONTEXT_UNAVAILABLE",
+                "detail":error.to_string(),
+                "policy":"fail-closed: no desktop operation without valid session evidence"
+            })
+        }
+    };
+    let classification = context["classification"].as_str().unwrap_or("unknown");
+    if classification != "active-console" {
+        return json!({
+            "schema":1,"permitted":false,"reason":"NON_INTERACTIVE_CONTEXT",
+            "classification":classification,
+            "session_id":context["session_id"],
+            "active_console_session":context["active_console_session"],
+            "policy":"run the authorized interactive worker inside the console session"
+        });
+    }
+    match context["own_session_lock_state"].as_str() {
+        Some("unlocked") => json!({
+            "schema":1,"permitted":true,"classification":classification,
+            "session_id":context["session_id"],
+            "lock_state":"unlocked"
+        }),
+        Some("locked") => json!({
+            "schema":1,"permitted":false,"reason":"SESSION_LOCKED",
+            "session_id":context["session_id"],
+            "policy":"locked sessions must not receive input or capture"
+        }),
+        Some(other) => json!({
+            "schema":1,"permitted":false,"reason":"UNRECOGNIZED_LOCK_STATE",
+            "lock_state":other,
+            "policy":"fail-closed: unrecognized session state"
+        }),
+        None => json!({
+            "schema":1,"permitted":false,"reason":"LOCK_STATE_UNAVAILABLE",
+            "session_id":context["session_id"],
+            "policy":"fail-closed: no lock-state evidence"
+        }),
+    }
+}
+
 /// The execution context of this process, classified for routing decisions (WISM-01/15).
 pub fn context() -> io::Result<Value> {
     #[cfg(windows)]
@@ -321,13 +369,14 @@ fn parent_process_is_sshd() -> io::Result<bool> {
 
 pub fn command(args: impl Iterator<Item = std::ffi::OsString>) -> io::Result<bool> {
     let args: Vec<_> = args.collect();
-    let usage = "winsessions list | winsessions context";
+    let usage = "winsessions list | winsessions context | winsessions desktop-authorization";
     if args.len() != 1 {
         return Err(invalid(usage));
     }
     match args[0].to_str() {
         Some("list") => println!("{}", inventory()?),
         Some("context") => println!("{}", context()?),
+        Some("desktop-authorization") => println!("{}", desktop_authorization()),
         _ => return Err(invalid(usage)),
     }
     Ok(true)
@@ -358,6 +407,55 @@ mod tests {
                 "non-console-session"
             ]
             .contains(&classification));
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn desktop_authorization_is_fail_closed_from_session_zero() {
+        // This test runs wherever CI or a developer runs it; both cases are asserted so the
+        // contract, not the environment, decides the outcome.
+        let decision = desktop_authorization();
+        assert_eq!(decision["schema"], 1);
+        let permitted = decision["permitted"].as_bool().unwrap();
+        if permitted {
+            // Only an unlocked active console may proceed, and it must say so with evidence.
+            assert_eq!(decision["lock_state"], "unlocked");
+            assert_eq!(decision["classification"], "active-console");
+        } else {
+            assert!(
+                [
+                    "NON_INTERACTIVE_CONTEXT",
+                    "SESSION_LOCKED",
+                    "UNRECOGNIZED_LOCK_STATE",
+                    "LOCK_STATE_UNAVAILABLE",
+                    "CONTEXT_UNAVAILABLE"
+                ]
+                .contains(&decision["reason"].as_str().unwrap()),
+                "unexpected refusal reason: {decision}"
+            );
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn lock_state_is_reported_for_the_console_session() {
+        let report = inventory().unwrap();
+        let console = report["active_console_session"].as_u64();
+        if let Some(console) = console {
+            let row = report["sessions"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|s| s["session_id"].as_u64() == Some(console))
+                .expect("active console must appear in the inventory")
+                .clone();
+            // The console session must carry a lock-state verdict, never a silent success.
+            assert!(
+                ["locked", "unlocked", "unknown", "unrecognized"]
+                    .contains(&row["session_flags"].as_str().unwrap()),
+                "unexpected flags: {row}"
+            );
         }
     }
 

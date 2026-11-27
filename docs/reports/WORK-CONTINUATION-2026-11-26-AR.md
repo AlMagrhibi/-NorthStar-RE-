@@ -128,3 +128,16 @@ cargo build --release --locked
 | CI 45920038668 على `5a4d408` | Native = success · Security = success · **Verified Windows distributions = failure بالتصميم**: خطوة التغليف رفضت `v11.0.0-rc.2` برسالة "v11.0.0-rc.2 is the historical installation baseline and must never be rebuilt or republished" |
 | التفسير | حماية Track D مثبتة حية: لا حزمة ولا نشر ما دام `release-request.json` يشير للأساس التاريخي. نشر V12 يتطلب اعتماد المالك وسمًا جديدًا في `release-request.json` (قرار مالك، لا قرار أيجنت) |
 | الأثر على الفحوص | Publish skipped تلقائيًا؛ لا أصول منشورة؛ RC2 المنشورة سابقًا محفوظة كنقطة rollback |
+
+## سجل أدلة — Batch 05 (جزء 1): Track D فصل القنوات + WIS-R01/R02/R07
+
+| الحقل | القيمة |
+|---|---|
+| Track D | `framework.json`: generation 12 · version `12.0.0-dev.1` · `build_channel=development` · status DEVELOPMENT. `release-request.json`: `authorized=false`, `channel=development`, tag `v12.0.0-dev.1`. `ci.yml`: tags v11.*+v12.*، التغليف يبني حزم التطوير كـartifacts فقط، النشر يرفض channel=development وauthorized=false. `Package-Release.ps1`: `-Development` switch، أسماء `NorthStar-RE-Framework-Development-*`، manifest بحقول `status=DEVELOPMENT` و`publication_authorized=false` و`framework_major=12`. |
+| اختبارات Track D الفعلية | حزمة تطوير نجحت محليًا (Source.zip + manifest + SHA256SUMS) · رفض RC2: PASS · رفض وسم غير متوافق: PASS · رفض -dev بدون switch: PASS · `Validate-Package` يرفض build_channel=development مع authorized=true |
+| WIS-R01/R02 | `desktop_authorization()` fail-closed: CONTEXT_UNAVAILABLE / NON_INTERACTIVE_CONTEXT / SESSION_LOCKED / UNRECOGNIZED_LOCK_STATE / LOCK_STATE_UNAVAILABLE — كلها ترفض؛ السماح فقط لـactive-console + unlocked مع دليل. الحارسان في desktop.rs وdesktop_api.rs يستخدمان القرار الجديد. |
+| WIS-R03 | capture-worker لم يعد مستثنى من الحارس: كونه أمرًا داخليًا ليس دليل صلاحية. |
+| WIS-R07 | اختبارات: fail-closed من أي سياق (يؤكد السماح فقط مع unlocked+active-console) + إبلاغ حالة القفل للجلسة النشطة دائمًا. |
+| Track E | المصفوفة صارت تحدد build profile (debug) ومسار التنفيذي وSHA-256 لكل test binary، وتوضح أن البصمتين السابقتين نسختا debug لحالتين مختلفتين من السورس — دليل كل commit صالح عند commitه فقط. |
+| اختبارات | 77 ناجحًا (56 وحدة + 21 تكامل) · clippy نظيف |
+| حدود الدليل | WIS-R04/R05/R06 (تشخيص ancestry موثوق، أخطاء WTS لكل جلسة، تحقق ملكية المستخدم/الهدف) + العامل التفاعلي وIPC: الحزمة القادمة · SUP-001..008: قيد التنفيذ · Track C: لم يبدأ |

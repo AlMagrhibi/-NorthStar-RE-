@@ -158,13 +158,12 @@ pub(crate) fn execute(project: &Path, value: &Value, mutating: bool) -> Result<V
   // Session-aware routing (WISM-01/02/11): a service or SSH session has no interactive
   // desktop, so direct execution is refused with the routing decision instead of acting
   // on a hidden desktop or silently doing nothing.
-  if let Ok(context)=crate::session::context() {
-    if context["direct_desktop_execution_permitted"]!=true {
-      return Err(invalid(&format!(
-        "SESSION_ROUTING_REFUSED: this process runs in {} (session {}, lock state {}); the interactive desktop is session {:?}. Run the authorized interactive worker inside that session; do not bypass Windows session boundaries",
-        context["classification"], context["session_id"], context["own_session_lock_state"], context["active_console_session"]
-      )).into());
-    }
+  let decision=crate::session::desktop_authorization();
+  if decision["permitted"]!=true {
+    return Err(invalid(&format!(
+      "SESSION_ROUTING_REFUSED: {} ({}) — {}",
+      decision["reason"], decision["classification"], decision["policy"]
+    )).into());
   }
   let event=json!({"schema":1,"id":stamp.to_string(),"action":value["action"],"hwnd":value["hwnd"],"pid":value["pid"],"mutating":mutating,"text_logged":false});
   let mut intent=event.clone();intent["state"]=json!("intent");append(&audit,&intent)?;

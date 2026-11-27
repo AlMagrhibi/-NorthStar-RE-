@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "product": "NorthStar RE Framework",
-  "generation": 11,
-  "version": "11.0.0-rc.2",
+  "generation": 12,
+  "version": "12.0.0-dev.1",
   "engine_version": "0.3.0",
   "binary": "nsre.exe",
   "master": "northstar-re",
@@ -12,5 +12,6 @@
   "rust_toolchain": "1.91.1",
   "rust_msrv": "1.89",
   "python_runtime_required": false,
-  "status": "RELEASE_CANDIDATE"
+  "build_channel": "development",
+  "status": "DEVELOPMENT"
 }
