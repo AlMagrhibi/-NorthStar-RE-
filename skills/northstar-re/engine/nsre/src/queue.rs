@@ -12,7 +12,7 @@ use std::{
 
 const APP_ID: i64 = 0x4e53514a;
 const LIMIT: u64 = 1024 * 1024;
-const SCHEMA_VERSION: i64 = 4;
+const SCHEMA_VERSION: i64 = 5;
 const DEFAULT_LEASE_MS: u64 = 30_000;
 const MAX_LEASE_MS: u64 = 3_600_000;
 
@@ -55,7 +55,7 @@ fn init(path: &Path) -> io::Result<()> {
          PRAGMA synchronous=FULL;
          BEGIN IMMEDIATE;
          PRAGMA application_id=1314083146;
-         PRAGMA user_version=4;
+         PRAGMA user_version=5;
          CREATE TABLE jobs(
             id TEXT PRIMARY KEY,
             input TEXT NOT NULL,
@@ -76,7 +76,11 @@ fn init(path: &Path) -> io::Result<()> {
             cancel_requested INTEGER NOT NULL DEFAULT 0,
             progress TEXT,
             holds_keys INTEGER NOT NULL DEFAULT 0,
-            worker_stop_verified INTEGER NOT NULL DEFAULT 0
+            worker_stop_verified INTEGER NOT NULL DEFAULT 0,
+            effectful INTEGER NOT NULL DEFAULT 0,
+            effect_verified INTEGER NOT NULL DEFAULT 0,
+            worker_pid INTEGER,
+            worker_created_ms INTEGER
          );
          CREATE TABLE lease_events(
             at_utc_ms INTEGER NOT NULL,
@@ -113,7 +117,7 @@ fn open_with_flags(path: &Path, flags: OpenFlags) -> io::Result<Connection> {
     let version: i64 = c
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(io::Error::other)?;
-    if app != APP_ID || !matches!(version, 1..=4) {
+    if app != APP_ID || !matches!(version, 1..=5) {
         return Err(invalid("not a compatible NorthStar queue"));
     }
     c.execute_batch("PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;")
@@ -149,6 +153,14 @@ fn submit_attempt(
     {
         return Err(invalid("invalid job id, priority, workers or input size"));
     }
+    let version: i64 = c
+        .query_row("PRAGMA user_version", [], |r| r.get(0))
+        .map_err(io::Error::other)?;
+    if version < SCHEMA_VERSION {
+        return Err(invalid(
+            "queue migrate required before submitting to this database",
+        ));
+    }
     let value: Value = serde_json::from_str(input).map_err(io::Error::other)?;
     if value["schema"] == 2 {
         crate::collect::validate_job(&value, workers)?;
@@ -162,11 +174,7 @@ fn submit_attempt(
     let version: i64 = tx
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(io::Error::other)?;
-    if version == 1 && (value["schema"] == 2 || !dependencies.is_empty() || !keys.is_empty()) {
-        return Err(invalid(
-            "queue migrate required for scheduling or collection",
-        ));
-    }
+
     // Dependencies must already exist: append-only submission cannot introduce a cycle.
     for dependency in &dependencies {
         if dependency == id
@@ -181,10 +189,20 @@ fn submit_attempt(
             return Err(invalid("self or unknown queue dependency"));
         }
     }
+    // Exclusive keys are a contract for a real-world effect, so the job cannot be replayed
+    // after an uncertain stop until that effect is verified.
+    let effectful = !keys.is_empty() || value.get("desktop").is_some();
     tx.execute(
-        "INSERT INTO jobs(id,input,input_sha256,priority,workers,state)
-         VALUES(?1,?2,?3,?4,?5,'queued')",
-        params![id, input, digest(input), priority, workers as i64],
+        "INSERT INTO jobs(id,input,input_sha256,priority,workers,state,effectful)
+         VALUES(?1,?2,?3,?4,?5,'queued',?6)",
+        params![
+            id,
+            input,
+            digest(input),
+            priority,
+            workers as i64,
+            effectful as i64
+        ],
     )
     .map_err(io::Error::other)?;
     if let Some(parent) = retry_of {
@@ -321,6 +339,34 @@ fn migrate(c: &mut Connection) -> io::Result<()> {
             )
             .map_err(io::Error::other)?;
         }
+        let has_effect: bool = tx
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM pragma_table_info('jobs') WHERE name='effectful')",
+                [],
+                |r| r.get(0),
+            )
+            .map_err(io::Error::other)?;
+        if !has_effect {
+            tx.execute_batch(
+                "ALTER TABLE jobs ADD COLUMN effectful INTEGER NOT NULL DEFAULT 0;
+                 ALTER TABLE jobs ADD COLUMN effect_verified INTEGER NOT NULL DEFAULT 0;",
+            )
+            .map_err(io::Error::other)?;
+        }
+        let has_identity: bool = tx
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM pragma_table_info('jobs') WHERE name='worker_pid')",
+                [],
+                |r| r.get(0),
+            )
+            .map_err(io::Error::other)?;
+        if !has_identity {
+            tx.execute_batch(
+                "ALTER TABLE jobs ADD COLUMN worker_pid INTEGER;
+                 ALTER TABLE jobs ADD COLUMN worker_created_ms INTEGER;",
+            )
+            .map_err(io::Error::other)?;
+        }
         // A running job from a previous schema holds whatever keys it reserved.
         tx.execute_batch(
             "UPDATE jobs SET holds_keys=1 WHERE state IN ('running','interrupted')
@@ -378,13 +424,23 @@ struct Claim {
     token: i64,
 }
 
-fn claim(c: &mut Connection, worker: &str, lease_ms: u64) -> io::Result<Option<Claim>> {
+fn claim(
+    c: &mut Connection,
+    worker: &str,
+    lease_ms: u64,
+    only_job: Option<&str>,
+) -> io::Result<Option<Claim>> {
     let tx = c
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .map_err(io::Error::other)?;
     let version: i64 = tx
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(io::Error::other)?;
+    if version < SCHEMA_VERSION {
+        return Err(invalid(
+            "queue migrate required before running workers on this database",
+        ));
+    }
     let eligible = if version >= 4 {
         // An interrupted job keeps its exclusive keys until the worker stop is verified,
         // because an expired lease is not proof that the old worker stopped acting.
@@ -403,10 +459,13 @@ fn claim(c: &mut Connection, worker: &str, lease_ms: u64) -> io::Result<Option<C
             JOIN jobs owner ON owner.id=held.job
             WHERE wanted.job=jobs.id AND owner.state='running')"
     };
+    let pinned = only_job
+        .map(|id| format!(" AND id='{}'", id.replace('\'', "''")))
+        .unwrap_or_default();
     let sql = if version >= 2 {
-        format!("SELECT id,input,input_sha256,workers FROM jobs WHERE {eligible} ORDER BY priority+skipped_claims DESC,rowid LIMIT 1")
+        format!("SELECT id,input,input_sha256,workers FROM jobs WHERE {eligible}{pinned} ORDER BY priority+skipped_claims DESC,rowid LIMIT 1")
     } else {
-        "SELECT id,input,input_sha256,workers FROM jobs WHERE state='queued' ORDER BY priority DESC,rowid LIMIT 1".to_owned()
+        format!("SELECT id,input,input_sha256,workers FROM jobs WHERE state='queued'{pinned} ORDER BY priority DESC,rowid LIMIT 1")
     };
     let job = tx
         .query_row(&sql, [], |r| {
@@ -433,7 +492,7 @@ fn claim(c: &mut Connection, worker: &str, lease_ms: u64) -> io::Result<Option<C
         )
         .map_err(io::Error::other)?;
     }
-    let token = if version >= 3 {
+    let token = {
         let now = utc_millis()? as i64;
         let holds: bool = tx
             .query_row(
@@ -443,11 +502,17 @@ fn claim(c: &mut Connection, worker: &str, lease_ms: u64) -> io::Result<Option<C
             )
             .map_err(io::Error::other)?;
         // heartbeat_ms records the claim instant; lease_expires_ms is the deadline.
+        // The claiming process records its own creation identity so a reused PID can never
+        // pass for the original worker.
+        let (worker_pid, worker_created_ms) = (
+            std::process::id() as i64,
+            crate::supervisor::self_creation_ms()?.unwrap_or(0),
+        );
         let changed = tx
             .execute(
                 "UPDATE jobs SET state='running', lease_owner=?2, lease_token=lease_token+1,
                    lease_ms=?3, lease_expires_ms=?4, heartbeat_ms=?5, attempt=attempt+1,
-                   progress=NULL, holds_keys=?6
+                   progress=NULL, holds_keys=?6, worker_pid=?7, worker_created_ms=?8
                  WHERE id=?1 AND state='queued'",
                 params![
                     id,
@@ -455,7 +520,9 @@ fn claim(c: &mut Connection, worker: &str, lease_ms: u64) -> io::Result<Option<C
                     lease_ms as i64,
                     now + lease_ms as i64,
                     now,
-                    holds as i64
+                    holds as i64,
+                    worker_pid,
+                    worker_created_ms as i64
                 ],
             )
             .map_err(io::Error::other)?;
@@ -466,13 +533,6 @@ fn claim(c: &mut Connection, worker: &str, lease_ms: u64) -> io::Result<Option<C
             r.get::<_, i64>(0)
         })
         .map_err(io::Error::other)?
-    } else {
-        tx.execute(
-            "UPDATE jobs SET state='running' WHERE id=?1 AND state='queued'",
-            [&id],
-        )
-        .map_err(io::Error::other)?;
-        0
     };
     if version >= 3 {
         log_event(
@@ -504,12 +564,15 @@ fn heartbeat(
     if !(1_000..=MAX_LEASE_MS).contains(&lease_ms) {
         return Err(invalid("lease must be within 1000..=3600000 ms"));
     }
+    let tx = c.unchecked_transaction().map_err(io::Error::other)?;
+    // The deadline is measured while the write lock is held, so a slow lock acquisition
+    // cannot silently shorten the new lease.
     let now = utc_millis()? as i64;
     let expires = now + lease_ms as i64;
     // Ownership, token, state, cancellation and lease validity are enforced by the same
     // statement: a worker whose lease already expired cannot renew it just because
     // reconciliation has not run yet.
-    let changed = c
+    let changed = tx
         .execute(
             "UPDATE jobs SET heartbeat_ms=?4, lease_expires_ms=?5, lease_ms=?6
              WHERE id=?1 AND state='running' AND lease_owner=?2 AND lease_token=?3
@@ -523,7 +586,8 @@ fn heartbeat(
             "LEASE_LOST: worker does not own a live lease for this job",
         ));
     }
-    log_event(c, id, "heartbeat", Some(worker), Some(token), None)?;
+    log_event(&tx, id, "heartbeat", Some(worker), Some(token), None)?;
+    tx.commit().map_err(io::Error::other)?;
     Ok(json!({
         "id":id,"state":"running","lease_owner":worker,"lease_token":token,
         "heartbeat_utc_ms":now,"lease_expires_utc_ms":expires
@@ -614,7 +678,8 @@ fn reconcile(c: &Connection) -> io::Result<Value> {
 /// Running cancellation is a request, not a kill: the owner observes it at its next
 /// checkpoint or commit boundary and releases the lease itself.
 fn cancel_running(c: &Connection, id: &str) -> io::Result<Value> {
-    let changed = c
+    let tx = c.unchecked_transaction().map_err(io::Error::other)?;
+    let changed = tx
         .execute(
             "UPDATE jobs SET cancel_requested=1 WHERE id=?1 AND state='running'",
             [id],
@@ -623,8 +688,38 @@ fn cancel_running(c: &Connection, id: &str) -> io::Result<Value> {
     if changed != 1 {
         return Err(invalid("cancellation request requires a running job"));
     }
-    log_event(c, id, "cancel_requested", None, None, None)?;
+    log_event(&tx, id, "cancel_requested", None, None, None)?;
+    tx.commit().map_err(io::Error::other)?;
     Ok(json!({"id":id,"state":"running","cancel_requested":true}))
+}
+
+/// Record a verified stop from an observed process exit (supervisor kill or crash).
+pub fn record_verified_stop(db: &Path, id: &str) -> io::Result<Value> {
+    let c = open(db)?;
+    worker_stopped(&c, id)
+}
+
+/// Supervisor-driven stop verification: the operating system, not a statement, proves the
+/// worker exited. PID reuse is defeated by comparing the recorded creation time.
+pub fn verify_stopped(db: &Path, id: &str) -> io::Result<Value> {
+    let c = open(db)?;
+    let (state, pid, created): (String, Option<i64>, Option<i64>) = c
+        .query_row(
+            "SELECT state,worker_pid,worker_created_ms FROM jobs WHERE id=?1",
+            [id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .map_err(io::Error::other)?;
+    if state != "running" && state != "interrupted" {
+        return Err(invalid(
+            "worker verification applies to a live or interrupted job",
+        ));
+    }
+    let report = crate::supervisor::verify_worker_gone(pid, created);
+    if report["worker_stop_verified"] == true {
+        worker_stopped(&c, id)?;
+    }
+    Ok(json!({"id":id,"state":state,"verification":report}))
 }
 
 /// Recording that the operator verified the worker exited. This is the only path that
@@ -668,6 +763,34 @@ fn worker_stopped(c: &Connection, id: &str) -> io::Result<Value> {
         "id":id,"state":"interrupted","worker_stop_verified":true,
         "keys_released":released == 1
     }))
+}
+
+/// Recording that the effect of an interrupted job was checked by the operator. Together
+/// with a verified worker stop this is what re-opens the explicit `retry` path.
+fn effect_verified(c: &Connection, id: &str) -> io::Result<Value> {
+    let tx = c.unchecked_transaction().map_err(io::Error::other)?;
+    let changed = tx
+        .execute(
+            "UPDATE jobs SET effect_verified=1
+             WHERE id=?1 AND state='interrupted' AND worker_stop_verified=1 AND effectful=1",
+            [id],
+        )
+        .map_err(io::Error::other)?;
+    if changed != 1 {
+        return Err(invalid(
+            "effect verification requires an interrupted effectful job whose worker stop is verified",
+        ));
+    }
+    log_event(
+        &tx,
+        id,
+        "effect_verified",
+        None,
+        None,
+        Some("operator recorded the post-run effect check"),
+    )?;
+    tx.commit().map_err(io::Error::other)?;
+    Ok(json!({"id":id,"effect_verified":true}))
 }
 
 /// Terminal cancellation. A queued job is cancelled directly; a job whose worker died may
@@ -732,13 +855,16 @@ fn run_one_with<F>(c: &mut Connection, evaluate: F) -> io::Result<Value>
 where
     F: FnOnce(&Connection, Value, usize) -> io::Result<Value>,
 {
-    run_one_leased(c, "local", DEFAULT_LEASE_MS, evaluate)
+    run_one_leased(c, "local", DEFAULT_LEASE_MS, 0, None, None, evaluate)
 }
 
 fn run_one_leased<F>(
     c: &mut Connection,
     worker: &str,
     lease_ms: u64,
+    heartbeat_ms: u64,
+    deadline_ms: Option<u64>,
+    only_job: Option<&str>,
     evaluate: F,
 ) -> io::Result<Value>
 where
@@ -755,9 +881,19 @@ where
     if !(1_000..=MAX_LEASE_MS).contains(&lease_ms) {
         return Err(invalid("lease must be within 1000..=3600000 ms"));
     }
+    if heartbeat_ms != 0 && !(250..=MAX_LEASE_MS).contains(&heartbeat_ms) {
+        return Err(invalid(
+            "heartbeat must be within 250..=3600000 ms or 0 to disable",
+        ));
+    }
+    if let Some(deadline) = deadline_ms {
+        if !(1_000..=MAX_LEASE_MS).contains(&deadline) {
+            return Err(invalid("deadline must be within 1000..=3600000 ms"));
+        }
+    }
     let started = Instant::now();
     let started_utc_ms = utc_millis()?;
-    let Some(claim) = claim(c, worker, lease_ms)? else {
+    let Some(claim) = claim(c, worker, lease_ms, only_job)? else {
         return Ok(json!({"state":"idle"}));
     };
     let id = claim.id;
@@ -766,21 +902,21 @@ where
     let expected = claim.expected;
     let input = claim.input;
     // A cancellation requested after claim but before evaluation is honoured without work.
-    let cancelled_before_start: bool = c
-        .query_row(
-            "SELECT cancel_requested FROM jobs WHERE id=?1 AND lease_token=?2",
-            params![id, token],
-            |r| r.get(0),
-        )
-        .unwrap_or(false);
-    if cancelled_before_start {
-        c.execute(
+    // The whole handback is one transaction: state, lease release, reservation release and
+    // the evidence row. It only applies to the current owner while the lease is still live,
+    // so a stale worker cannot use a leftover cancellation flag to abandon someone else's job.
+    let now = utc_millis()? as i64;
+    let changed = c
+        .execute(
             "UPDATE jobs SET state='cancelled',lease_owner=NULL,lease_expires_ms=NULL,
-               heartbeat_ms=NULL,progress=NULL
-             WHERE id=?1 AND state='running' AND lease_token=?2 AND cancel_requested=1",
-            params![id, token],
+               heartbeat_ms=NULL,progress=NULL,holds_keys=0
+             WHERE id=?1 AND state='running' AND lease_owner=?2 AND lease_token=?3
+               AND cancel_requested=1 AND lease_expires_ms IS NOT NULL
+               AND lease_expires_ms > ?4",
+            params![id, worker, token, now],
         )
         .map_err(io::Error::other)?;
+    if changed == 1 {
         log_event(
             c,
             &id,
@@ -791,6 +927,69 @@ where
         )?;
         return Ok(json!({"id":id,"state":"cancelled","lease_token":token}));
     }
+    let pending: bool = c
+        .query_row(
+            "SELECT cancel_requested=1 FROM jobs WHERE id=?1 AND state='running'
+               AND lease_owner=?2 AND lease_token=?3",
+            params![id, worker, token],
+            |r| r.get(0),
+        )
+        .optional()
+        .map_err(io::Error::other)?
+        .unwrap_or(false);
+    if pending {
+        // The lease already expired while the cancellation was pending: the worker stops
+        // without publishing anything, and reconciliation owns the recovery.
+        return Err(invalid(
+            "CANCELLED: cancellation is pending on an expired lease; stopping without a result",
+        ));
+    }
+    // Independent heartbeat: a dedicated thread renews the lease and reports progress
+    // while the evaluation runs. It stops when the job reaches a terminal state, and a
+    // pending cancellation is recorded in the progress trail instead of being ignored.
+    let heartbeat_stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let heartbeat_handle = if heartbeat_ms != 0 {
+        let db_path = c.path().unwrap_or("").to_owned();
+        let stop = heartbeat_stop.clone();
+        let job_id = id.clone();
+        let owner = worker.to_owned();
+        let interval = heartbeat_ms;
+        Some(std::thread::spawn(move || {
+            let mut note = "running";
+            loop {
+                if stop.load(std::sync::atomic::Ordering::SeqCst) {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(interval.min(1_000)));
+                if stop.load(std::sync::atomic::Ordering::SeqCst) {
+                    break;
+                }
+                let Ok(conn) = open(Path::new(&db_path)) else {
+                    break;
+                };
+                let cancelled: bool = conn
+                    .query_row(
+                        "SELECT cancel_requested=1 FROM jobs WHERE id=?1",
+                        [&job_id],
+                        |r| r.get(0),
+                    )
+                    .unwrap_or(false);
+                if cancelled {
+                    note = "cancellation pending; owner must stop";
+                }
+                let _ = heartbeat(&conn, &job_id, &owner, token, 30_000);
+                let _ = conn.execute(
+                    "UPDATE jobs SET progress=?2 WHERE id=?1 AND state='running'",
+                    params![
+                        job_id,
+                        json!({"at_utc_ms":utc_millis().ok(),"note":note}).to_string()
+                    ],
+                );
+            }
+        }))
+    } else {
+        None
+    };
     let dependencies_passed = (|| -> io::Result<Vec<Value>> {
         if digest(&input) != expected {
             return Err(invalid("input hash mismatch"));
@@ -816,11 +1015,24 @@ where
             dependencies,
         ),
     };
-    let (state, mut report) = match result {
+    let (mut state, mut report) = match result {
         Ok(report) if report["passed"] == true => ("completed", report),
         Ok(report) => ("failed", report),
         Err(e) => ("failed", json!({"error":e.to_string()})),
     };
+    // A monotonic deadline never trusts wall-clock adjustments.
+    if state == "completed" {
+        if let Some(deadline) = deadline_ms {
+            if started.elapsed().as_millis() as u64 > deadline {
+                state = "failed";
+                report = json!({
+                    "error":"DEADLINE_EXCEEDED",
+                    "deadline_ms":deadline,
+                    "duration_ms":started.elapsed().as_millis() as u64
+                });
+            }
+        }
+    }
     report["queue_provenance"] = json!({"schema":1,"producer":"nsre","producer_version":env!("CARGO_PKG_VERSION"),"input_sha256":expected,"dependencies":dependencies});
     report["execution"] = json!({
         "schema":1,"execution_id":id,"state":state,
@@ -832,6 +1044,10 @@ where
         "automatic_retry":false
     });
     let body = serde_json::to_string(&report).map_err(io::Error::other)?;
+    heartbeat_stop.store(true, std::sync::atomic::Ordering::SeqCst);
+    if let Some(handle) = heartbeat_handle {
+        let _ = handle.join();
+    }
     // Fencing: only the current lease holder of a lease that is still valid may publish a
     // terminal result, even if reconciliation has not run yet. The status change and its
     // evidence row commit together.
@@ -843,9 +1059,9 @@ where
         .execute(
             "UPDATE jobs SET state=?1,result=?2,result_sha256=?3,
                lease_owner=NULL,lease_expires_ms=NULL,heartbeat_ms=NULL,progress=NULL,holds_keys=0
-             WHERE id=?4 AND state='running' AND lease_token=?5 AND cancel_requested=0
-               AND lease_expires_ms IS NOT NULL AND lease_expires_ms > ?6",
-            params![state, body, digest(&body), id, token, now],
+             WHERE id=?4 AND state='running' AND lease_owner=?7 AND lease_token=?5
+               AND cancel_requested=0 AND lease_expires_ms IS NOT NULL AND lease_expires_ms > ?6",
+            params![state, body, digest(&body), id, token, now, worker],
         )
         .map_err(io::Error::other)?;
     if changed != 1 {
@@ -864,8 +1080,9 @@ where
             tx.execute(
                 "UPDATE jobs SET state='cancelled',lease_owner=NULL,lease_expires_ms=NULL,
                    heartbeat_ms=NULL,progress=NULL,holds_keys=0
-                 WHERE id=?1 AND state='running' AND lease_token=?2 AND cancel_requested=1",
-                params![id, token],
+                 WHERE id=?1 AND state='running' AND lease_owner=?3 AND lease_token=?2
+                   AND cancel_requested=1",
+                params![id, token, worker],
             )
             .map_err(io::Error::other)?;
             log_event(&tx, &id, "cancelled", Some(worker), Some(token), None)?;
@@ -945,6 +1162,10 @@ struct LeaseRow {
     progress: Option<String>,
     stop_verified: i64,
     holds_keys: i64,
+    pid: Option<i64>,
+    created_ms: Option<i64>,
+    effectful: i64,
+    effect_verified: i64,
 }
 
 fn status(c: &Connection, id: &str) -> io::Result<Value> {
@@ -1001,7 +1222,7 @@ fn status(c: &Connection, id: &str) -> io::Result<Value> {
     let lease = if version >= 3 {
         let row: LeaseRow = c
             .query_row(
-                "SELECT lease_owner,lease_token,lease_expires_ms,heartbeat_ms,attempt,cancel_requested,progress,worker_stop_verified,holds_keys FROM jobs WHERE id=?1",
+                "SELECT lease_owner,lease_token,lease_expires_ms,heartbeat_ms,attempt,cancel_requested,progress,worker_stop_verified,holds_keys,worker_pid,worker_created_ms,effectful,effect_verified FROM jobs WHERE id=?1",
                 [id],
                 |r| {
                     Ok(LeaseRow {
@@ -1014,6 +1235,10 @@ fn status(c: &Connection, id: &str) -> io::Result<Value> {
                         progress: r.get(6)?,
                         stop_verified: r.get(7)?,
                         holds_keys: r.get(8)?,
+                        pid: r.get(9)?,
+                        created_ms: r.get(10)?,
+                        effectful: r.get(11)?,
+                        effect_verified: r.get(12)?,
                     })
                 },
             )
@@ -1022,7 +1247,9 @@ fn status(c: &Connection, id: &str) -> io::Result<Value> {
             "owner":row.owner,"token":row.token,"expires_utc_ms":row.expires,
             "heartbeat_utc_ms":row.heartbeat,"attempt":row.attempt,
             "cancel_requested":row.cancel == 1,"progress":row.progress,
-            "worker_stop_verified":row.stop_verified == 1,"exclusive_keys_held":row.holds_keys == 1
+            "worker_stop_verified":row.stop_verified == 1,"exclusive_keys_held":row.holds_keys == 1,
+            "worker_pid":row.pid,"worker_created_ms":row.created_ms,
+            "effectful":row.effectful == 1,"effect_verified":row.effect_verified == 1
         })
     } else {
         json!({"schema":"legacy","owner":null,"token":0,"cancel_requested":false})
@@ -1075,6 +1302,18 @@ fn retry(c: &Connection, old_id: &str, new_id: &str) -> io::Result<()> {
     if state != "interrupted" || digest(&input) != expected || old_id == new_id {
         return Err(invalid("retry requires intact interrupted job and new id"));
     }
+    let (effectful, effect_verified, stop_verified): (i64, i64, i64) = c
+        .query_row(
+            "SELECT effectful,effect_verified,worker_stop_verified FROM jobs WHERE id=?1",
+            [old_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .map_err(io::Error::other)?;
+    if effectful == 1 && (stop_verified == 0 || effect_verified == 0) {
+        return Err(invalid(
+            "retrying an effectful job requires a verified worker stop and a verified effect check",
+        ));
+    }
     submit_attempt(c, new_id, &input, priority, workers as usize, Some(old_id))
 }
 
@@ -1094,7 +1333,7 @@ fn transition(c: &Connection, id: &str, from: &str, to: &str) -> io::Result<()> 
 
 pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
     let args: Vec<_> = args.collect();
-    let usage = "queue init DB | migrate DB | submit DB ID INPUT PRIORITY WORKERS --reviewed-redacted | run-one DB [--worker NAME] [--lease-ms N] | drain DB LIMIT | status DB ID | wait DB ID SECONDS | retry DB OLD_ID NEW_ID --reviewed-redacted | cancel DB ID [--running] | heartbeat DB ID WORKER TOKEN LEASE_MS | reconcile DB | interrupt DB ID --worker-stopped";
+    let usage = "queue init DB | migrate DB | submit DB ID INPUT PRIORITY WORKERS --reviewed-redacted | run-one DB [--worker NAME] [--lease-ms N] | drain DB LIMIT | status DB ID | wait DB ID SECONDS | retry DB OLD_ID NEW_ID --reviewed-redacted | cancel DB ID [--running] | heartbeat DB ID WORKER TOKEN LEASE_MS | reconcile DB | effect-verified DB ID | interrupt DB ID --worker-stopped";
     if args.len() < 2 {
         return Err(invalid(usage));
     }
@@ -1136,6 +1375,9 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
         "run-one" if args.len() >= 2 => {
             let mut worker = "local".to_owned();
             let mut lease_ms = DEFAULT_LEASE_MS;
+            let mut heartbeat_ms = 0u64;
+            let mut deadline_ms = None;
+            let mut only_job = None;
             let mut rest = args[2..].iter();
             while let Some(flag) = rest.next() {
                 match flag.to_str() {
@@ -1153,17 +1395,47 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
                             .and_then(|v| v.parse().ok())
                             .ok_or_else(|| invalid("lease milliseconds required"))?;
                     }
+                    Some("--heartbeat-ms") => {
+                        heartbeat_ms = rest
+                            .next()
+                            .and_then(|v| v.to_str())
+                            .and_then(|v| v.parse().ok())
+                            .ok_or_else(|| invalid("heartbeat milliseconds required"))?;
+                    }
+                    Some("--deadline-ms") => {
+                        deadline_ms = Some(
+                            rest.next()
+                                .and_then(|v| v.to_str())
+                                .and_then(|v| v.parse().ok())
+                                .ok_or_else(|| invalid("deadline milliseconds required"))?,
+                        );
+                    }
+                    Some("--job") => {
+                        only_job = Some(
+                            rest.next()
+                                .and_then(|v| v.to_str())
+                                .ok_or_else(|| invalid("job id required"))?,
+                        );
+                    }
                     _ => return Err(invalid(usage)),
                 }
             }
-            let report = run_one_leased(&mut c, &worker, lease_ms, |c, v, workers| {
-                if v["schema"] == 2 {
-                    validate_source_scope(c, &v)?;
-                    crate::collect::evaluate_job(&v, workers)
-                } else {
-                    crate::batch::evaluate(&v, workers)
-                }
-            })?;
+            let report = run_one_leased(
+                &mut c,
+                &worker,
+                lease_ms,
+                heartbeat_ms,
+                deadline_ms,
+                only_job,
+                |c, v, workers| {
+                    if v["schema"] == 2 {
+                        validate_source_scope(c, &v)?;
+                        crate::collect::evaluate_job(&v, workers)
+                    } else {
+                        crate::batch::evaluate(&v, workers)
+                    }
+                },
+            )?;
             println!("{report}");
             return Ok(report["state"] != "failed" && report["state"] != "cancelled");
         }
@@ -1182,6 +1454,7 @@ pub fn command(args: impl Iterator<Item = OsString>) -> io::Result<bool> {
             println!("{}", heartbeat(&c, id()?, worker, token, lease_ms)?);
         }
         "reconcile" if args.len() == 2 => println!("{}", reconcile(&c)?),
+        "effect-verified" if args.len() == 3 => println!("{}", effect_verified(&c, id()?)?),
         "cancel" if args.len() == 4 && args[3] == "--running" => {
             println!("{}", cancel_running(&c, id()?)?)
         }
@@ -1331,23 +1604,23 @@ mod tests {
         submit(&a, "writer-b", &manifest(&[], &["index"], true), 100, 1).unwrap();
         submit(&a, "other", &manifest(&[], &["other"], true), 0, 1).unwrap();
         assert_eq!(
-            claim(&mut a, "worker-a", 1000).unwrap().unwrap().id,
+            claim(&mut a, "worker-a", 1000, None).unwrap().unwrap().id,
             "writer-a"
         );
         let mut b = open(&f.db()).unwrap();
         assert_eq!(
-            claim(&mut b, "worker-b", 1000).unwrap().unwrap().id,
+            claim(&mut b, "worker-b", 1000, None).unwrap().unwrap().id,
             "other"
         );
-        assert!(claim(&mut b, "worker-b", 1000).unwrap().is_none());
+        assert!(claim(&mut b, "worker-b", 1000, None).unwrap().is_none());
         transition(&a, "writer-a", "running", "interrupted").unwrap();
-        assert!(claim(&mut b, "worker-b", 1000).unwrap().is_none());
+        assert!(claim(&mut b, "worker-b", 1000, None).unwrap().is_none());
         worker_stopped(&a, "writer-a").unwrap();
         assert_eq!(
-            claim(&mut b, "worker-b", 1000).unwrap().unwrap().id,
+            claim(&mut b, "worker-b", 1000, None).unwrap().unwrap().id,
             "writer-b"
         );
-        assert!(claim(&mut a, "worker-a", 1000).unwrap().is_none());
+        assert!(claim(&mut a, "worker-a", 1000, None).unwrap().is_none());
     }
 
     #[test]
@@ -1374,7 +1647,7 @@ mod tests {
                 std::thread::spawn(move || {
                     let mut c = open(&db).unwrap();
                     barrier.wait();
-                    claim(&mut c, "racer", 1000).unwrap()
+                    claim(&mut c, "racer", 1000, None).unwrap()
                 })
             })
             .collect();
@@ -1385,9 +1658,9 @@ mod tests {
         assert_eq!(claims.len(), 1);
         let mut c = open(&f.db()).unwrap();
         transition(&c, &claims[0].id, "running", "interrupted").unwrap();
-        assert!(claim(&mut c, "racer", 1000).unwrap().is_none());
+        assert!(claim(&mut c, "racer", 1000, None).unwrap().is_none());
         worker_stopped(&c, &claims[0].id).unwrap();
-        assert!(claim(&mut c, "racer", 1000).unwrap().is_some());
+        assert!(claim(&mut c, "racer", 1000, None).unwrap().is_some());
     }
 
     #[test]
@@ -1421,17 +1694,19 @@ mod tests {
         let mut c = open(&f.db()).unwrap();
         let input =
             r#"{"schema":1,"tasks":[{"id":"a","input":{"operation":"json-roundtrip","data":1}}]}"#;
+        // Writing and running require the current schema; migration is the explicit gate.
+        assert!(submit(&c, "old", input, 50, 1).is_err());
+        assert!(claim(&mut c, "worker-a", 1000, None).is_err());
+        migrate(&mut c).unwrap();
+        migrate(&mut c).unwrap();
+        assert_eq!(
+            c.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
+            5
+        );
         submit(&c, "old", input, 50, 1).unwrap();
-        assert!(submit(&c, "new", &manifest(&["old"], &[], true), 0, 1).is_err());
-        assert_eq!(claim(&mut c, "worker-a", 1000).unwrap().unwrap().id, "old");
-        assert!(migrate(&mut c).is_err());
-        transition(&c, "old", "running", "interrupted").unwrap();
-        migrate(&mut c).unwrap();
-        migrate(&mut c).unwrap();
-        assert_eq!(status(&c, "old").unwrap()["input_sha256"], digest(input));
-        retry(&c, "old", "retry").unwrap();
-        submit(&c, "new", &manifest(&["retry"], &[], true), 100, 1).unwrap();
-        assert_eq!(run_one(&mut c).unwrap()["id"], "retry");
+        submit(&c, "new", &manifest(&["old"], &[], true), 100, 1).unwrap();
+        assert_eq!(run_one(&mut c).unwrap()["id"], "old");
         assert_eq!(run_one(&mut c).unwrap()["id"], "new");
     }
 
@@ -1473,7 +1748,7 @@ mod tests {
         init(&f.db()).unwrap();
         let mut c = open(&f.db()).unwrap();
         submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
-        let claim = claim(&mut c, "worker-a", 1000).unwrap().unwrap();
+        let claim = claim(&mut c, "worker-a", 1000, None).unwrap().unwrap();
         assert_eq!(claim.token, 1);
         let before = status(&c, "job").unwrap();
         assert_eq!(before["state"], "running");
@@ -1495,7 +1770,7 @@ mod tests {
         init(&f.db()).unwrap();
         let mut c = open(&f.db()).unwrap();
         submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
-        let first = claim(&mut c, "worker-a", 1000).unwrap().unwrap();
+        let first = claim(&mut c, "worker-a", 1000, None).unwrap().unwrap();
         c.execute("UPDATE jobs SET lease_expires_ms=1 WHERE id='job'", [])
             .unwrap();
         let report = reconcile(&c).unwrap();
@@ -1504,10 +1779,10 @@ mod tests {
         assert_eq!(report["unverified_effect"], true);
         assert_eq!(status(&c, "job").unwrap()["state"], "interrupted");
         // Reconciliation never silently replays the job.
-        assert!(claim(&mut c, "worker-b", 1000).unwrap().is_none());
+        assert!(claim(&mut c, "worker-b", 1000, None).unwrap().is_none());
         // The interrupted job can only continue through an explicit, evidenced retry.
         retry(&c, "job", "job-retry").unwrap();
-        let next = claim(&mut c, "worker-b", 1000).unwrap().unwrap();
+        let next = claim(&mut c, "worker-b", 1000, None).unwrap().unwrap();
         assert_eq!(next.id, "job-retry");
         assert_eq!(next.token, 1, "each job fences its own lease tokens");
         let events: i64 = c
@@ -1528,7 +1803,7 @@ mod tests {
         let mut c = open(&f.db()).unwrap();
         submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
         // The evaluator loses its lease mid-flight (supervisor reconciliation).
-        let error = run_one_leased(&mut c, "worker-a", 1000, |c, _, _| {
+        let error = run_one_leased(&mut c, "worker-a", 1000, 0, None, None, |c, _, _| {
             c.execute("UPDATE jobs SET lease_expires_ms=1 WHERE id='job'", [])
                 .unwrap();
             reconcile(c).unwrap();
@@ -1550,7 +1825,7 @@ mod tests {
         init(&f.db()).unwrap();
         let mut c = open(&f.db()).unwrap();
         submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
-        let error = run_one_leased(&mut c, "worker-a", 1000, |c, _, _| {
+        let error = run_one_leased(&mut c, "worker-a", 1000, 0, None, None, |c, _, _| {
             cancel_running(c, "job").unwrap();
             Ok(json!({"passed":true}))
         })
@@ -1579,16 +1854,18 @@ mod tests {
         drop(c);
         let mut c = open(&f.db()).unwrap();
         let input = manifest(&[], &[], true);
-        submit(&c, "legacy", &input, 5, 1).unwrap();
+        // v2 databases must migrate before any write, and the migration keeps their rows.
+        assert!(submit(&c, "legacy", &input, 5, 1).is_err());
         migrate(&mut c).unwrap();
         let version: i64 = c
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .unwrap();
-        assert_eq!(version, 4);
+        assert_eq!(version, 5);
+        submit(&c, "legacy", &input, 5, 1).unwrap();
         let legacy = status(&c, "legacy").unwrap();
         assert_eq!(legacy["input_sha256"], digest(&input));
         assert_eq!(legacy["lease"]["token"], 0);
-        let claimed = claim(&mut c, "worker-a", 1000).unwrap().unwrap();
+        let claimed = claim(&mut c, "worker-a", 1000, None).unwrap().unwrap();
         assert_eq!(claimed.id, "legacy");
         assert_eq!(claimed.token, 1);
         // Migration is idempotent once the worker released the lease, and the trail stays usable.
@@ -1607,7 +1884,7 @@ mod tests {
         init(&f.db()).unwrap();
         let mut c = open(&f.db()).unwrap();
         submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
-        let first = claim(&mut c, "worker-a", 1000).unwrap().unwrap();
+        let first = claim(&mut c, "worker-a", 1000, None).unwrap().unwrap();
         c.execute("UPDATE jobs SET lease_expires_ms=1 WHERE id='job'", [])
             .unwrap();
         // Reconciliation has not run, yet the lease is already void.
@@ -1624,7 +1901,7 @@ mod tests {
         init(&f.db()).unwrap();
         let mut c = open(&f.db()).unwrap();
         submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
-        let error = run_one_leased(&mut c, "worker-a", 1000, |c, _, _| {
+        let error = run_one_leased(&mut c, "worker-a", 1000, 0, None, None, |c, _, _| {
             c.execute("UPDATE jobs SET lease_expires_ms=1 WHERE id='job'", [])
                 .unwrap();
             Ok(json!({"passed":true}))
@@ -1645,7 +1922,7 @@ mod tests {
         init(&f.db()).unwrap();
         let mut c = open(&f.db()).unwrap();
         submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
-        let first = claim(&mut c, "worker-a", 1000).unwrap().unwrap();
+        let first = claim(&mut c, "worker-a", 1000, None).unwrap().unwrap();
         // Renew before reconciliation scans; reconciliation must not touch a live lease.
         let extended = heartbeat(&c, "job", "worker-a", first.token, 60_000).unwrap();
         let report = reconcile(&c).unwrap();
@@ -1666,14 +1943,19 @@ mod tests {
         let mut c = open(&f.db()).unwrap();
         for i in 0..4 {
             submit(&c, &format!("job-{i}"), &manifest(&[], &[], true), 10, 1).unwrap();
-            claim(&mut c, &format!("worker-{i}"), 2000).unwrap();
+            claim(&mut c, &format!("worker-{i}"), 2000, None).unwrap();
         }
         drop(c);
         let db = f.db();
+        // Deterministic start: the barrier releases both sides together, and the assertion
+        // below is what must hold in every interleaving, not any particular timing.
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
         let reconciler = {
             let db = db.clone();
+            let barrier = barrier.clone();
             std::thread::spawn(move || {
                 let c = open(&db).unwrap();
+                barrier.wait();
                 for _ in 0..40 {
                     reconcile(&c).unwrap();
                     std::thread::sleep(std::time::Duration::from_millis(2));
@@ -1684,6 +1966,7 @@ mod tests {
             let db = db.clone();
             std::thread::spawn(move || {
                 let c = open(&db).unwrap();
+                barrier.wait();
                 for i in 0..40 {
                     let job = format!("job-{}", i % 4);
                     let owner = format!("worker-{}", i % 4);
@@ -1719,7 +2002,7 @@ mod tests {
         init(&f.db()).unwrap();
         let mut c = open(&f.db()).unwrap();
         submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
-        claim(&mut c, "worker-a", 1000).unwrap();
+        claim(&mut c, "worker-a", 1000, None).unwrap();
         cancel_running(&c, "job").unwrap();
         c.execute("UPDATE jobs SET lease_expires_ms=1 WHERE id='job'", [])
             .unwrap();
@@ -1753,7 +2036,7 @@ mod tests {
         let mut c = open(&f.db()).unwrap();
         submit(&c, "effect", &manifest(&[], &["desktop"], true), 100, 1).unwrap();
         submit(&c, "rival", &manifest(&[], &["desktop"], true), 0, 1).unwrap();
-        let first = claim(&mut c, "worker-a", 1000).unwrap().unwrap();
+        let first = claim(&mut c, "worker-a", 1000, None).unwrap().unwrap();
         assert_eq!(first.id, "effect");
         assert_eq!(
             status(&c, "effect").unwrap()["lease"]["exclusive_keys_held"],
@@ -1763,9 +2046,9 @@ mod tests {
             .unwrap();
         reconcile(&c).unwrap();
         // The effect may still be running: the rival must not acquire the same resource.
-        assert!(claim(&mut c, "worker-b", 1000).unwrap().is_none());
+        assert!(claim(&mut c, "worker-b", 1000, None).unwrap().is_none());
         worker_stopped(&c, "effect").unwrap();
-        let rival = claim(&mut c, "worker-b", 1000).unwrap().unwrap();
+        let rival = claim(&mut c, "worker-b", 1000, None).unwrap().unwrap();
         assert_eq!(rival.id, "rival");
     }
 
@@ -1800,7 +2083,7 @@ mod tests {
         init(&f.db()).unwrap();
         let mut c = open(&f.db()).unwrap();
         submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
-        claim(&mut c, "worker-a", 60_000).unwrap();
+        claim(&mut c, "worker-a", 60_000, None).unwrap();
         let report = status(&c, "job").unwrap();
         let heartbeat = report["lease"]["heartbeat_utc_ms"].as_i64().unwrap();
         let expires = report["lease"]["expires_utc_ms"].as_i64().unwrap();
@@ -1809,6 +2092,52 @@ mod tests {
             60_000,
             "heartbeat is the claim instant, not the deadline"
         );
+    }
+
+    #[test]
+    fn effectful_jobs_need_verified_stop_and_effect_before_retry() {
+        let f = Fixture::new();
+        init(&f.db()).unwrap();
+        let mut c = open(&f.db()).unwrap();
+        submit(&c, "effect", &manifest(&[], &["gpu"], true), 10, 1).unwrap();
+        claim(&mut c, "worker-a", 1000, None).unwrap();
+        // A verified stop is required before the effect itself can be signed off.
+        worker_stopped(&c, "effect").unwrap();
+        // The stop is verified, but the effect itself was never checked.
+        let error = retry(&c, "effect", "effect-retry").unwrap_err();
+        assert!(error.to_string().contains("verified effect"), "{error}");
+        effect_verified(&c, "effect").unwrap();
+        retry(&c, "effect", "effect-retry").unwrap();
+        assert_eq!(status(&c, "effect-retry").unwrap()["retry_of"], "effect");
+        assert_eq!(
+            claim(&mut c, "worker-b", 1000, None).unwrap().unwrap().id,
+            "effect-retry"
+        );
+    }
+
+    #[test]
+    fn evidence_failure_rolls_back_heartbeat_reconcile_and_cancellation() {
+        let f = Fixture::new();
+        init(&f.db()).unwrap();
+        let mut c = open(&f.db()).unwrap();
+        submit(&c, "job", &manifest(&[], &[], true), 10, 1).unwrap();
+        claim(&mut c, "worker-a", 60_000, None).unwrap();
+        // Force expiry so reconcile actually takes the write path with its evidence row.
+        c.execute("UPDATE jobs SET lease_expires_ms=1 WHERE id='job'", [])
+            .unwrap();
+        c.execute_batch("ALTER TABLE lease_events RENAME TO lease_events_off")
+            .unwrap();
+        assert!(heartbeat(&c, "job", "worker-a", 1, 60_000).is_err());
+        assert!(cancel_running(&c, "job").is_err());
+        assert!(reconcile(&c).is_err());
+        let after = status(&c, "job").unwrap();
+        assert_eq!(after["state"], "running", "no partial lease change");
+        assert_eq!(after["lease"]["cancel_requested"], false);
+        c.execute_batch("ALTER TABLE lease_events_off RENAME TO lease_events")
+            .unwrap();
+        // With the trail restored the same operations succeed.
+        assert_eq!(reconcile(&c).unwrap()["reconciled"][0]["id"], "job");
+        assert_eq!(status(&c, "job").unwrap()["state"], "interrupted");
     }
     #[test]
     fn durable_priority_cancel_and_results() {

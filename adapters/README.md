@@ -21,11 +21,12 @@ For a disposable Windows project, use the installed verified executable explicit
 
 Initialize only a new dedicated queue; do not reinitialize an existing database. `$Project` must already have its normal `.northstar/state` directory. MCP clients must initialize and send `notifications/initialized` before calling tools. An existing FreePi version may not support MCP registration; detect the actual host capabilities before configuring it. No provider credentials, host settings, skills or user installation are modified by this adapter. Submission remains through the reviewed native CLI. The integration test uses real stdio processes and disposable projects, verifies discovery/result consumption, rejects extra database/path arguments and checks isolation; it is not a FreePi host test or evidence that work survives host exit. Host versions and interactive Windows 11 acceptance remain UNVERIFIED.
 
-## Queue schema v4 — worker ownership, leases and fencing
+## Queue schema v5 — worker ownership, leases, fencing and supervision
 
-Queue databases now carry schema v4, and `queue migrate DB` upgrades v1, v2 and v3 in one
+Queue databases now carry schema v5, and `queue migrate DB` upgrades v1 through v4 in one
 transaction while refusing to run if any job is `running`. Existing jobs, dependencies and
-exclusive keys are preserved; v3 databases gain the reservation and stop-verification columns.
+exclusive keys are preserved. Writing to or running workers on an older database is refused
+until it migrates; reads stay available.
 
 ```powershell
 & $Engine queue run-one $Db --worker 'host:nsre:4321' --lease-ms 60000
@@ -58,9 +59,24 @@ worker might still be acting. `status` exposes `lease.owner`, `lease.token`, `le
 `lease.expires_utc_ms`, `lease.cancel_requested`, `lease.worker_stop_verified` and
 `lease.exclusive_keys_held`.
 
-Process-creation identity, independent heartbeat threads, hard execution deadlines, progress
-reporting, Windows Job Objects and process-tree cleanup remain the next work package; this
-contract does not claim them.
+## Owned worker supervision
+
+```powershell
+& $Engine supervisor spawn $Db 'job-1' --worker 'host:nsre:4321' --lease-ms 60000 --deadline-ms 120000 --heartbeat-ms 5000
+& $Engine supervisor verify $Db 'job-1'
+```
+
+`supervisor spawn` runs the worker as a child `nsre queue run-one --job ...` process inside
+a Windows Job Object the supervisor owns (`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`), so the whole
+worker tree dies with it. The claim records the spawning process id and its creation time;
+the deadline is measured monotonically and a passing deadline kills the tree, observes the
+exit, and records a verified stop from that observation — not from a text statement.
+`supervisor verify` re-checks the recorded (pid, creation-time) pair against the live system,
+so a reused PID cannot pass for the original worker; it refuses while the process is alive.
+Inside the worker, `run-one --heartbeat-ms N` runs an independent heartbeat thread that
+renews the lease and writes `progress` while the evaluation runs, and `--deadline-ms N`
+turns a late completion into an explicit `DEADLINE_EXCEEDED` failure. The `pause` batch
+operation (50..=30000 ms) exists as a bounded fixture for these tests.
 
 ## Optional desktop session
 

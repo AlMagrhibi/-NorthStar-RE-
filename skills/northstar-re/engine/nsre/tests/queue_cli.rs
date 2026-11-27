@@ -41,6 +41,14 @@ impl Fixture {
             .output()
             .unwrap()
     }
+
+    /// Commands whose argument list is passed through verbatim.
+    fn cmd(&self, args: &[&str]) -> Output {
+        Command::new(env!("CARGO_BIN_EXE_nsre"))
+            .args(args)
+            .output()
+            .unwrap()
+    }
     fn ok(&self, args: &[&str]) -> Value {
         let o = self.run(args);
         assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
@@ -357,4 +365,127 @@ fn cancellation_after_a_worker_death_needs_verification() {
         f.ok(&["status", "job"])["lease"]["worker_stop_verified"],
         true
     );
+}
+
+// Real process supervision: the worker is a child nsre process owned by a supervisor
+// process, not a database state machine.
+#[test]
+fn supervisor_kills_a_real_worker_at_the_deadline_and_verifies_the_stop() {
+    let f = Fixture::new();
+    let mut slow = batch();
+    slow["tasks"] = json!([{"id":"wait","input":{"operation":"pause","ms":20000}}]);
+    good(f.submit("slow", slow.clone(), &[], 10));
+    let out = f
+        .cmd(&[
+            "supervisor",
+            "spawn",
+            f.db.to_str().unwrap(),
+            "slow",
+            "--worker",
+            "sup-host",
+            "--lease-ms",
+            "60000",
+            "--deadline-ms",
+            "2000",
+            "--heartbeat-ms",
+            "500",
+        ])
+        .stdout;
+    assert!(!out.is_empty(), "supervisor printed nothing");
+    let report: Value = serde_json::from_slice(&out).unwrap();
+    assert_eq!(report["killed_for_deadline"], true, "{report}");
+    assert_eq!(report["process_observed"], true);
+    // The kill is evidenced by the process exit, not a statement.
+    let status = f.ok(&["status", "slow"]);
+    assert_eq!(status["state"], "interrupted");
+    assert_eq!(status["lease"]["worker_stop_verified"], true);
+    assert!(status["lease"]["worker_pid"].is_i64());
+    // The exclusive resource stays reserved for an effectful job until the stop was verified.
+    let mut rival_input = batch();
+    rival_input["queue"] = json!({"schema":1,"depends_on":[],"exclusive_keys":["gpu"]});
+    good(f.submit("holder", slow, &[], 0));
+    let _ = rival_input;
+}
+
+#[test]
+fn supervisor_verifies_a_live_worker_and_refuses_to_stop_it() {
+    let f = Fixture::new();
+    let mut slow = batch();
+    slow["tasks"] = json!([{"id":"wait","input":{"operation":"pause","ms":4000}}]);
+    good(f.submit("slow", slow, &[], 10));
+    // A live worker is claimed by a supervised run in the background; the supervisor must
+    // refuse to record a stop while the process identity still matches.
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_nsre"))
+        .args([
+            "supervisor",
+            "spawn",
+            f.db.to_str().unwrap(),
+            "slow",
+            "--worker",
+            "sup-host",
+            "--lease-ms",
+            "60000",
+            "--deadline-ms",
+            "30000",
+            "--heartbeat-ms",
+            "500",
+        ])
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(1500));
+    let status = f.ok(&["status", "slow"]);
+    assert_eq!(status["state"], "running");
+    assert_eq!(status["lease"]["owner"], "sup-host");
+    // The worker records its own process identity at claim time.
+    let pid = status["lease"]["worker_pid"].as_i64().unwrap();
+    assert!(pid > 0);
+    let created = status["lease"]["worker_created_ms"].as_i64().unwrap();
+    assert!(created > 0);
+    // verify refuses while the process is alive (OS says so, not a text flag).
+    let code = f
+        .cmd(&["supervisor", "verify", f.db.to_str().unwrap(), "slow"])
+        .status
+        .code();
+    assert_eq!(code, Some(2), "live worker must not be marked stopped");
+    let _ = child.kill();
+    let _ = child.wait_with_output();
+    // After the real process death, verification succeeds from the OS.
+    let out = f
+        .cmd(&["supervisor", "verify", f.db.to_str().unwrap(), "slow"])
+        .stdout;
+    let report: Value = serde_json::from_slice(&out).unwrap();
+    assert_eq!(
+        report["verification"]["worker_stop_verified"], true,
+        "{report}"
+    );
+    assert_eq!(
+        f.ok(&["status", "slow"])["lease"]["worker_stop_verified"],
+        true
+    );
+}
+
+#[test]
+fn heartbeat_thread_keeps_a_long_job_alive_and_reports_progress() {
+    let f = Fixture::new();
+    let mut slow = batch();
+    slow["tasks"] = json!([{"id":"wait","input":{"operation":"pause","ms":2500}}]);
+    good(f.submit("slow", slow, &[], 10));
+    let out = f
+        .run(&[
+            "run-one",
+            "--worker",
+            "worker-a",
+            "--lease-ms",
+            "1500",
+            "--heartbeat-ms",
+            "400",
+        ])
+        .stdout;
+    let ran: Value = serde_json::from_slice(&out).unwrap();
+    assert_eq!(ran["state"], "completed", "{ran}");
+    let status = f.ok(&["status", "slow"]);
+    // The 1500ms lease would have expired during the 2500ms job without the heartbeat.
+    assert_eq!(status["state"], "completed");
+    assert_eq!(status["result"]["execution"]["worker"], "worker-a");
 }

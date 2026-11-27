@@ -144,7 +144,7 @@ fn handle_mode(
         "capabilities" | "nsre_capabilities" => Ok(json!({
             "schema":1,"producer":{"name":"nsre","version":env!("CARGO_PKG_VERSION")},
             "engines":serde_json::from_str::<Value>(include_str!("engine-registry.json")).expect("embedded registry"),
-            "queue":{"database_schemas":[1,2,3,4],"job_input_schemas":[1,2],"read_status_tool":true,
+            "queue":{"database_schemas":[1,2,3,4,5],"job_input_schemas":[1,2],"read_status_tool":true,
                 "mcp_submit":false,"automatic_recovery":false,"gui_mutations":false},
             "desktop_bridge":{"available":cfg!(windows),"enabled":desktop,"gui_actions_in_queue":false},
             "agent_acceptance":"unverified"

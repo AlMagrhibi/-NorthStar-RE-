@@ -389,6 +389,15 @@ pub fn evaluate(v: &Value) -> io::Result<Value> {
         "isolation-plan" => isolation_plan(v),
         "protocol-check" => schema_check(v, true),
         "config-check" => schema_check(v, false),
+        // Deterministic fixture for supervision tests: a bounded, side-effect-free wait.
+        "pause" => {
+            let ms = v["ms"].as_u64().ok_or_else(|| invalid("ms required"))?;
+            if !(50..=30_000).contains(&ms) {
+                return Err(invalid("pause must be within 50..=30000 ms"));
+            }
+            std::thread::sleep(std::time::Duration::from_millis(ms));
+            Ok(json!({"passed":true,"paused_ms":ms}))
+        }
         "regression-check" => {
             let baseline = v
                 .get("baseline")

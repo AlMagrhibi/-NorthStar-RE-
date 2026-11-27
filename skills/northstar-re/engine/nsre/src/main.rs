@@ -13,6 +13,7 @@ mod pe;
 mod probe;
 mod queue;
 mod rpc;
+mod supervisor;
 use rayon::prelude::*;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -278,6 +279,16 @@ fn main() -> ExitCode {
         }
         if cmd == "collect" {
             return match collect::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        if cmd == "supervisor" {
+            return match supervisor::command(args) {
                 Ok(true) => ExitCode::SUCCESS,
                 Ok(false) => ExitCode::from(2),
                 Err(e) => {

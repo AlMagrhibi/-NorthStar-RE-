@@ -93,3 +93,19 @@ cargo build --release --locked
 | البيئة | Windows 11 x64 · Rust 1.91.1 MSVC |
 | النتيجة | 68 اختبارًا ناجحًا (50 وحدة + 18 CLI/تكامل)، منها 11 جديدة للتصحيحات؛ Clippy نظيف؛ Package PASS |
 | حدود الدليل | QV3-07 (هوية إنشاء العملية، نبض مستقل، مهلة صلبة، Job Objects، قتل عامل حقيقي، تعامل مع تغيّر الساعة) لم يُنفَّذ بعد — بنود الدفعة التالية، لا ادعاء قبول NSO-02/NSO-05 |
+
+## سجل أدلة — Batch 03: تصحيحات A1–A9 + مشرف العامل الأصلي (QV3-07، ADD-003/004/037/038، NSO-02/05/06 جزئيًا)
+
+| الحقل | القيمة |
+|---|---|
+| A1–A2 | heartbeat وcancel_running داخل Transaction مع دليلهما؛ وقت الـlease يُحسب بعد قفل الكتابة (A5 جزئيًا) |
+| A3 | إلغاء ما قبل التقييم يتحقق ذريًا من owner/token/الصلاحية ويحرر الحجز الحصري في نفس المعاملة؛ lease منتهٍ + إلغاء معلّق → العامل يتوقف دون نتيجة |
+| A4 | النشر النهائي يتحقق من owner صراحةً بجانب token والحالة والصلاحية |
+| A6 | عمودا `effectful/effect_verified`: المفاتيح الحصرية تعني أثرًا واقعيًا؛ `retry` يُرفض حتى `interrupt --worker-stopped` ثم `effect-verified` |
+| A7 | v5 هي بوابة الكتابة والتشغيل: submit/claim يرفضان v<5 قبل migrate؛ القراءة تبقى متاحة |
+| A8 | barrier يبدأ السباق حتميًا والثابت الذري هو ما يُختبر لا التوقيت |
+| A9 | حقن فشل الأدلة في heartbeat/cancel/reconcile/finish: لا تغيير جزئي للحالة (وحدة + إعادة الجدول) |
+| B | `src/supervisor.rs`: هوية إنشاء العملية (GetProcessTimes)، حماية PID reuse، Job Object بـKILL_ON_JOB_CLOSE، مهلة monotonic مع قتل شجرة العامل وملاحظة الخروج، `supervisor verify` من حالة OS، نبض مستقل داخل العامل مع progress، `DEADLINE_EXCEEDED` بالساعة الرتيبة، عملية `pause` كـfixture محدود |
+| اختبارات عملية | قتل عامل حقيقي عند المهلة (عملية فعلية) → interrupted + worker_stop_verified من الخروج · رفض إيقاف عامل حي (exit 2) · نبض مستقل يبقي مهمة 2500ms على lease 1500ms حية حتى الاكتمال |
+| أوامر الاختبار | `cargo test --locked` (73 اختبارًا) · `cargo clippy --locked --all-targets -- -D warnings` · `Validate-Package.ps1 -CheckHashes` |
+| حدود الدليل | انهيار المشرف نفسه أثناء تشغيل العامل واختبار إعادة تشغيله لم يُنفذ بعد؛ Job Object limits (ذاكرة/CPU) تُدار عبر governor ولم تُربط بدورة الطابور؛ WISM/SSH/Adaptive Input هي الدفعة التالية |
