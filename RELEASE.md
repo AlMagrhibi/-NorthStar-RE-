@@ -1,6 +1,6 @@
 # Release engineering
 
-The owner authorized initial candidate v11.0.0-rc.2 in .github/release-request.json. A push to main or the exact approved tag runs the complete pipeline. Native Linux/Windows formatting, check, tests, Clippy, build and doctor, package validation, Windows installer lifecycle, dependency audit and license checks must pass before packaging. Only the final publish job has contents:write; pull requests cannot publish. Existing releases are never overwritten. Change the explicit release request for a new owner-authorized candidate.
+The owner authorized initial candidate v11.0.0-rc.2 in .github/release-request.json. A push to main or the exact approved tag runs the complete pipeline. Windows-only native formatting, check, tests, Clippy, build and doctor, package validation, Windows installer lifecycle, dependency audit and license checks must pass before packaging. Only the final publish job has contents:write; pull requests cannot publish. Existing releases are never overwritten. Change the explicit release request for a new owner-authorized candidate.
 
 Pinned action commit SHAs and Rust 1.91.1 are used. cargo-audit is pinned to 0.23.0 with its own locked build. Dependency-review SaaS availability depends on repository plan; locked dependency audit is mandatory independently. Framework licensing remains owner-controlled; no public Pages deployment or visibility change is configured.
 
@@ -11,3 +11,5 @@ A source-only package can be generated with install/Package-Release.ps1 -SourceO
 ## هندسة النشر بالعربية
 
 النشر الأول مرخص كمرشح إصدار فقط، ويعتمد على نجاح الاختبارات والبناء وdoctor ودورة تثبيت Windows وفحص الاعتماديات والتراخيص. لا تعاد كتابة tag أو الإصدارات السابقة. توضح بصمات الحزم وmanifest رقم commit والدليل؛ لا توجد شهادة توقيع تنفيذي. قبول Windows 11 الحقيقي والأيجنتات يظل UNVERIFIED إلى أن توجد سجلات فعلية. إعداد workflow أو رفع السورس وحده لا يثبت نجاح النشر.
+
+Future candidate pipelines run exclusively on Windows, including security and publication. Historical releases retain their original evidence. See [Windows platform decision](docs/architecture/windows-platform.md).

@@ -45,6 +45,14 @@ No new published release or desktop acceptance is implied.
 
 [Implementation and acceptance ledger](skills/northstar-re/references/engineering-validation-lab.md). All ten work items have initial offline Rust helpers on the development branch; full engines and runtime acceptance remain pending. No new release is implied.
 
+## Approved engine architecture and orchestration
+
+See [engine registry and execution contract](skills/northstar-re/references/engine-orchestrator.md). Twelve engine directions approved; bounded parallel offline lab runner candidate; persistent scheduler and live collectors remain planned. No release or desktop acceptance implied.
+
 ## FW-021–FW-025 — operational engineering
 
 [Operational report checks](skills/northstar-re/references/engineering-validation-lab.md) are initial offline Rust foundations. Live load, process isolation, UI diagnostics, security execution and resource collection require separate implementation and acceptance.
+
+## Windows Desktop Control — ADR-NSO-002
+
+[Desktop architecture and acceptance](docs/architecture/desktop-control.md): Win32 window control source candidate; full UI Automation/capture/input and Windows 11 acceptance pending. Preserve twelve engine architecture and integrate as a Runtime Diagnostics capability.

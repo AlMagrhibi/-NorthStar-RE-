@@ -1,3 +1,5 @@
+> **V12 development:** the [unified execution directive](docs/NORTHSTAR-V12-EXECUTION-DIRECTIVE.md) now governs the twelve-engine platform, desktop/session control, FreePi and SSH integration. V12 is not released. Hosted Windows CI [45895240781](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45895240781) passed at `92bd971`; actual Windows 11/FreePi/SSH acceptance remains outstanding. Installation instructions below describe the existing RC2 baseline.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/branding/banner-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="assets/branding/banner-light.svg">
@@ -40,6 +42,8 @@ Discover the actual environment. Preserve originals. Route from evidence. Keep c
 
 ## Architecture overview
 
+**Future platform scope: Windows 11 x64 only.** All automated acceptance jobs for the new architecture run on hosted Windows; actual desktop acceptance is separate. [Platform decision](docs/architecture/windows-platform.md).
+
 ```mermaid
 flowchart TD
  A["Coding agent"] --> B["northstar-re master"]
@@ -55,7 +59,7 @@ flowchart TD
 
 ## Native Rust engine
 
-A modular binary built with Rayon, walkdir, SHA-256, serde_json and SQLite. Bounded batches feed one index writer. Outputs carry completion states; errors and skipped links prevent evidence-grade completeness. There is no bundled decryptor, worker scheduler, compiled plugin SDK or distributed service. [Source and build guide](docs/en/development.md).
+A modular binary built with Rayon, walkdir, SHA-256, serde_json and SQLite. Bounded batches feed one index writer. Outputs carry completion states; errors and skipped links prevent evidence-grade completeness. There is no bundled decryptor, complete worker scheduler, compiled plugin SDK or distributed service. The development branch introduces a candidate offline queue; it is not part of RC2. [Source and build guide](docs/en/development.md).
 
 ## Master skill
 

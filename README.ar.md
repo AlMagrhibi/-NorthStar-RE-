@@ -1,3 +1,5 @@
+> **تطوير V12:** اعتُمد [التوجيه الموحد كاملًا](docs/NORTHSTAR-V12-EXECUTION-DIRECTIVE.md) للمحركات الاثني عشر والتحكم والجلسات وFreePi وSSH. لم يصدر V12 بعد. نجح [CI ويندوز 45895240781](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45895240781) عند `92bd971`؛ قبول Windows 11 وFreePi وSSH الفعلي ما زال مطلوبًا. تعليمات التثبيت أدناه تخص RC2 الحالي.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/branding/banner-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="assets/branding/banner-light.svg">
@@ -39,6 +41,8 @@ NorthStar RE Framework منظومة ذكاء هندسي للتحليل والت�
 | التكامل | تسجيل مهارة وAPI/MCP محلي تجريبي | المضيفون والتوافق الحقيقي غير متحققين |
 
 ## المعمارية
+
+**نطاق التطوير المستقبلي: Windows 11 x64 فقط.** جميع اختبارات المعمارية الجديدة المستضافة على Windows، مع قبول منفصل لسطح المكتب الفعلي. [قرار المنصة](docs/architecture/windows-platform.md).
 
 ```mermaid
 flowchart TD

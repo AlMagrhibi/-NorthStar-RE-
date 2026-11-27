@@ -1,9 +1,21 @@
 //! Read-only inventory prototype. Never loads or executes target files.
+mod batch;
+mod collect;
+mod context;
+#[cfg(windows)]
+mod desktop;
+mod desktop_api;
 mod framework;
+#[cfg(windows)]
+mod governor;
 mod index;
 mod lab;
+mod pe;
 mod probe;
+mod queue;
 mod rpc;
+mod session;
+mod supervisor;
 use rayon::prelude::*;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -232,10 +244,100 @@ fn main() -> ExitCode {
     if let Some(cmd) = args.next().and_then(|x| x.into_string().ok()) {
         if cmd == "--help" || cmd == "help" {
             println!(
-                "nsre 0.3.0: scan index export diff probe analyze {}",
+                "nsre 0.3.0: scan index export diff probe analyze batch engines queue desktop collect governed-batch session supervisor {}",
                 framework::COMMANDS.join(" ")
             );
             return ExitCode::SUCCESS;
+        }
+        if cmd == "engines" {
+            if args.next().is_some() {
+                eprintln!("usage: nsre engines");
+                return ExitCode::FAILURE;
+            }
+            print!("{}", include_str!("engine-registry.json"));
+            return ExitCode::SUCCESS;
+        }
+        #[cfg(windows)]
+        if cmd == "desktop" {
+            return match desktop::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        #[cfg(windows)]
+        if cmd == "governed-batch" {
+            return match governor::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        if cmd == "collect" {
+            return match collect::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        if cmd == "context" {
+            return match context::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        if cmd == "winsessions" {
+            return match session::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        if cmd == "supervisor" {
+            return match supervisor::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        if cmd == "queue" {
+            return match queue::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        if cmd == "batch" {
+            return match batch::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
         }
         if framework::COMMANDS.contains(&cmd.as_str()) {
             return match framework::command(&cmd, args) {

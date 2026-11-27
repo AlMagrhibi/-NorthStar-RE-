@@ -13,7 +13,8 @@ foreach ($f in $all) {
 }
 $meta=Get-Content -LiteralPath (Join-Path $Root 'framework.json') -Raw -Encoding UTF8|ConvertFrom-Json
 $request=Get-Content -LiteralPath (Join-Path $Root '.github/release-request.json') -Raw -Encoding UTF8|ConvertFrom-Json
-if ($meta.generation -ne 11 -or $meta.engine_version -ne '0.3.0' -or $meta.master -ne 'northstar-re' -or $meta.specialists -ne 52 -or $meta.tool_catalog_entries -ne 108 -or $meta.python_runtime_required -or $request.tag -ne ('v'+$meta.version)) { throw 'Framework/release metadata drift' }
+if ($meta.generation -ne 12 -or $meta.engine_version -ne '0.3.0' -or $meta.master -ne 'northstar-re' -or $meta.specialists -ne 52 -or $meta.tool_catalog_entries -ne 108 -or $meta.python_runtime_required -or $request.tag -ne ('v'+$meta.version)) { throw 'Framework/release metadata drift' }
+if ($meta.build_channel -eq 'development' -and $request.authorized) { throw 'A development build channel must not carry publication authorization' }
 $master=Join-Path $Root 'skills/northstar-re'
 $skills=@(Get-ChildItem -LiteralPath (Join-Path $master 'specialists') -Directory)
 if ($skills.Count -ne 52) { throw "Expected 52 specialists; found $($skills.Count)" }

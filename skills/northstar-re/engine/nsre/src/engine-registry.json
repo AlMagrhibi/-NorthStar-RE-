@@ -1,0 +1,181 @@
+{
+  "schema": 1,
+  "scope": "candidate capability registry; batch operations offline; queue supports reviewed local file collection",
+  "engines": [
+    {
+      "id": "native-core",
+      "name": "Native Core",
+      "foundation": "existing-cli-and-offline-candidate",
+      "batch_operations": [
+        "content-digest"
+      ],
+      "complete": false,
+      "shared_collect_cli": [
+        "collect"
+      ],
+      "collect_scope": "selected local file hashes and header hints; no restore",
+      "queue_collect_input_schema": 2,
+      "governed_batch_cli": "governed-batch"
+    },
+    {
+      "id": "binary-intelligence",
+      "name": "Binary Intelligence",
+      "foundation": "existing-probe-and-offline-candidate",
+      "batch_operations": [
+        "binary-header",
+        "pe-layout"
+      ],
+      "complete": false,
+      "shared_collect_cli": [
+        "collect"
+      ],
+      "collect_scope": "selected local file hashes and header hints; no restore",
+      "queue_collect_input_schema": 2
+    },
+    {
+      "id": "semantic-intelligence",
+      "name": "Semantic Intelligence",
+      "foundation": "offline-graph-candidate",
+      "batch_operations": [
+        "semantic-reachability"
+      ],
+      "complete": false
+    },
+    {
+      "id": "algorithm-intelligence",
+      "name": "Algorithm Intelligence",
+      "foundation": "offline-lab",
+      "batch_operations": [
+        "algorithm-catalog",
+        "sha256-kat",
+        "assembly-summary"
+      ],
+      "complete": false
+    },
+    {
+      "id": "data-engineering",
+      "name": "Data Engineering",
+      "foundation": "offline-lab",
+      "batch_operations": [
+        "json-roundtrip",
+        "config-check"
+      ],
+      "complete": false
+    },
+    {
+      "id": "runtime-diagnostics",
+      "name": "Runtime Diagnostics",
+      "foundation": "offline-lab-and-native-desktop-candidate",
+      "batch_operations": [
+        "isolation-plan",
+        "process-report",
+        "ui-report"
+      ],
+      "complete": false,
+      "desktop_cli": [
+        "list",
+        "inspect",
+        "restore",
+        "focus",
+        "move",
+        "resize",
+        "maximize",
+        "click",
+        "pointer",
+        "type",
+        "type-stdin",
+        "key",
+        "controls",
+        "invoke",
+        "capture",
+        "watch",
+        "right-click",
+        "middle-click",
+        "double-click",
+        "scroll",
+        "drag",
+        "capabilities",
+        "capture-wgc",
+        "watch-wgc"
+      ],
+      "desktop_acceptance": "unverified",
+      "gui_mutations_in_queue": false,
+      "desktop_implementation": "Win32 input/window management, bounded UIA control tree and InvokePattern, isolated PrintWindow and WGC PNG frames; Windows 11/FreePi acceptance pending",
+      "desktop_agent_bridge": "mcp/api --desktop-control; explicit selected-window tools; no GUI queue actions",
+      "governed_batch_cli": "governed-batch"
+    },
+    {
+      "id": "compatibility",
+      "name": "Compatibility",
+      "foundation": "offline-lab",
+      "batch_operations": [
+        "protocol-check"
+      ],
+      "complete": false
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "foundation": "existing-gates",
+      "batch_operations": [
+        "security-regression-report"
+      ],
+      "complete": false,
+      "governed_batch_cli": "governed-batch"
+    },
+    {
+      "id": "performance",
+      "name": "Performance",
+      "foundation": "existing-benchmark",
+      "batch_operations": [
+        "load-report",
+        "resource-report"
+      ],
+      "complete": false,
+      "governed_batch_cli": "governed-batch"
+    },
+    {
+      "id": "knowledge",
+      "name": "Knowledge",
+      "foundation": "offline-lab",
+      "batch_operations": [
+        "evidence-check"
+      ],
+      "complete": false,
+      "shared_collect_cli": [
+        "collect"
+      ],
+      "collect_scope": "selected local file hashes and header hints; no restore",
+      "queue_collect_input_schema": 2
+    },
+    {
+      "id": "recovery",
+      "name": "Recovery",
+      "foundation": "partial-and-offline-candidate",
+      "batch_operations": [
+        "checkpoint-compare"
+      ],
+      "complete": false,
+      "shared_collect_cli": [
+        "collect"
+      ],
+      "collect_scope": "selected local file hashes and header hints; no restore",
+      "queue_collect_input_schema": 2
+    },
+    {
+      "id": "quality-assurance",
+      "name": "Quality Assurance",
+      "foundation": "offline-lab",
+      "batch_operations": [
+        "gate-summary",
+        "regression-check"
+      ],
+      "complete": false,
+      "shared_collect_cli": [
+        "collect"
+      ],
+      "collect_scope": "selected local file hashes and header hints; no restore",
+      "queue_collect_input_schema": 2
+    }
+  ]
+}

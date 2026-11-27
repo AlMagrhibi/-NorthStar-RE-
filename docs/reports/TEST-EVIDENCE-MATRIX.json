@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "generated_utc": "2026-11-27T01:51:24Z",
+  "commit_sha": "28841586ac02e7dfb59b1894b775af2e85760fce",
+  "executable_sha256": "f48a5a6ae3dc51ed75137bdaa1868b1016d2267cc3bec904a302d3e39320c5c8",
+  "environment_reference": {
+    "hostname": "NSKM",
+    "os": "Microsoft Windows 11 Pro",
+    "os_display_version": "26H2",
+    "os_build": "10.0.26300",
+    "edition_id": "Professional",
+    "device": "Dell Latitude 5320",
+    "cpu": "Intel i5-1145G7 @ 2.60GHz (4 cores / 8 logical)",
+    "ram_gb": 15.7,
+    "rust_host_target": "x86_64-pc-windows-msvc",
+    "rustc": "1.91.1",
+    "shell": "Git Bash (MSYS2/MINGW64) on native Windows; PowerShell 7 for management",
+    "native_windows_not_wsl": true,
+    "session_id": 0,
+    "session_classification": "session-zero (SSH/service context)",
+    "freepi_pid": 13472,
+    "cwd": "C:/Users/kalma"
+  },
+  "groups": {
+    "1_native_windows_11_tests": {
+      "ran_on": "local Windows 11 (this machine, native, not WSL/VM)",
+      "commit_sha": "28841586ac02e7dfb59b1894b775af2e85760fce",
+      "executable_sha256": "f48a5a6ae3dc51ed75137bdaa1868b1016d2267cc3bec904a302d3e39320c5c8",
+      "os_build": "10.0.26300",
+      "session_id": 0,
+      "result": {
+        "unit_tests": "56 passed; 0 failed",
+        "queue_cli": "3 passed; 0 failed",
+        "engine_cli": "2 passed; 0 failed",
+        "queue_cli_process": "13 passed; 0 failed",
+        "framework_cli": "3 passed; 0 failed",
+        "total": 77,
+        "clippy": "clean (-D warnings)"
+      },
+      "evidence_commands": [
+        "cargo test --locked",
+        "cargo clippy --locked --all-targets -- -D warnings",
+        "nsre winsessions desktop-authorization"
+      ],
+      "build_profile": "debug",
+      "timestamp_utc": "2026-11-27T01:51:24Z"
+    },
+    "2_github_hosted_ci_tests": {
+      "ran_on": "GitHub windows-2022 runner (NOT this machine)",
+      "latest_run": {
+        "run_id": 45920927197,
+        "commit_sha": "28841586ac02e7dfb59b1894b775af2e85760fce",
+        "native": "success",
+        "security": "success",
+        "verified_windows_distributions": "refused by design (v11.0.0-rc.2 protection)",
+        "url": "https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45920927197",
+        "note": "CI for the current batch will be appended after push; this run belongs to 2884158 exactly."
+      }
+    },
+    "3_interactive_desktop_tests": {
+      "ran_on": "local Windows 11, Session 0 (service/SSH context)",
+      "commit_sha": "28841586ac02e7dfb59b1894b775af2e85760fce",
+      "executable_sha256": "f48a5a6ae3dc51ed75137bdaa1868b1016d2267cc3bec904a302d3e39320c5c8",
+      "session_id": 0,
+      "result": {
+        "wism_01_session_zero_detection": "PASS",
+        "wism_02_interactive_discovery": "PASS (console session 1, user NSKM)",
+        "wism_11_lock_state": "PASS (console=unlocked; own session state read attempted)",
+        "session_routing_refusal": "PASS (SESSION_ROUTING_REFUSED: NON_INTERACTIVE_CONTEXT)",
+        "desktop_authorization_fail_closed": "PASS (permitted=false with reason NON_INTERACTIVE_CONTEXT)",
+        "interactive_worker_in_session_1": "UNVERIFIED (next work package)"
+      },
+      "limit": "No interactive desktop actions were executed because this process runs in Session 0; those require the authorized interactive worker in session 1 (next work package)"
+    },
+    "4_freepi_ssh_end_to_end": {
+      "ran_on": "FreePi CLI 0.6.28 inside Git Bash on this machine, SSH/service context",
+      "commit_sha": "28841586ac02e7dfb59b1894b775af2e85760fce",
+      "result": {
+        "github_mcp_binding": "PASS (57 tools, verified earlier)",
+        "northstar_session_context_from_freepi": "PASS (session-zero, 3 SSH markers)",
+        "northstar_desktop_end_to_end": "UNVERIFIED (requires interactive worker in session 1)"
+      }
+    }
+  },
+  "separation_note": "Local Windows 11 results and GitHub Actions results are never merged; CI runs on windows-2022 runner images, not on this reference machine.",
+  "build_profile": "debug (cargo test/build default profile; NOT release)",
+  "executable_path": "skills/northstar-re/engine/nsre/target/debug/nsre.exe",
+  "test_binary_sha256": {
+    "engine_cli-231be54df7affb8d.exe": "\\f6d64216bd0fd8ccff8d47474209649caca219e6f04f576840ac46d66fb298e1",
+    "engine_cli-a24b636bed3e358e.exe": "\\5d0ed099502bf0575e101a3632276c97b73b699c0a142012350cada9f0b2ce81",
+    "framework_cli-ed2d29e327af7507.exe": "\\e2cb8a13780e7f804b3e5c77ecfedacb27931b66c99a61952a7b9b0c82a642df",
+    "framework_cli-f96ccb526524b381.exe": "\\b0d7512ee3ca9e1e6335142d055d151cc25e8c0e19ead04312a44c476b31e718",
+    "queue_cli-4746f026de15fb48.exe": "\\e5867651bf8afbd62480e777e0864a7f2facdfbf23fa1c0711138abe10a1e9c4",
+    "queue_cli-8f441d754199656d.exe": "\\e7549f6f2cfc745b06ac5cc44d2d717e9229c755e30f19b7d4ddcdcf36fc39f1"
+  },
+  "note_on_previous_hashes": "Two earlier executable hashes appeared in this matrix before this clarification: 053b003e… (debug build at commit 0785d78, before the clippy fixes) and f48a5a6a… (debug build at the current commit after the clippy fixes). Both are DEBUG builds of different source states; neither is a release build. Evidence for commit X is only valid at commit X."
+}

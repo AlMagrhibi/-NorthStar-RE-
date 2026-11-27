@@ -1,5 +1,7 @@
 # Installation, upgrade and removal
 
+V12 is under development under the [unified directive](docs/NORTHSTAR-V12-EXECUTION-DIRECTIVE.md). No V12 installation or agent-update package is accepted yet. The commands below apply to the existing verified RC2 package. Keep its backup for rollback; a development branch checkout is not a final release.
+
 [Agent-first guide](INSTALL-FOR-AGENTS.md) · [Requirements and first run](docs/en/getting-started.md) · [التعليمات العربية](docs/ar/getting-started.md)
 
 ## Ready-to-install Windows edition

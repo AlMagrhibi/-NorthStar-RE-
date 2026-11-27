@@ -9,3 +9,5 @@ CI rejects missing/unapproved declared license expressions using scripts/Check-L
 ترخيص المنظومة لم يعتمد كترخيص مفتوح المصدر. تراخيص الاعتماديات مستقلة ولا تمنح حق إعادة توزيع المشروع. يلزم الحفاظ على إشعارات upstream ومراجعة الحقوق قبل التوزيع خارج النطاق الخاص المصرح.
 
 [Exact locked dependency notice files](third-party/README.md) are copied unchanged from crate distributions. SQLite is bundled through libsqlite3-sys; its public-domain provenance and upstream notices must be retained and reviewed as applicable.
+
+Windows desktop integration additionally uses the Microsoft windows crate for UI Automation/COM and png for bounded image encoding. Their locked transitive dependencies and unchanged upstream license texts are included under third-party. No external desktop executable is bundled.

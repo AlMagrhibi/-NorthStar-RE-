@@ -1,5 +1,6 @@
 {
-  "authorized": true,
-  "tag": "v11.0.0-rc.2",
-  "basis": "Owner execution directive: publish only after all mandatory CI, Windows executable and installer gates pass; retain prerelease status until actual Windows 11 and agent acceptance."
+  "authorized": false,
+  "channel": "development",
+  "tag": "v12.0.0-dev.1",
+  "basis": "V12 development build. No publication is authorized: the final release requires owner approval after the unified acceptance gates pass. v11.0.0-rc.2 remains the historical installation baseline and rollback point."
 }

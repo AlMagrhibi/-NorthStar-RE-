@@ -1,0 +1,38 @@
+# أدلة استكمال ومراجعة حدود الجامع — 2026-11-26
+
+قرأ هذا التنفيذ `NORTHSTAR-RE-V11-MASTER-HANDOVER.md` كاملًا (434 سطرًا). بدأ عند `87f1b977` وأصلح عائق parser في `8d9a1a4529a0f533bd81d173c21475e8cefc27ff`؛ [CI 45871621232](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45871621232) success لكل Native/Security/Verified distributions، والنشر skipped.
+
+أثناء التنفيذ تقدم الفرع بالتزامن إلى `96d5424` ثم `9575db5` ثم `3c61558`. رُفض تحديث HEAD المتوقع؛ جُلب السورس الجديد واعتُمد عقده للجدولة وواجهة الأيجنت، وأُعيد دمج التصحيحات المتوافقة دون force push أو استبدال السورس بتطبيق منافس. وصف تلك التحديثات في [تقرير الاستكمال](WORK-CONTINUATION-2026-11-26-AR.md).
+
+## التصحيحات الإضافية
+
+- فحص أسلاف جذر المصدر قبل canonicalization؛ كانت canonicalization تخفي رابطًا وسيطًا في المسار. يُعاد الفحص وقت التشغيل أيضًا. تظل سباقات filesystem المتعمدة خارج الضمان الحالي.
+- رفض DB داخل شجرة المصدر عند submission والتنفيذ حتى لا يكتب العامل في الشجرة التي يعلن قراءتها فقط.
+- التحقق البنيوي من relative paths وexpected SHA-256 قبل enqueue، مع الحفاظ على التحقق وقت قراءة الملفات. اختبار traversal السابق صار يثبت رفض الإدراج المبكر وعدم وجود الوظيفة.
+- فحص input digest قبل استخدام اعتمادياته، وتسجيل producer/version/input digest وبصمات نتائج الاعتماديات دون تضمين تقارير الآباء تكراريًا.
+- إعادة المحاولة تتحقق من اتساق الحالة والنتيجة السابقة بالإضافة لبصمة المدخل. عقد queue الموجود داخل input يحفظ الاعتماديات والأقفال عند إعادة submission.
+
+## الأدلة القابلة للتكرار
+
+ملف `tests/queue_cli.rs` ينشئ ملفات اصطناعية وDB مؤقتة بمسار يحتوي مسافات، ويشغل binary الحقيقي:
+
+| الحالة | الإثبات |
+|---|---|
+| جامع ثم تابع أعلى أولوية | الجامع ينفذ أولًا؛ SHA-256 فعلي؛ بصمة نتيجة الجامع مربوطة بتقرير التابع |
+| تغيير المصدر بعد submission | تُحسب bytes الجديدة ويُفشل التابع؛ لا إعادة استخدام cache |
+| traversal وDB داخل root وجذر نسبي | exit 1 دون إدراج وظيفة قابلة للتنفيذ |
+| ثمانية worker processes | ثمانية IDs مختلفة ونتائج completed محفوظة |
+| result فاسد في parent | exit 2 للتابع وfailed دون تنفيذ عمليته |
+| رابط في ancestor أو استبدال root برابط | اختبار Unix تكميلي يرفض المصدر دون تغييره؛ لا يدعي اختبار junction على Windows |
+
+نجحت fmt/check/test/Clippy/release محليًا على Linux مع Rust 1.91.1 قبل مزامنة أحدث commit؛ تُعاد مجموعة الفحوص على النسخة المدمجة. فحص PowerShell والبصمات وWindows CI على commit الباتش هما شرط CI_VERIFIED، وتوثق نتيجتهما بعد اكتمالهما.
+
+## الحدود الحالية
+
+لا تساوي هذه الإضافة اكتمال المحركات الـ12 أو قبول FreePi. جميع complete=false باقية. لا يزال supervision/leases/cancel الجاري وJob Objects والميزانيات المقاسة وUIA/capture واختبارات Windows 11/FreePi غير مكتملة. البيئة المتاحة Linux ولا يوجد اتصال متاح بجهاز Windows للمستخدم؛ لا دليل تفاعلي أو G04/G05 أو تثبيت على جهازه. لا merge أو tag أو نشر إصدار نهائي قبل إغلاق جميع البوابات.
+
+## توسعة Binary Intelligence
+
+أضيف [محلل PE محدود](../architecture/bounded-pe-layout.md) لـPE32/PE32+ وجداول الأقسام وربط فعلي بجامع الملفات وbatch registry. يتحقق من حدود offsets والأقسام والمحاذاة والتداخل، مع اختبارات x86/x64 وtruncation وoverflow وnegative fixtures. خيار require_pe_layout يميز نجاح حساب البصمة عن نجاح تحليل البنية؛ full_format_validated=false محفوظة. فحص Windows يقرأ nsre.exe المبني فعليًا ويقارن SHA-256 مستقلًا. ليست هذه imports/exports/CLR أو Authenticode أو قبول loader، ولا يغلق المحرك كاملًا.
+
+على السورس المدمج بعد `3c61558` وتصحيحات النطاق ثم إضافة PE: نجحت محليًا Rust 1.91.1 وfmt/check/test/Clippy/release؛ 26 unit + 3 engine_cli + 2 framework_cli + 5 queue_cli + 4 security_regression = 40 اختبارًا فريدًا على Linux. منها اختبار reparse إضافي خاص بـUnix؛ لا تنقل هذا العدد إلى Windows دون سجله. فحوص الإصدار والسطح التفاعلي ما زالت مستقلة.

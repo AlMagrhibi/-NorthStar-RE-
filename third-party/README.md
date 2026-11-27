@@ -50,3 +50,28 @@ Locked upstream license/notice files copied unchanged. No framework rights grant
 | windows-link | 0.2.1 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
 | windows-sys | 0.61.2 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
 | zmij | 1.0.23 | MIT | LICENSE-MIT |
+
+Additional Windows desktop dependencies (locked):
+
+| Crate | Version | Declared license | Included notices |
+|---|---|---|---|
+| adler2 | 2.0.1 | 0BSD OR MIT OR Apache-2.0 | LICENSE-0BSD, LICENSE-APACHE, LICENSE-MIT |
+| crc32fast | 1.5.6 | MIT OR Apache-2.0 | LICENSE-APACHE, LICENSE-MIT |
+| fdeflate | 0.3.7 | MIT OR Apache-2.0 | LICENSE-APACHE, LICENSE-MIT |
+| flate2 | 1.1.11 | MIT OR Apache-2.0 | LICENSE-APACHE, LICENSE-MIT |
+| miniz_oxide | 0.8.9 | MIT OR Zlib OR Apache-2.0 | LICENSE, LICENSE-APACHE.md, LICENSE-MIT.md, LICENSE-ZLIB.md |
+| miniz_oxide | 0.9.1 | MIT OR Zlib OR Apache-2.0 | LICENSE, LICENSE-APACHE.md, LICENSE-MIT.md, LICENSE-ZLIB.md |
+| png | 0.18.1 | MIT OR Apache-2.0 | LICENSE-APACHE, LICENSE-MIT |
+| simd-adler32 | 0.3.10 | MIT | LICENSE.md |
+| syn | 2.0.119 | MIT OR Apache-2.0 | LICENSE-APACHE, LICENSE-MIT |
+| windows | 0.62.2 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
+| windows-collections | 0.3.2 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
+| windows-core | 0.62.2 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
+| windows-future | 0.3.2 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
+| windows-implement | 0.60.2 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
+| windows-interface | 0.59.3 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
+| windows-numerics | 0.3.1 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
+| windows-result | 0.4.1 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
+| windows-strings | 0.5.1 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
+| windows-threading | 0.2.1 | MIT OR Apache-2.0 | license-apache-2.0, license-mit |
+| zlib-rs | 0.6.9 | Zlib | LICENSE |

@@ -2,7 +2,7 @@ name: NorthStar RE CI
 on:
   push:
     branches: [main]
-    tags: ['v11.*']
+    tags: ['v11.*', 'v12.*']
   pull_request:
   workflow_dispatch:
 permissions:
@@ -12,12 +12,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   native:
-    name: Native (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, windows-2022]
-    runs-on: ${{ matrix.os }}
+    name: Native (windows-2022)
+    runs-on: windows-2022
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -42,7 +38,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
-          name: evidence-${{ matrix.os }}
+          name: evidence-windows-2022
           path: ${{ runner.temp }}/native-reports
           if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -53,7 +49,7 @@ jobs:
           if-no-files-found: error
   security:
     name: Security and licenses
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -63,8 +59,8 @@ jobs:
       - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         id: audit-cache
         with:
-          path: ~/.cargo/bin/cargo-audit
-          key: linux-cargo-audit-0.23.0-rust-1.91.1
+          path: ~/.cargo/bin/cargo-audit.exe
+          key: windows-cargo-audit-0.23.0-rust-1.91.1
       - if: steps.audit-cache.outputs.cache-hit != 'true'
         run: cargo install cargo-audit --version 0.23.0 --locked
       - name: Audit locked dependencies and licenses
@@ -106,8 +102,18 @@ jobs:
       - name: Assemble and independently verify both archives
         shell: pwsh
         run: |
-          $tag=(Get-Content .github/release-request.json -Raw | ConvertFrom-Json).tag
-          ./install/Package-Release.ps1 -Tag $tag -Output "${{ runner.temp }}/release-assets" -Reports "${{ runner.temp }}/release-reports"
+          $request=Get-Content .github/release-request.json -Raw | ConvertFrom-Json
+          $meta=Get-Content framework.json -Raw | ConvertFrom-Json
+          $expected="v$($meta.version)"
+          if ($request.tag -ne $expected) { throw "Release request tag '$($request.tag)' does not match the tree generation '$expected'; refusing to publish a stale tag" }
+          if ($request.tag -eq 'v11.0.0-rc.2') { throw 'v11.0.0-rc.2 is the historical installation baseline and must never be rebuilt or republished' }
+          # Development packages are built and verified as artifacts; they are never published.
+          if ($request.channel -eq 'development') {
+            Write-Host "Development package for ${expected}: built as artifact only, publication not authorized"
+          } elseif (!$request.authorized) {
+            throw 'No authorized release request'
+          }
+          ./install/Package-Release.ps1 -Tag $request.tag -Output "${{ runner.temp }}/release-assets" -Reports "${{ runner.temp }}/release-reports" -Development:($request.channel -eq 'development')
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: verified-release-assets
@@ -115,9 +121,9 @@ jobs:
           if-no-files-found: error
   publish:
     name: Publish authorized candidate
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v11.'))
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v11.') || startsWith(github.ref, 'refs/tags/v12.'))
     needs: [package]
-    runs-on: ubuntu-24.04
+    runs-on: windows-2022
     permissions:
       contents: write
     steps:
@@ -135,9 +141,14 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           $request=Get-Content .github/release-request.json -Raw | ConvertFrom-Json
-          if (!$request.authorized -or $request.tag -notmatch '^v11\.[0-9]+\.[0-9]+-rc\.[0-9]+$') { throw 'No authorized candidate tag' }
+          if (!$request.authorized) { throw 'Publication is not authorized by release-request.json' }
+          if ($request.channel -eq 'development') { throw 'Development builds are never published' }
+          if ($request.tag -notmatch '^v1[12]\.[0-9]+\.[0-9]+-rc\.[0-9]+$') { throw 'No authorized release-candidate tag' }
           $tag=if ($env:GITHUB_REF -like 'refs/tags/*') {$env:GITHUB_REF -replace '^refs/tags/',''} else {$request.tag}
           if ($tag -ne $request.tag) { throw 'Tag not approved by release request' }
+          $meta=Get-Content framework.json -Raw | ConvertFrom-Json
+          if ($tag -ne "v$($meta.version)") { throw "Requested tag '$tag' does not match the tree generation 'v$($meta.version)'" }
+          if ($tag -eq 'v11.0.0-rc.2') { throw 'v11.0.0-rc.2 is the historical baseline; never republish it' }
           gh release view $tag --json tagName 2>$null
           if ($LASTEXITCODE -eq 0) { Write-Host 'Existing release retained; no overwrite'; exit 0 }
           $manifest=Get-Content release-assets/release-manifest.json -Raw | ConvertFrom-Json
@@ -147,5 +158,6 @@ jobs:
             $hash=$Matches[1]; $name=$Matches[2]
             if ((Get-FileHash (Join-Path release-assets $name) -Algorithm SHA256).Hash.ToLowerInvariant() -ne $hash) { throw 'Artifact hash mismatch' }
           }
-          gh release create $tag ./release-assets/* --target $env:GITHUB_SHA --prerelease --title "NorthStar RE Framework V11 — $tag" --notes-file docs/RELEASE-NOTES-AR.md
+          $assets=@(Get-ChildItem -LiteralPath release-assets -File | ForEach-Object FullName)
+          gh release create $tag @assets --target $env:GITHUB_SHA --prerelease --title "NorthStar RE Framework V11 — $tag" --notes-file docs/RELEASE-NOTES-AR.md
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }

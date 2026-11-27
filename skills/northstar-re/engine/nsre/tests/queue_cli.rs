@@ -1,0 +1,491 @@
+//! Process-level queue fixtures. Synthetic files only; no desktop or agent claims.
+use rusqlite::Connection;
+use serde_json::{json, Value};
+use std::{
+    fs,
+    path::PathBuf,
+    process::{Command, Output},
+    sync::atomic::{AtomicU64, Ordering},
+    time::{SystemTime, UNIX_EPOCH},
+};
+
+/// Fixtures from parallel tests in the same process share a pid, so the counter is
+/// what keeps their temporary directories distinct when the clock is too coarse.
+static FIXTURE_SEQ: AtomicU64 = AtomicU64::new(0);
+struct Fixture {
+    root: PathBuf,
+    db: PathBuf,
+}
+impl Fixture {
+    fn new() -> Self {
+        let root = std::env::temp_dir().join(format!(
+            "nsre queue fixture-{}-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos(),
+            FIXTURE_SEQ.fetch_add(1, Ordering::SeqCst)
+        ));
+        fs::create_dir(&root).unwrap();
+        let db = root.join("jobs.sqlite");
+        let f = Self { root, db };
+        f.ok(&["init"]);
+        f
+    }
+    fn run(&self, args: &[&str]) -> Output {
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_nsre"));
+        cmd.args(["queue", args[0]])
+            .arg(&self.db)
+            .args(&args[1..])
+            .output()
+            .unwrap()
+    }
+
+    /// Commands whose argument list is passed through verbatim.
+    fn cmd(&self, args: &[&str]) -> Output {
+        Command::new(env!("CARGO_BIN_EXE_nsre"))
+            .args(args)
+            .output()
+            .unwrap()
+    }
+    fn ok(&self, args: &[&str]) -> Value {
+        let o = self.run(args);
+        assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+        serde_json::from_slice(&o.stdout).unwrap_or(Value::Null)
+    }
+    fn submit(&self, id: &str, mut input: Value, deps: &[&str], priority: u32) -> Output {
+        let p = self.root.join("input.json");
+        // Keep any scheduling fields the caller set (exclusive keys) and only pin dependencies.
+        let mut schedule = input
+            .get("queue")
+            .cloned()
+            .unwrap_or_else(|| json!({"schema":1}));
+        schedule["schema"] = json!(1);
+        schedule["depends_on"] = json!(deps);
+        input["queue"] = schedule;
+        fs::write(&p, input.to_string()).unwrap();
+        self.run(&[
+            "submit",
+            id,
+            p.to_str().unwrap(),
+            &priority.to_string(),
+            "2",
+            "--reviewed-redacted",
+        ])
+    }
+}
+impl Drop for Fixture {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.root);
+    }
+}
+fn batch() -> Value {
+    json!({"schema":1,"tasks":[{"id":"data","input":{"operation":"json-roundtrip","data":1}}]})
+}
+fn good(o: Output) {
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+}
+#[test]
+fn queued_collection_observes_changes_and_blocks_dependents() {
+    let f = Fixture::new();
+    let source = f.root.join("source");
+    fs::create_dir(&source).unwrap();
+    fs::write(source.join("a.txt"), b"abc").unwrap();
+    let expected = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+    let collection = json!({"schema":2,"kind":"collect","root":source,"manifest":{"schema":1,"files":[{"path":"a.txt","expected_sha256":expected}]}});
+    good(f.submit("collect", collection.clone(), &[], 0));
+    good(f.submit("after", batch(), &["collect"], 100));
+    assert_eq!(f.ok(&["run-one"])["id"], "collect");
+    assert_eq!(f.ok(&["run-one"])["id"], "after");
+    let parent = f.ok(&["status", "collect"]);
+    let child = f.ok(&["wait", "after", "0"]);
+    assert_eq!(parent["result"]["results"][0]["hash_recomputed"], true);
+    assert_eq!(parent["result"]["results"][0]["sha256"], expected);
+    assert_eq!(
+        child["result"]["queue_provenance"]["dependencies"][0]["result_sha256"],
+        parent["result_sha256"]
+    );
+    good(f.submit("changed", collection, &[], 0));
+    good(f.submit("blocked", batch(), &["changed"], 100));
+    fs::write(source.join("a.txt"), b"different").unwrap();
+    assert_eq!(f.run(&["run-one"]).status.code(), Some(2));
+    let changed = f.ok(&["status", "changed"]);
+    assert_eq!(changed["state"], "failed");
+    assert_ne!(changed["result"]["results"][0]["sha256"], expected);
+    assert_eq!(f.run(&["run-one"]).status.code(), Some(2));
+    assert_eq!(f.ok(&["status", "blocked"])["state"], "failed");
+    assert_eq!(f.run(&["wait", "blocked", "0"]).status.code(), Some(2));
+    assert_eq!(fs::read(source.join("a.txt")).unwrap(), b"different");
+}
+#[test]
+fn collector_contract_rejects_escape_and_database_in_source() {
+    let f = Fixture::new();
+    let source = f.root.join("source");
+    fs::create_dir(&source).unwrap();
+    let mut input = json!({"schema":2,"kind":"collect","root":source,"manifest":{"schema":1,"files":[{"path":"../outside"}]}});
+    assert_eq!(
+        f.submit("escape", input.clone(), &[], 50).status.code(),
+        Some(1)
+    );
+    input["manifest"]["files"][0]["path"] = json!("a.txt");
+    input["root"] = json!(f.root);
+    assert_eq!(
+        f.submit("db-in-source", input.clone(), &[], 50)
+            .status
+            .code(),
+        Some(1)
+    );
+    input["root"] = json!("relative");
+    assert_eq!(f.submit("relative", input, &[], 50).status.code(), Some(1));
+    assert_eq!(f.ok(&["run-one"])["state"], "idle");
+}
+#[test]
+fn concurrent_processes_claim_distinct_durable_jobs() {
+    let f = Fixture::new();
+    for n in 0..8 {
+        good(f.submit(&format!("job-{n}"), batch(), &[], 50));
+    }
+    let children: Vec<_> = (0..8)
+        .map(|_| {
+            Command::new(env!("CARGO_BIN_EXE_nsre"))
+                .args(["queue", "run-one"])
+                .arg(&f.db)
+                .stdout(std::process::Stdio::piped())
+                .spawn()
+                .unwrap()
+        })
+        .collect();
+    let mut ids = std::collections::BTreeSet::new();
+    for child in children {
+        let out = child.wait_with_output().unwrap();
+        assert!(out.status.success());
+        let v: Value = serde_json::from_slice(&out.stdout).unwrap();
+        assert!(ids.insert(v["id"].as_str().unwrap().to_owned()));
+    }
+    assert_eq!(ids.len(), 8);
+    for id in ids {
+        assert_eq!(f.ok(&["status", &id])["state"], "completed");
+    }
+    assert_eq!(f.ok(&["run-one"])["state"], "idle");
+}
+#[test]
+fn corrupted_dependency_fails_before_child_execution() {
+    let f = Fixture::new();
+    good(f.submit("parent", batch(), &[], 0));
+    good(f.submit("child", batch(), &["parent"], 100));
+    f.ok(&["run-one"]);
+    let c = Connection::open(&f.db).unwrap();
+    c.execute("UPDATE jobs SET result='{}' WHERE id='parent'", [])
+        .unwrap();
+    drop(c);
+    assert_eq!(f.run(&["run-one"]).status.code(), Some(2));
+    assert_eq!(f.run(&["status", "parent"]).status.code(), Some(1));
+    assert_eq!(f.ok(&["status", "child"])["state"], "failed");
+}
+
+#[cfg(unix)]
+#[test]
+fn collector_refuses_reparse_ancestor_and_rechecks_scope_at_execution() {
+    use std::os::unix::fs::symlink;
+    let f = Fixture::new();
+    let actual = f.root.join("actual");
+    let source = actual.join("source");
+    fs::create_dir_all(&source).unwrap();
+    fs::write(source.join("a.txt"), b"abc").unwrap();
+    let alias = f.root.join("alias");
+    symlink(&actual, &alias).unwrap();
+    let mut input = json!({"schema":2,"kind":"collect","root":alias.join("source"),"manifest":{"schema":1,"files":[{"path":"a.txt"}]}});
+    assert_eq!(
+        f.submit("ancestor", input.clone(), &[], 50).status.code(),
+        Some(1)
+    );
+    input["root"] = json!(source);
+    good(f.submit("replace-root", input, &[], 50));
+    let moved = actual.join("original");
+    fs::rename(&source, &moved).unwrap();
+    symlink(&moved, &source).unwrap();
+    assert_eq!(f.run(&["run-one"]).status.code(), Some(2));
+    assert_eq!(f.ok(&["status", "replace-root"])["state"], "failed");
+    assert_eq!(fs::read(moved.join("a.txt")).unwrap(), b"abc");
+}
+
+// Lease, fencing and reconciliation surface exercised through the CLI, the same entry
+// point a supervised worker or the supervisor process uses.
+#[test]
+fn run_one_reports_worker_identity_and_lease_token() {
+    let f = Fixture::new();
+    good(f.submit("job", batch(), &[], 10));
+    let out = f
+        .run(&["run-one", "--worker", "worker-a", "--lease-ms", "5000"])
+        .stdout;
+    let ran: Value = serde_json::from_slice(&out).unwrap();
+    assert_eq!(ran["state"], "completed");
+    assert_eq!(ran["lease_token"], 1);
+    let report = f.ok(&["status", "job"]);
+    assert_eq!(report["result"]["execution"]["worker"], "worker-a");
+    assert_eq!(report["result"]["execution"]["lease_token"], 1);
+    assert_eq!(report["lease"]["attempt"], 1);
+    assert!(report["lease"]["owner"].is_null());
+}
+
+#[test]
+fn heartbeat_and_reconcile_enforce_lease_ownership() {
+    let f = Fixture::new();
+    good(f.submit("job", batch(), &[], 10));
+    let c = Connection::open(&f.db).unwrap();
+    c.execute(
+        "UPDATE jobs SET state='running',lease_owner='worker-a',lease_token=7,lease_ms=2000,
+           lease_expires_ms=?,heartbeat_ms=? WHERE id='job'",
+        [now_ms() + 60_000, now_ms()],
+    )
+    .unwrap();
+    drop(c);
+    // A foreign worker cannot extend someone else's lease.
+    assert_eq!(
+        f.run(&["heartbeat", "job", "worker-b", "7", "5000"])
+            .status
+            .code(),
+        Some(1)
+    );
+    let extended = f.ok(&["heartbeat", "job", "worker-a", "7", "5000"]);
+    assert_eq!(extended["lease_token"], 7);
+    // Expiry is reconciled to interrupted, never silently re-run.
+    let c = Connection::open(&f.db).unwrap();
+    c.execute("UPDATE jobs SET lease_expires_ms=1 WHERE id='job'", [])
+        .unwrap();
+    drop(c);
+    let report = f.ok(&["reconcile"]);
+    assert_eq!(report["reconciled"][0]["id"], "job");
+    assert_eq!(report["reconciled"][0]["previous_owner"], "worker-a");
+    assert_eq!(report["unverified_effect"], true);
+    assert_eq!(f.ok(&["status", "job"])["state"], "interrupted");
+    // The job continues only through an explicit retry, with provenance kept.
+    good(f.run(&["retry", "job", "job-retry", "--reviewed-redacted"]));
+    assert_eq!(f.ok(&["status", "job-retry"])["retry_of"], "job");
+    assert_eq!(f.ok(&["run-one"])["state"], "completed");
+}
+
+#[test]
+fn running_cancellation_is_requested_through_the_cli() {
+    let f = Fixture::new();
+    good(f.submit("job", batch(), &[], 10));
+    assert_eq!(
+        f.run(&["cancel", "job", "--running"]).status.code(),
+        Some(1)
+    );
+    let c = Connection::open(&f.db).unwrap();
+    c.execute(
+        "UPDATE jobs SET state='running',lease_owner='worker-a',lease_token=2 WHERE id='job'",
+        [],
+    )
+    .unwrap();
+    drop(c);
+    let ack = f.ok(&["cancel", "job", "--running"]);
+    assert_eq!(ack["cancel_requested"], true);
+    let status = f.ok(&["status", "job"]);
+    assert_eq!(status["lease"]["cancel_requested"], true);
+    // A cancelled job is never claimed again by a fresh worker.
+    assert_eq!(f.ok(&["run-one"])["state"], "idle");
+}
+
+fn now_ms() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64
+}
+
+#[test]
+fn expired_lease_cannot_be_renewed_through_the_cli() {
+    let f = Fixture::new();
+    good(f.submit("job", batch(), &[], 10));
+    let c = Connection::open(&f.db).unwrap();
+    c.execute(
+        "UPDATE jobs SET state='running',lease_owner='worker-a',lease_token=3,lease_ms=1000,
+           lease_expires_ms=1,heartbeat_ms=1 WHERE id='job'",
+        [],
+    )
+    .unwrap();
+    drop(c);
+    // Reconciliation has not run yet, but the lease is already void.
+    assert_eq!(
+        f.run(&["heartbeat", "job", "worker-a", "3", "5000"])
+            .status
+            .code(),
+        Some(1)
+    );
+    assert_eq!(f.ok(&["status", "job"])["lease"]["expires_utc_ms"], 1);
+}
+
+#[test]
+fn verified_worker_stop_releases_exclusive_keys_for_the_next_owner() {
+    let f = Fixture::new();
+    let mut effect = batch();
+    effect["queue"] = json!({"schema":1,"depends_on":[],"exclusive_keys":["desktop"]});
+    good(f.submit("effect", effect.clone(), &[], 100));
+    good(f.submit("rival", effect, &[], 0));
+    let c = Connection::open(&f.db).unwrap();
+    c.execute(
+        "UPDATE jobs SET state='running',lease_owner='worker-a',lease_token=1,
+           lease_expires_ms=1,holds_keys=1 WHERE id='effect'",
+        [],
+    )
+    .unwrap();
+    drop(c);
+    let report = f.ok(&["reconcile"]);
+    assert_eq!(report["reconciled"][0]["keys_held"], true);
+    // The old worker may still act, so the exclusive resource stays reserved.
+    assert_eq!(f.ok(&["run-one"])["state"], "idle");
+    let stopped = f.ok(&["interrupt", "effect", "--worker-stopped"]);
+    assert_eq!(stopped["worker_stop_verified"], true);
+    assert_eq!(stopped["keys_released"], true);
+    assert_eq!(f.ok(&["run-one"])["id"], "rival");
+}
+
+#[test]
+fn cancellation_after_a_worker_death_needs_verification() {
+    let f = Fixture::new();
+    good(f.submit("job", batch(), &[], 10));
+    let c = Connection::open(&f.db).unwrap();
+    c.execute(
+        "UPDATE jobs SET state='running',lease_owner='worker-a',lease_token=1,
+           lease_expires_ms=1,cancel_requested=1 WHERE id='job'",
+        [],
+    )
+    .unwrap();
+    drop(c);
+    f.ok(&["reconcile"]);
+    // The owner never confirmed the cancellation, so it is not final.
+    assert_eq!(f.run(&["cancel", "job"]).status.code(), Some(1));
+    assert_eq!(f.ok(&["status", "job"])["state"], "interrupted");
+    f.ok(&["interrupt", "job", "--worker-stopped"]);
+    assert_eq!(f.ok(&["cancel", "job"])["state"], "cancelled");
+    assert_eq!(
+        f.ok(&["status", "job"])["lease"]["worker_stop_verified"],
+        true
+    );
+}
+
+// Real process supervision: the worker is a child nsre process owned by a supervisor
+// process, not a database state machine.
+#[test]
+fn supervisor_kills_a_real_worker_at_the_deadline_and_verifies_the_stop() {
+    let f = Fixture::new();
+    let mut slow = batch();
+    slow["tasks"] = json!([{"id":"wait","input":{"operation":"pause","ms":20000}}]);
+    good(f.submit("slow", slow.clone(), &[], 10));
+    let out = f
+        .cmd(&[
+            "supervisor",
+            "spawn",
+            f.db.to_str().unwrap(),
+            "slow",
+            "--worker",
+            "sup-host",
+            "--lease-ms",
+            "60000",
+            "--deadline-ms",
+            "2000",
+            "--heartbeat-ms",
+            "500",
+        ])
+        .stdout;
+    assert!(!out.is_empty(), "supervisor printed nothing");
+    let report: Value = serde_json::from_slice(&out).unwrap();
+    assert_eq!(report["killed_for_deadline"], true, "{report}");
+    assert_eq!(report["process_observed"], true);
+    // The kill is evidenced by the process exit, not a statement.
+    let status = f.ok(&["status", "slow"]);
+    assert_eq!(status["state"], "interrupted");
+    assert_eq!(status["lease"]["worker_stop_verified"], true);
+    assert!(status["lease"]["worker_pid"].is_i64());
+    // The exclusive resource stays reserved for an effectful job until the stop was verified.
+    let mut rival_input = batch();
+    rival_input["queue"] = json!({"schema":1,"depends_on":[],"exclusive_keys":["gpu"]});
+    good(f.submit("holder", slow, &[], 0));
+    let _ = rival_input;
+}
+
+#[test]
+fn supervisor_verifies_a_live_worker_and_refuses_to_stop_it() {
+    let f = Fixture::new();
+    let mut slow = batch();
+    slow["tasks"] = json!([{"id":"wait","input":{"operation":"pause","ms":4000}}]);
+    good(f.submit("slow", slow, &[], 10));
+    // A live worker is claimed by a supervised run in the background; the supervisor must
+    // refuse to record a stop while the process identity still matches.
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_nsre"))
+        .args([
+            "supervisor",
+            "spawn",
+            f.db.to_str().unwrap(),
+            "slow",
+            "--worker",
+            "sup-host",
+            "--lease-ms",
+            "60000",
+            "--deadline-ms",
+            "30000",
+            "--heartbeat-ms",
+            "500",
+        ])
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(1500));
+    let status = f.ok(&["status", "slow"]);
+    assert_eq!(status["state"], "running");
+    assert_eq!(status["lease"]["owner"], "sup-host");
+    // The worker records its own process identity at claim time.
+    let pid = status["lease"]["worker_pid"].as_i64().unwrap();
+    assert!(pid > 0);
+    let created = status["lease"]["worker_created_ms"].as_i64().unwrap();
+    assert!(created > 0);
+    // verify refuses while the process is alive (OS says so, not a text flag).
+    let code = f
+        .cmd(&["supervisor", "verify", f.db.to_str().unwrap(), "slow"])
+        .status
+        .code();
+    assert_eq!(code, Some(2), "live worker must not be marked stopped");
+    let _ = child.kill();
+    let _ = child.wait_with_output();
+    // After the real process death, verification succeeds from the OS.
+    let out = f
+        .cmd(&["supervisor", "verify", f.db.to_str().unwrap(), "slow"])
+        .stdout;
+    let report: Value = serde_json::from_slice(&out).unwrap();
+    assert_eq!(
+        report["verification"]["worker_stop_verified"], true,
+        "{report}"
+    );
+    assert_eq!(
+        f.ok(&["status", "slow"])["lease"]["worker_stop_verified"],
+        true
+    );
+}
+
+#[test]
+fn heartbeat_thread_keeps_a_long_job_alive_and_reports_progress() {
+    let f = Fixture::new();
+    let mut slow = batch();
+    slow["tasks"] = json!([{"id":"wait","input":{"operation":"pause","ms":2500}}]);
+    good(f.submit("slow", slow, &[], 10));
+    let out = f
+        .run(&[
+            "run-one",
+            "--worker",
+            "worker-a",
+            "--lease-ms",
+            "1500",
+            "--heartbeat-ms",
+            "400",
+        ])
+        .stdout;
+    let ran: Value = serde_json::from_slice(&out).unwrap();
+    assert_eq!(ran["state"], "completed", "{ran}");
+    let status = f.ok(&["status", "slow"]);
+    // The 1500ms lease would have expired during the 2500ms job without the heartbeat.
+    assert_eq!(status["state"], "completed");
+    assert_eq!(status["result"]["execution"]["worker"], "worker-a");
+}

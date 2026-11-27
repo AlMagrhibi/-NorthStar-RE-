@@ -28,3 +28,9 @@
 Historical source validation reports describe the input package only. Current verification evidence is in reports/. Documentation distinguishes implemented CLI behavior, instruction-only capabilities, experimental MCP and planned services.
 
 [التسليم النهائي وروابط الحزم والبصمات والتحقق المستقل](reports/FINAL-DELIVERY-AR.md).
+
+## Engineering intelligence architecture / معمارية الذكاء الهندسي
+
+[Target architecture](architecture/overview.md) · [Task lifecycle and acceptance](architecture/task-lifecycle.md) · [Engine registry and execution contract](../skills/northstar-re/references/engine-orchestrator.md).
+
+[Windows-only platform decision / قرار منصة ويندوز](architecture/windows-platform.md).

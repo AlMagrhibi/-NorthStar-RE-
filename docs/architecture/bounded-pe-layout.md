@@ -1,0 +1,11 @@
+# Binary Intelligence — bounded PE layout parser
+
+The `pe-layout` operation and shared file collector parse PE32/PE32+ headers and section file ranges in native Rust, without loading code. The reference is Microsoft's [PE format specification](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format). This extends `binary-header` hints; the existing hint operation retains its old contract.
+
+Offline input: `{"operation":"pe-layout","hex":"<whole synthetic file, at most 64 KiB>"}`. The existing batch engine ownership maps it to `binary-intelligence`. Invalid input produces a failed task, not a positive format hint.
+
+The direct or queued collector uses actual file length and a prefix capped at 64 KiB. Its per-file report includes `pe_layout` for MZ inputs. Add `"require_pe_layout":true` to a selected file to require successful structural parsing in addition to hashing. Without that requirement, the report may successfully hash a malformed file while explicitly reporting its layout error. This distinction preserves the strength of the evidence.
+
+The parser bounds header offsets, optional-header sizes, directory count, section count, table length, alignments, image and raw ranges, and overlapping section ranges. Reports normalize architecture, format, entry RVA, section offsets/sizes/permissions and trailing byte count. A header outside the available prefix is unsupported and fails closed when layout is required. Directory contents, imports/exports, relocations, CLR metadata, Authenticode and Windows loader acceptance remain unverified; `full_format_validated:false` is retained. Trailing bytes are descriptive and do not classify packing or malicious content. Labels and section names remain untrusted data.
+
+Synthetic tests cover PE32/PE32+, all shorter header prefixes, huge offsets, overlapping raw/virtual ranges and inconsistent alignment/directories. Collector tests cover valid x86/x64 files and MZ-only malformed files with/without required layout. Windows smoke additionally parses the actual newly built MSVC `nsre.exe` and independently compares its SHA-256. It must pass on the exact commit before claiming CI verification. No engine completion flag changes and no proprietary binaries are added to the repository.
