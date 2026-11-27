@@ -230,7 +230,7 @@ mod tests {
         let interactive = report["routing"]["direct_desktop"].as_bool().unwrap();
         assert_eq!(desktop, interactive);
         if report["classification"].as_str().unwrap() != "active-console" {
-            assert_eq!(desktop, false);
+            assert!(!desktop);
             assert_eq!(
                 report["routing"]["requires_authorized_interactive_worker"],
                 true
