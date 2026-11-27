@@ -88,7 +88,7 @@ e2eb6f36cbe69bc9c260993b9f4206cb3d802850baebb726b6dcc82d44e498a2  docs/reports/S
 3e302ed88c253deaa20f0faf969d87dbc78fd76608309e7fa4a9fb56d06e177e  docs/reports/SOURCE-INVENTORY.json
 0b71c6043d2ead3c761fd8ea66d11fe3010e0007a974520586729a45d45384aa  docs/reports/SOURCE-VALIDATION-HISTORICAL.txt
 c16a17ecd1836f13c4c83e767cc7d5d98d528e9c683e00c200d6d759da62b894  docs/reports/TEST-EVIDENCE-MATRIX-AR.md
-c2ddd500bdfc22aec6a05edbc167ba602c5abcd501625bfd81a9ab1600839b33  docs/reports/TEST-EVIDENCE-MATRIX.json
+b02b970b73f742358972be8176c29254c2f886740203072c5ff5cd43e2de2e50  docs/reports/TEST-EVIDENCE-MATRIX.json
 339603445ad0997102d768ee68295a75713e9432a50d099e7193379c3e560dec  docs/reports/TESTS-AR.md
 f8643dd9cf40ac1ff4d4e340dbe2695bed372176100cd99d1798e9af9639801e  docs/reports/WORK-CONTINUATION-2026-11-26-AR.md
 65aace3c7d64b7b27208554a5c740441de65956c6c3bb21ec5dd1bc9df8b23bc  docs/reports/WORK-HARDENING-2026-11-26-AR.md
@@ -139,7 +139,7 @@ ea186268d8ea5023f9358a23bf6b40c1fcc9944bc148504191ce1a1751357ab3  skills/northst
 1d22df08a980fc5fb95e548a1f65df6b87a64a62af67e00f2f28dfcba40a4545  skills/northstar-re/engine/nsre/src/queue.rs
 7052458a0960b89bf3a9e425425f0f9ede2cb9af017a2486f1b32287a23bb2b1  skills/northstar-re/engine/nsre/src/rpc.rs
 84eea9cd388024baea25dac19927e3ae440ea08a3cc2bf9bb0c578df2d919c3f  skills/northstar-re/engine/nsre/src/schema.sql
-e3bbb35786aa1b8edea0caa75bf4f1802b1fa7e31918f9149a269af9ee54804b  skills/northstar-re/engine/nsre/src/session.rs
+d028d37ee864c41fae2367e512e6631f2d5b4e54bea2a30e6a16a8bed190b0d2  skills/northstar-re/engine/nsre/src/session.rs
 0db7da8db82bc5f8308246c0dff0a5eff4b0e78619d8c6eda530f9643af83065  skills/northstar-re/engine/nsre/src/supervisor.rs
 362472ab5efeb9ddde953b260e0985b4d9a08acfb759b58a5ebf361f7e35bdb0  skills/northstar-re/engine/nsre/tests/engine_cli.rs
 20372e047ee39dde294a0388eafcbd0b3c21a617915cee2891ae80c811ec8d79  skills/northstar-re/engine/nsre/tests/framework_cli.rs

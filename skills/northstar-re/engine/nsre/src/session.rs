@@ -15,7 +15,6 @@ fn invalid(message: &str) -> io::Error {
 mod wts {
     use std::io;
     use windows::core::PWSTR;
-    use windows::Win32::Foundation::HANDLE;
     use windows::Win32::System::RemoteDesktop::{
         ProcessIdToSessionId, WTSEnumerateSessionsW, WTSFreeMemory, WTSGetActiveConsoleSessionId,
         WTSQuerySessionInformationW, WTSINFOEXW, WTS_CURRENT_SERVER_HANDLE, WTS_INFO_CLASS,
@@ -190,6 +189,7 @@ pub fn inventory() -> io::Result<Value> {
             rows.push(json!({
                 "session_id": session.id,
                 "name": session.name,
+                "wts_station_name": wts::session_name(session.id)?,
                 "connection_state": state_name(session.state),
                 "session_flags": wts::flag_name(flags.unwrap_or(-1)),
                 "user": wts::session_user(session.id)?,
@@ -269,8 +269,10 @@ fn parent_process_is_sshd() -> io::Result<bool> {
     };
     let me = std::process::id();
     let mut parent: u32 = 0;
-    let mut entry = PROCESSENTRY32W::default();
-    entry.dwSize = std::mem::size_of::<PROCESSENTRY32W>() as u32;
+    let mut entry = PROCESSENTRY32W {
+        dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
+        ..PROCESSENTRY32W::default()
+    };
     unsafe {
         if Process32FirstW(snapshot, &mut entry).is_ok() {
             loop {

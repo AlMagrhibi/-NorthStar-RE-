@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_utc": "2026-11-27T00:53:16Z",
+  "generated_utc": "2026-11-27T00:59:48Z",
   "commit_sha": "",
   "executable_sha256": "053b003e241424096c9a80d8b896ecb8ccc15cfc14d76c03e770936b4663caa0",
   "environment_reference": {
@@ -25,7 +25,7 @@
     "1_native_windows_11_tests": {
       "ran_on": "local Windows 11 (this machine, native, not WSL/VM)",
       "commit_sha": "",
-      "executable_sha256": "053b003e241424096c9a80d8b896ecb8ccc15cfc14d76c03e770936b4663caa0",
+      "executable_sha256": "4ff7f29bad063a0a61c100c3e6287455a15890a5aafb605b1d39c37176763044",
       "os_build": "10.0.26300",
       "session_id": 0,
       "result": {
@@ -35,7 +35,8 @@
         "queue_cli_process": "13 passed; 0 failed",
         "framework_cli": "3 passed; 0 failed",
         "total": 75,
-        "duration_seconds_approx": 6.2
+        "duration_seconds_approx": 6.4,
+        "clippy": "clean (-D warnings)"
       },
       "evidence_commands": [
         "cargo test --locked",
