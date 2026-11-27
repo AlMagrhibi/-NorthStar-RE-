@@ -1,6 +1,7 @@
 //! Read-only inventory prototype. Never loads or executes target files.
 mod batch;
 mod collect;
+mod context;
 #[cfg(windows)]
 mod desktop;
 mod desktop_api;
@@ -280,6 +281,16 @@ fn main() -> ExitCode {
         }
         if cmd == "collect" {
             return match collect::command(args) {
+                Ok(true) => ExitCode::SUCCESS,
+                Ok(false) => ExitCode::from(2),
+                Err(e) => {
+                    eprintln!("nsre: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        if cmd == "context" {
+            return match context::command(args) {
                 Ok(true) => ExitCode::SUCCESS,
                 Ok(false) => ExitCode::from(2),
                 Err(e) => {

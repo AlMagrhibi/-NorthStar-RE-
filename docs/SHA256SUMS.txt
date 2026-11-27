@@ -90,7 +90,7 @@ e2eb6f36cbe69bc9c260993b9f4206cb3d802850baebb726b6dcc82d44e498a2  docs/reports/S
 c16a17ecd1836f13c4c83e767cc7d5d98d528e9c683e00c200d6d759da62b894  docs/reports/TEST-EVIDENCE-MATRIX-AR.md
 fd6b9c1d72350fff852803d6148ffbe129bc58235e7bf357a14a51fdf3cb05ac  docs/reports/TEST-EVIDENCE-MATRIX.json
 339603445ad0997102d768ee68295a75713e9432a50d099e7193379c3e560dec  docs/reports/TESTS-AR.md
-7393ebaad030dc40b5ba22dacee57a07cf95eefe7c6b20f76ce2d224757449b8  docs/reports/WORK-CONTINUATION-2026-11-26-AR.md
+bf0af4cbd243ff72a6334437e72b199f7fa4aa5522ae030c56c69f54594c6f1b  docs/reports/WORK-CONTINUATION-2026-11-26-AR.md
 65aace3c7d64b7b27208554a5c740441de65956c6c3bb21ec5dd1bc9df8b23bc  docs/reports/WORK-HARDENING-2026-11-26-AR.md
 60b50698941dcae4c57757ca2ff912f6d51b55def181d5132ec0b4e262b04c33  docs/reports/cargo-audit.json
 f1a2887a040f9415e2ea09d34ff7da2f3516887d8a403fb5ad243cf6205abdca  docs/reports/performance.json
@@ -117,10 +117,11 @@ a872e1ba6dedf132e5385e3751adff113eaa31667d3bf5325328b540abf6de0e  scripts/Write-
 f6303aa517f8bfb24fa47d04531ebca41abe092a1c65b14c02c7e947ecec47ea  skills/northstar-re/SKILL.md
 7545cc0fc1d0331b3cd2e46ab6031c9472c7dd31e2b8c98dd1d735712815abd7  skills/northstar-re/engine/nsre/.cargo/config.toml
 ca2b42fae0204a2e1019ed48b4579f5484f6ebf426d389616512bc10e2677e86  skills/northstar-re/engine/nsre/Cargo.lock
-35384e73fe40a655c618d9b10240f6530e3c982a4b628f88763d4c3e62eb0dff  skills/northstar-re/engine/nsre/Cargo.toml
+901e1c333f47596c91803f3de3d7a931caf9a99d833e0865f0a7eb88ced3d304  skills/northstar-re/engine/nsre/Cargo.toml
 a5bb6fd60a286c64b8a6a43be13e81845a2b374b146d9be1839d338e0707452a  skills/northstar-re/engine/nsre/README.md
 0064f932562ec62bb66deb3efbea33e87d7f61dd930442ea0f995393d6064a97  skills/northstar-re/engine/nsre/src/batch.rs
 45704493b519052e4145f97787a697064fbf2be9b95dd7ed50bcde68296cac76  skills/northstar-re/engine/nsre/src/collect.rs
+89e94d5f56327993091efb33bf02973bc075455d14c52abbc032b5ed570dc219  skills/northstar-re/engine/nsre/src/context.rs
 d674c5b703314761f36f67d10d9c16e178c7c18674f3d46c8c96328aea7a4f7c  skills/northstar-re/engine/nsre/src/desktop.rs
 dbd323a13f9707633bc34eba3acd770850b1a38c8b72342ddc7c9e5b18193de9  skills/northstar-re/engine/nsre/src/desktop/capture.rs
 fd3a87bd0628fcf9af50e4f3129fa8bcd095c0987e8181fccabbf97a08ff2590  skills/northstar-re/engine/nsre/src/desktop/keyboard.rs
@@ -133,7 +134,7 @@ acd2e01d4fab92cec8cb7920ed86f0c7afbd257e9566a500baf815b27de912ad  skills/northst
 c64b1f2c4546acce3ef7d7d8a36b66657e08285215e1c5a11eeb536b845c180a  skills/northstar-re/engine/nsre/src/governor.rs
 e4b0563aa1d36eca341846c5ac5d0ae3d6e2e862c859c8675b76b62d85bb9efc  skills/northstar-re/engine/nsre/src/index.rs
 e7e7f9194f14994b5a133ae4ee09dd3e39f13d8fc0865942752309fc07d3942d  skills/northstar-re/engine/nsre/src/lab.rs
-dbbe969361d33c740dbd10e735ccf7a4e7a46f66a67606af885a0bf254ab8e53  skills/northstar-re/engine/nsre/src/main.rs
+de32480462509b814fd5362c7f38db4ea656095e54bd3bf5c075ff8108d92a3b  skills/northstar-re/engine/nsre/src/main.rs
 ea186268d8ea5023f9358a23bf6b40c1fcc9944bc148504191ce1a1751357ab3  skills/northstar-re/engine/nsre/src/pe.rs
 33fe17effcb15c569d9c771ecf323827704a5e07b9c1f6e2683651784f2b8a4d  skills/northstar-re/engine/nsre/src/probe.rs
 1d22df08a980fc5fb95e548a1f65df6b87a64a62af67e00f2f28dfcba40a4545  skills/northstar-re/engine/nsre/src/queue.rs

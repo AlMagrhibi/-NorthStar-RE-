@@ -141,3 +141,14 @@ cargo build --release --locked
 | Track E | المصفوفة صارت تحدد build profile (debug) ومسار التنفيذي وSHA-256 لكل test binary، وتوضح أن البصمتين السابقتين نسختا debug لحالتين مختلفتين من السورس — دليل كل commit صالح عند commitه فقط. |
 | اختبارات | 77 ناجحًا (56 وحدة + 21 تكامل) · clippy نظيف |
 | حدود الدليل | WIS-R04/R05/R06 (تشخيص ancestry موثوق، أخطاء WTS لكل جلسة، تحقق ملكية المستخدم/الهدف) + العامل التفاعلي وIPC: الحزمة القادمة · SUP-001..008: قيد التنفيذ · Track C: لم يبدأ |
+
+## سجل أدلة — WISM Extension: السياق التنفيذي الديناميكي وحركة الاتصال
+
+| الحقل | القيمة |
+|---|---|
+| ما أُضيف | `src/context.rs`: هوية السياق كـhash محتوى للحقائق التنفيذية (session + classification + lock state + فئة النظام workstation/server عبر GetProductInfo) — بلا PID أو username أو IP أو دقة عرض. `context evaluate|capabilities|compare`. القدرات الديناميكية: desktop_observe/act تظهران فقط في active-console غير مقفل؛ queue/batch/collect/supervisor متاحة دائمًا. `compare` يصنّف تغيّر السياق ويمنع إعادة تنفيذ الأعمال المؤثرة مجهولة النتيجة، ويبقي المهام غير التفاعلية مستمرة عبر قطع الاتصال (الملكية في الطابور الدائم). |
+| إثبات حي (Session 0 عبر FreePi/SSH) | identity `a9f4c632…` · classification=session-zero · desktop_act=false · interactive_worker_required=true · compare(نفس الهوية)=changed=false · compare(هوية قديمة)=changed=true مع السياسة أعلاه |
+| بلا ثوابت | لا Session ID=1 ولا PID ولا username ولا IP ولا دقة عرض في أي قرار — كلها تُكتشف من OS وتُعاد تقييمها عند كل استدعاء |
+| اختبارات | 5 جديدة (استقرار الهوية، الحساب اليدوي مطابق، القدرات بلا desktop خارج الجلسة التفاعلية، compare ثابت/متغير) — 82 اختبارًا ناجحًا إجمالًا |
+| فئة النظام | GetProductInfo يميّز workstation عن server — CI على Windows Server لا يُحتسب كبيئة Windows 11 المرجعية |
+| حدود الدليل | مراقبة تغيّر الجلسة لحظيًا (watch loop) وIPC الموثق والعامل التفاعلي في session 1: الحزمة القادمة · SUP-001..008 وTrack C ما زالت مفتوحة |
