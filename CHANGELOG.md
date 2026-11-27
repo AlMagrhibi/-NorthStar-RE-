@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-27 — Development identity 0.012 (documentation decision)
+
+- Adopt the early-stage product display identity 0.012; target technical version 0.0.12-dev.1, migration pending.
+- Preserve all historical version labels, commits, release artifacts and original dates; no history rewriting.
+- Record the current development baseline at [d917cb5](https://github.com/AlMagrhibi/-NorthStar-RE-/commit/d917cb562e9248e9f5a924eda42e311899149acd) with [CI 45927809158](https://github.com/AlMagrhibi/-NorthStar-RE-/actions/runs/45927809158).
+- Development package channel, protected publication, WISM context discovery and dynamic capability evaluation; the authorized interactive worker, IPC, supervisor hardening and adaptive input remain open.
+- Keep all twelve engine IDs, 42 additions and acceptance gates. No production release or installation upgrade authorized.
+
+## Historical record (preserved verbatim)
+
+# Changelog
+
 ## V11 / engine 0.3.0 — repository engineering candidate, 2026-11-25
 
 - Preserve one master, 52 specialist modules, 108 catalog entries, original research and source engine layout.
