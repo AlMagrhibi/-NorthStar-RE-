@@ -14,7 +14,7 @@ $Master=Join-Path $Package 'skills\northstar-re'
 $HomeRoot=Join-Path $env:LOCALAPPDATA 'NorthStarRE'
 $Reg=Join-Path $HomeRoot 'registration.json'
 $Metadata=Get-Content -LiteralPath (Join-Path $Package 'framework.json') -Raw -Encoding UTF8|ConvertFrom-Json
-if ($Metadata.product -ne 'NorthStar RE Framework' -or $Metadata.engine_version -ne '0.3.0' -or $Metadata.version -notmatch '^11\.[0-9]+\.[0-9]+-rc\.[0-9]+$') { throw 'Incompatible framework metadata' }
+if ($Metadata.product -ne 'NorthStar RE Framework' -or $Metadata.engine_version -ne '0.3.0' -or $Metadata.version -notmatch '^(11|12)\.[0-9]+\.[0-9]+(-dev\.[0-9]+|-rc\.[0-9]+)?$') { throw 'Incompatible framework metadata' }
 function Assert-Normal([string]$Path) {
  $p=[IO.Path]::GetFullPath($Path)
  while ($p) {
